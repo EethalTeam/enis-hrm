@@ -1,0 +1,271 @@
+export const initialData = {
+  employees: [
+    {
+      id: 'emp-1',
+      name: 'Karthi',
+      email: 'karthi@company.com',
+      department: 'Engineering',
+      designation: 'Senior Developer',
+      status: 'Active',
+      joinDate: '2023-01-15',
+      salary: 85000,
+      shiftId: 'shift-1',
+      workingHours: 8,
+      workLocation: 'Office',
+      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+      role: 'Team Lead'
+    },
+    {
+      id: 'emp-2',
+      name: 'Madhan Kumar',
+      email: 'madhan@company.com',
+      department: 'Human Resources',
+      designation: 'HR Manager',
+      status: 'Active',
+      joinDate: '2022-08-20',
+      salary: 75000,
+      shiftId: 'shift-3',
+      workingHours: 8,
+      workLocation: 'Remote (WFH)',
+      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+      role: 'HR Manager'
+    },
+    {
+      id: 'emp-3',
+      name: 'Shiva',
+      email: 'shiva@company.com',
+      department: 'Engineering',
+      designation: 'Team Lead',
+      status: 'Active',
+      joinDate: '2022-03-10',
+      salary: 95000,
+      shiftId: 'shift-2',
+      workingHours: 8,
+      workLocation: 'Hybrid',
+      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+      role: 'Admin'
+    },
+    {
+      id: 'emp-4',
+      name: 'Vishal',
+      email: 'vishal@company.com',
+      department: 'Marketing',
+      designation: 'Marketing Specialist',
+      status: 'Active',
+      joinDate: '2023-05-12',
+      salary: 65000,
+      shiftId: 'shift-1',
+      workingHours: 8,
+      workLocation: 'Office',
+      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+      role: 'Employee'
+    }
+  ],
+  departments: [
+    { id: 'dept-1', name: 'Engineering', head: 'Karthi' },
+    { id: 'dept-2', name: 'Human Resources', head: 'Madhan Kumar' }
+  ],
+  designations: [
+    { id: 'desig-1', name: 'Senior Developer', department: 'Engineering' },
+    { id: 'desig-2', name: 'HR Manager', department: 'Human Resources' },
+    { id: 'desig-3', name: 'Marketing Specialist', department: 'Marketing' },
+    { id: 'desig-4', name: 'Sales Executive', department: 'Sales' },
+  ],
+  projects: [
+    {
+      id: 'proj-1',
+      name: 'Customer Portal Redesign',
+      status: 'In Progress',
+      progress: 65,
+      startDate: '2024-01-15',
+      endDate: '2024-04-30',
+      budget: 150000,
+      teamSize: 8,
+      assignees: ['emp-1', 'emp-3']
+    },
+    {
+      id: 'proj-2',
+      name: 'Mobile App Development',
+      status: 'Planning',
+      progress: 15,
+      startDate: '2024-02-01',
+      endDate: '2024-08-15',
+      budget: 250000,
+      teamSize: 12,
+      assignees: ['emp-4']
+    },
+  ],
+  tasks: [
+    {
+      id: 'task-1',
+      title: 'Implement user authentication',
+      description: 'Set up JWT-based authentication system',
+      priority: 'High',
+      status: 'In Progress',
+      assignee: 'emp-1',
+      projectId: 'proj-1',
+      dueDate: '2024-02-15',
+    },
+    {
+      id: 'task-2',
+      title: 'Design database schema',
+      description: 'Create comprehensive database design for the new system',
+      priority: 'High',
+      status: 'Completed',
+      assignee: 'emp-3',
+      projectId: 'proj-1',
+      dueDate: '2024-02-01',
+    },
+    {
+      id: 'task-3',
+      title: 'Create wireframes',
+      description: 'Design wireframes for mobile application',
+      priority: 'Medium',
+      status: 'Todo',
+      assignee: 'emp-4',
+      projectId: 'proj-2',
+      dueDate: '2024-02-20',
+    }
+  ],
+  shifts: [
+    { id: 'shift-1', name: 'Day Shift (8 hours)', startTime: '09:00', endTime: '17:00', hourlyRate: 40, color: 'bg-blue-500' },
+    { id: 'shift-2', name: 'Night Shift (8 hours)', startTime: '17:00', endTime: '01:00', hourlyRate: 45, color: 'bg-indigo-500' },
+    { id: 'shift-3', name: 'General Shift (8 hours)', startTime: '10:00', endTime: '18:00', hourlyRate: 38, color: 'bg-green-500' },
+    { id: 'shift-4', name: '24-hour Shift', startTime: '09:00', endTime: '09:00', hourlyRate: 55, color: 'bg-red-500' },
+  ],
+  earnings: [
+    { id: 'earn-1', name: 'Basic Salary', type: 'percentage', value: 50 },
+    { id: 'earn-2', name: 'House Rent Allowance (HRA)', type: 'percentage', value: 20 },
+    { id: 'earn-3', name: 'Medical Allowance', type: 'fixed', value: 1500 },
+    { id: 'earn-4', name: 'Performance Bonus', type: 'percentage', value: 10 },
+  ],
+  deductions: [
+    { id: 'deduct-1', name: 'Professional Tax', type: 'fixed', value: 200 },
+    { id: 'deduct-2', name: 'Provident Fund (PF)', type: 'percentage', value: 12 },
+    { id: 'deduct-3', name: 'Income Tax', type: 'percentage', value: 15 },
+  ],
+  timesheetEntries: [
+    {
+      id: 'time-1',
+      date: '2025-08-19',
+      projectId: 'proj-1',
+      taskId: 'task-1',
+      hours: 8.5,
+      description: 'Worked on JWT token implementation and refresh logic.',
+      status: 'Approved'
+    },
+    { id: 'time-2', date: '2025-08-20', projectId: 'proj-2', taskId: 'task-3', hours: 7.0, description: 'Initial wireframes for login and dashboard screens.', status: 'Pending' },
+  ],
+  leads: [
+    {
+      id: 'lead-1',
+      name: 'Acme Corporation',
+      contact: 'Arun',
+      email: 'arun@acme.com',
+      phone: '+1 (555) 123-4567',
+      status: 'Hot',
+      value: 150000,
+      source: 'Website',
+      assignedTo: 'emp-2',
+      lastContact: '2024-02-20',
+      nextFollowUp: '2024-02-25'
+    },
+    {
+      id: 'lead-2',
+      name: 'Tech Solutions Inc',
+      contact: 'Gokul',
+      email: 'gokul@techsolutions.com',
+      phone: '+1 (555) 987-6543',
+      status: 'Warm',
+      value: 85000,
+      source: 'Referral',
+      assignedTo: 'emp-3',
+      lastContact: '2024-02-18',
+      nextFollowUp: '2024-02-22'
+    },
+  ],
+  leaves: [
+     {
+      id: 'leave-1',
+      employeeId: 'emp-1',
+      type: 'Casual Leave',
+      startDate: '2024-02-15',
+      endDate: '2024-02-16',
+      days: 2,
+      status: 'Approved',
+      reason: 'Personal work',
+      appliedOn: '2024-02-10'
+    },
+    {
+      id: 'leave-2',
+      employeeId: 'emp-2',
+      type: 'Sick Leave',
+      startDate: '2024-02-20',
+      endDate: '2024-02-22',
+      days: 3,
+      status: 'Pending',
+      reason: 'Medical treatment',
+      appliedOn: '2024-02-18'
+    },
+  ],
+  permissions: [
+    { id: 'perm-1', employeeId: 'emp-1', date: '2025-08-22', hours: 2, reason: 'Doctor Appointment', status: 'Approved' },
+    { id: 'perm-2', employeeId: 'emp-4', date: '2025-08-23', hours: 1, reason: 'Personal Errand', status: 'Pending' },
+  ],
+  attendance: [
+    { id: 'att-1', employeeId: 'emp-1', date: '2025-08-22', checkIn: '09:15', checkOut: '18:30', status: 'Present', hours: 9.25 },
+    { id: 'att-2', employeeId: 'emp-2', date: '2025-08-22', checkIn: '08:45', checkOut: '17:45', status: 'Present', hours: 9.00 },
+    { id: 'att-3', employeeId: 'emp-3', date: '2025-08-22', checkIn: '09:30', checkOut: '18:45', status: 'Late', hours: 9.25 },
+    { id: 'att-4', employeeId: 'emp-4', date: '2025-08-22', checkIn: null, checkOut: null, status: 'Absent', hours: 0 },
+  ],
+  tickets: [
+    {
+      id: 'TKT-001',
+      title: 'Login Issues with HRMS Portal',
+      description: 'Unable to access the HRMS portal after password reset',
+      category: 'Login Issue',
+      priority: 'High',
+      status: 'Open',
+      assignedTo: 'emp-3',
+      createdBy: 'emp-1',
+      createdAt: '2024-02-20T10:30:00Z',
+      updatedAt: '2024-02-20T14:15:00Z',
+      dueDate: '2024-02-22T17:00:00Z'
+    },
+  ],
+  finances: [
+    {
+      id: 'trans-1',
+      type: 'Payment',
+      description: 'Salary Payment - February 2024',
+      amount: -485000,
+      date: '2024-02-20',
+      status: 'Completed',
+      category: 'Payroll'
+    },
+    {
+      id: 'trans-2',
+      type: 'Revenue',
+      description: 'Project Payment - Customer Portal',
+      amount: 150000,
+      date: '2024-02-18',
+      status: 'Completed',
+      category: 'Project Revenue'
+    },
+  ],
+  notifications: [],
+  roles: [
+    { id: 'role-1', name: 'Super Admin' },
+    { id: 'role-2', name: 'Admin' },
+    { id: 'role-3', name: 'HR Manager' },
+    { id: 'role-4', name: 'Team Lead' },
+    { id: 'role-5', name: 'Employee' },
+  ],
+  menuPermissions: {
+    'Super Admin': ['*'],
+    'Admin': ['/dashboard', '/employees', '/settings/roles'],
+    'HR Manager': ['/dashboard', '/employees', '/leaves'],
+    'Team Lead': ['/dashboard', '/projects', '/tasks'],
+    'Employee': ['/dashboard', '/tasks', '/leaves'],
+  },
+};
