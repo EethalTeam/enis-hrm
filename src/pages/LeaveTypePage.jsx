@@ -108,7 +108,7 @@ const LeaveTypePage = () => {
   };
   let api=false
 useEffect(()=>{
-  if(LeaveType.length === 0){
+  if(LeaveType.length === 0 && !api){
 getLeaveType()
 api=true
   }

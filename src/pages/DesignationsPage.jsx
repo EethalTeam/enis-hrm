@@ -185,7 +185,7 @@ const DesignationsPage = () => {
   };
   let api=false
 useEffect(()=>{
-  if(Designation.length === 0){
+  if(Designation.length === 0 && !api){
 getDesignation()
 api=true
   }

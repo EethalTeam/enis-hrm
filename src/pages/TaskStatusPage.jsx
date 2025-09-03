@@ -108,7 +108,7 @@ const TaskStatusPage = () => {
   };
   let api=false
 useEffect(()=>{
-  if(TaskStatus.length === 0 && api){
+  if(TaskStatus.length === 0 && !api){
 getTaskStatus()
 api=true
   }

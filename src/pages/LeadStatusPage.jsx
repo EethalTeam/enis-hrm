@@ -108,7 +108,7 @@ const LeadStatussPage = () => {
   };
   let api=false
 useEffect(()=>{
-  if(LeadStatus.length === 0 && api){
+  if(LeadStatus.length === 0 && !api){
 getLeadStatus()
 api=true
   }

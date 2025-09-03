@@ -108,7 +108,7 @@ const WorkLocationsPage = () => {
   };
   let api=false
 useEffect(()=>{
-  if(WorkLocation.length === 0){
+  if(WorkLocation.length === 0 && !api){
 getWorkLocation()
 api=true
   }

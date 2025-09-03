@@ -108,7 +108,7 @@ const TaskPriorityPage = () => {
   };
   let api=false
 useEffect(()=>{
-  if(TaskPriority.length === 0 && api){
+  if(TaskPriority.length === 0 && !api){
 getTaskPriority()
 api=true
   }

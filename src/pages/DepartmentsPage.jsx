@@ -7,6 +7,7 @@ import { config } from '@/components/CustomComponents/config';
 import { Button } from '@/components/ui/button';
 import { useData } from '@/contexts/DataContext';
 import { useToast } from "@/components/ui/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,8 +15,17 @@ import ConfirmationDialog from '@/components/ConfirmationDialog';
 
 const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
   const [formData, setFormData] = useState(
-    department || { departmentName: '', head: '',_id:'' }
+    department || { departmentName: '', employee:'', departmentHead: '',_id:'' }
   );
+    const [Data,SetData] = useState([])
+
+    useEffect(()=>{
+     if(department){
+      setFormData({
+        departmentName: department.departmentName, employee:department.departmentHead?.name || '', departmentHead: department.departmentHead?._id || '',_id:department._id
+      })
+     }
+    },[])
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -30,6 +40,32 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
     }
     setOpen(false);
   };
+    const getEmployeeList = async () => {
+        try {
+           SetData([]); // clear Data once
+          let url = config.Api + "Employee/getAllEmployees/";
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({}),
+          });
+    
+          if (!response.ok) {
+            throw new Error('Failed to get State');
+          }
+    
+          const result = await response.json();
+          SetData(result)
+          // setState(result)
+          // setFilteredData(result)
+        } catch (error) {
+          console.error('Error:', error);
+          throw error;
+        }
+      }
+  
     const createDepartment = async (data) => {
       try {
         let url = config.Api + "Department/createDepartment";
@@ -72,7 +108,16 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
       throw error;
     }
    }
-
+const handleSelectChange = (id, name, key, value) => {
+  if (key && name) {
+    setFormData(prev => ({
+      ...prev,
+      [id]: key,    
+      [name]: value 
+    }));
+    SetData([]); // clear Data once
+  }
+};
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="glass-effect border-white/10 text-white">
@@ -86,7 +131,36 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
           </div>
           <div>
             <Label htmlFor="head">Department Head</Label>
-            <Input id="head" name="head" value={formData.head} onChange={handleChange} required className="bg-white/5" />
+             <Select
+                                          name="employee"
+                                          value={formData.departmentHead} // store only _id
+                                          onOpenChange={async (open) => {
+                                            if (open && (!Data || Data.length === 0)) {
+                                              await getEmployeeList();
+                                            }
+                                          }}
+                                          onValueChange={(id) => {
+                                            if (!id) return;
+                                            const dept = Data.find(d => d._id === id);
+                                            if (dept) {
+                                              handleSelectChange('departmentHead', 'employee', dept._id, dept.name);
+                                            }
+                                          }}
+                                          // required
+                                        >
+                                          <SelectTrigger className="glass-effect border-white/10">
+                                            <SelectValue placeholder="Select Employee" >
+                                              {formData.employee}
+                                            </SelectValue>
+                                          </SelectTrigger>
+                                          <SelectContent className="glass-effect border-white/10 text-white">
+                                            {(Data || []).map((dept) => (
+                                              <SelectItem key={dept._id} value={dept._id} className="hover:bg-white/10">
+                                                {dept.name}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
           </div>
           <DialogFooter>
             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
@@ -112,7 +186,7 @@ const DepartmentsPage = () => {
   };
   let api=false
 useEffect(()=>{
-  if(Department.length === 0){
+  if(Department.length === 0 && !api){
 getDepartment()
 api=true
   }
@@ -212,7 +286,7 @@ api=true
                     {(Department || []).map(dept => (
                       <tr key={dept.id}>
                         <td>{dept.departmentName}</td>
-                        <td>{dept.head}</td>
+                        <td>{dept.departmentHead.name}</td>
                         <td>
                           <div className="flex gap-2">
                             <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEdit(dept)}><Edit className="w-4 h-4" /></Button>

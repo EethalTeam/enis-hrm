@@ -108,7 +108,7 @@ const LeaveStatusPage = () => {
   };
   let api=false
 useEffect(()=>{
-  if(LeaveStatus.length === 0){
+  if(LeaveStatus.length === 0 && !api){
 getLeaveStatus()
 api=true
   }

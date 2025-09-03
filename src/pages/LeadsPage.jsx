@@ -14,8 +14,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { config } from '@/components/CustomComponents/config';
+import { useAuth } from '@/contexts/AuthContext';
 
 const LeadForm = ({ open, setOpen, lead, onSave ,getAllLeads}) => {
+     const { user } = useAuth();
   const { employees } = useData();
   const [formData, setFormData] = useState(
     lead || {_id:'', companyName: '', contactPerson: '', contactEmail: '', contactPhone: '', status: '',statusId:'', estimatedValue: '', source: '', employee:'',assignedTo:'', lastContact: new Date().toISOString().slice(0,10), nextFollowUp: '' }
@@ -266,6 +268,7 @@ const handleSelectChange = (id, name, key, value) => {
 };
 
 const LeadsPage = () => {
+  const {user}=useAuth()
   const { deleteLead } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -333,7 +336,7 @@ const handleFileChange = async (e) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({_id:user._id,role:user.role}),
       });
 
       if (!response.ok) {
@@ -464,7 +467,9 @@ const handleFileChange = async (e) => {
               <div className="overflow-x-auto">
                 <table className="data-table">
                   <thead>
-                    <tr><th>Lead</th><th>Contact</th><th>Value</th><th>Status</th><th>Assigned To</th><th>Actions</th></tr>
+                    <tr><th>Lead</th><th>Contact</th>
+                    {/* <th>Value</th> */}
+                    <th>Status</th><th>Assigned To</th><th>Actions</th></tr>
                   </thead>
                   <tbody>
                     {filteredLeads.map(lead => {
@@ -472,8 +477,8 @@ const handleFileChange = async (e) => {
                         <tr key={lead.id}>
                           <td><div className="font-medium text-white">{lead.companyName}</div><div className="text-xs text-gray-400">{lead.source}</div></td>
                           <td><div className="text-white">{lead.contactPerson}</div><div className="text-xs text-gray-400">{lead.contactEmail}</div></td>
-                          <td className="text-green-400">${lead.estimatedValue.toLocaleString()}</td>
-                          <td><span className={`status-badge ${getStatusColor(lead.status)}`}>{lead.status}</span></td>
+                          {/* <td className="text-green-400">${lead.estimatedValue.toLocaleString()}</td> */}
+                          <td><span className={`status-badge ${getStatusColor(lead.status)}`}>{lead.statusId.statusName}</span></td>
                           <td>{lead?.assignedTo?.name || 'Unassigned'}</td>
                           <td>
                             <div className="flex gap-1">

@@ -108,7 +108,7 @@ const ProjectStatussPage = () => {
   };
   let api=false
 useEffect(()=>{
-  if(ProjectStatus.length === 0){
+  if(ProjectStatus.length === 0 && !api){
 getProjectStatus()
 api=true
   }

@@ -14,9 +14,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { config } from '@/components/CustomComponents/config';
+import { useAuth } from '@/contexts/AuthContext';
 
 const TaskForm = ({ open, setOpen, task, onSave,getAllTasks }) => {
+   const { user } = useAuth();
   const { projects, employees } = useData();
+    const [isConfirmPause, setIsConfirmPause] = useState(false);
+  const [isConfirmComplete, setIsConfirmComplete] = useState(false);
+  const [feedback,setFeedback] = useState('')
+  const [ProgressMessage,setProgressMessage] = useState('')
   const [formData, setFormData] = useState(
     task || {_id:'', taskName: '', description: '', taskPriority: '',taskPriorityId:'', taskStatus: '',taskStatusId:'', assignee: '',assignedTo:'',project:'', projectId: '', dueDate: '' }
   );
@@ -203,6 +209,47 @@ const handleSelectChange = (id, name, key, value) => {
       throw error;
     }
   }
+      const updateTaskStatus = async (taskId,status) => {
+    try {
+      if(status === 'Pause' && !ProgressMessage){
+         toast({
+            title: 'Validation fails',
+            description: 'Please enter a reason for progress message or reason for pausing the task',
+          });
+          return ;
+      }else if(status === 'Complete' && !feedback){
+         toast({
+            title: 'Validation fails',
+            description: 'Please enter a feedback before completing the task',
+          });
+          return ;
+      }
+      let url = config.Api + "Task/updateTaskStatus/";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({taskId,status,progressDetails:ProgressMessage,feedback:feedback}),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get State');
+      }
+   let result=await response.json()
+      SetData([])
+      toast({
+            title: 'Status Updated',
+            description: `${result.message}`,
+          });
+    setOpen(false);
+      getAllTasks()
+      // setFilteredData(result)
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
 const handleSubmit = (e) => {
     e.preventDefault();
     // onSave(formData);
@@ -212,6 +259,7 @@ const handleSubmit = (e) => {
             title: 'Task Updated',
             description: "Task has been updated successfully.",
           });
+          setOpen(false)
         } else {
           createTask(formData);
           toast({
@@ -219,20 +267,69 @@ const handleSubmit = (e) => {
             description: `${formData.taskName} has been added to the system.`,
           });
         }
-        setOpen(false);
     setOpen(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <>
+    <AnimatePresence>
+  {isConfirmPause && (
+    <ConfirmationDialog
+      isOpen={isConfirmPause}
+      onClose={() => setIsConfirmPause(false)}
+      onConfirm={()=>updateTaskStatus(formData._id,formData.taskStatus === 'In Progress' ? 'Pause' : 'Start')}
+      title="Pause Task?"
+      description="Please provide a reason or Progress message for pausing the task."
+    >
+      {/* Custom input for ProgressMessage */}
+      <div className="mt-2">
+        <Label htmlFor="ProgressMessage" className="text-gray-300"><b>Progress message</b></Label>
+        <Input
+          id="ProgressMessage"
+          type="text"
+          value={ProgressMessage}
+          onChange={(e) => setProgressMessage(e.target.value)}
+          placeholder="Enter Progress Message"
+          className="bg-white/5 border-white/10"
+        />
+      </div>
+    </ConfirmationDialog>
+  )}
+</AnimatePresence>
+       <AnimatePresence>
+  {isConfirmComplete && (
+    <ConfirmationDialog
+      isOpen={isConfirmComplete}
+      onClose={() => setIsConfirmComplete(false)}
+      onConfirm={()=>updateTaskStatus(formData._id,'Complete')}
+      title="Complete Task?"
+      description="Please provide a feedback before completing the task."
+    >
+      {/* Custom input for Feedback */}
+      <div className="mt-2">
+        <Label htmlFor="feedback" className="text-gray-300"><b>Feedback</b></Label>
+        <Input
+          id="feedback"
+          type="text"
+          value={feedback}
+          onChange={(e) => setFeedback(e.target.value)}
+          placeholder="Enter Feedback"
+          className="bg-white/5 border-white/10"
+        />
+      </div>
+    </ConfirmationDialog>
+  )}
+</AnimatePresence>
+   
+    {(!isConfirmPause && !isConfirmComplete) && <Dialog open={open} onOpenChange={setOpen}>=
       <DialogContent className="glass-effect border-white/10 text-white">
         <DialogHeader>
-          <DialogTitle>{task ? 'Edit Task' : 'Create New Task'}</DialogTitle>
+          <DialogTitle>{task ? ((user.role === 'Super Admin' || user.role === 'Admin') ? 'Edit Task' : 'Task details') : 'Create New Task'}</DialogTitle>
           <DialogDescription className="text-gray-400">{task ? 'Update task details.' : 'Add a new task to a project.'}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <Input name="taskName" value={formData.taskName} onChange={handleChange} placeholder="Task Title" required className="bg-white/5 border-white/10" />
-          <Textarea name="description" value={formData.description} onChange={handleChange} placeholder="Task Description" className="bg-white/5 border-white/10" />
+          <Input name="taskName" value={formData.taskName} onChange={handleChange} placeholder="Task Title" required className="bg-white/5 border-white/10" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}/>
+          <Textarea disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} name="description" value={formData.description} onChange={handleChange} placeholder="Task Description" className="bg-white/5 border-white/10" />
           <div className="grid grid-cols-2 gap-4">
             <Select
                                          name="taskPriority"
@@ -242,6 +339,7 @@ const handleSubmit = (e) => {
                                              await getTaskPriorityList();
                                            }
                                          }}
+                                         disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}
                                          onValueChange={(id) => {
                                            if (!id) return;
                                            const dept = Data.find(d => d._id === id);
@@ -272,6 +370,7 @@ const handleSubmit = (e) => {
                                              await getTaskStatusList();
                                            }
                                          }}
+                                         disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}
                                          onValueChange={(id) => {
                                            if (!id) return;
                                            const dept = Data.find(d => d._id === id);
@@ -302,6 +401,7 @@ const handleSubmit = (e) => {
                                              await getProjectList();
                                            }
                                          }}
+                                         disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}
                                          onValueChange={(id) => {
                                            if (!id) return;
                                            const dept = Data.find(d => d._id === id);
@@ -332,6 +432,7 @@ const handleSubmit = (e) => {
                                               await getEmployeeList();
                                             }
                                           }}
+                                          disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}
                                           onValueChange={(id) => {
                                             if (!id) return;
                                             const dept = Data.find(d => d._id === id);
@@ -357,19 +458,28 @@ const handleSubmit = (e) => {
           </div>
           <div>
              <Label htmlFor="dueDate" className="text-gray-300">Due Date</Label>
-             <Input id="dueDate" name="dueDate" type="date" value={formData.dueDate} onChange={handleChange} className="bg-white/5 border-white/10" />
+             <Input disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} id="dueDate" name="dueDate" type="date" value={formData.dueDate} onChange={handleChange} className="bg-white/5 border-white/10" />
           </div>
           <DialogFooter>
-            <DialogClose asChild><Button type="button" variant="outline" className="border-white/10 hover:bg-white/10">Cancel</Button></DialogClose>
-            <Button type="submit" className="bg-gradient-to-r from-blue-500 to-purple-600">Save Task</Button>
+            {(user.role === 'Super Admin' || user.role === 'Admin') &&<DialogClose asChild><Button type="button" variant="outline" className="border-white/10 hover:bg-white/10">Cancel</Button></DialogClose>}
+            {(user.role === 'Super Admin' || user.role === 'Admin') &&<Button type="submit" className="bg-gradient-to-r from-blue-500 to-purple-600">Save Task</Button>}
           </DialogFooter>
         </form>
+        <div style={{display:'flex',justifyContent:'flex-end'}}>
+         {(formData.taskStatus !== 'Completed' && formData.assignedTo === user._id) && <Button onClick={()=>{
+          // updateTaskStatus(formData._id,formData.taskStatus === 'In Progress' ? 'Pause' : 'Start')
+         formData.taskStatus === 'In Progress' ?  setIsConfirmPause(true) : updateTaskStatus(formData._id,formData.taskStatus === 'In Progress' ? 'Pause' : 'Start')
+          }} className={`bg-gradient-to-r ${formData.taskStatus === 'In Progress' ? 'from-yellow-500 to-yellow-600' :'from-green-500 to-green-600' } mr-4`}>{formData.taskStatus === 'In Progress' ? 'Pause Task' : 'Start Task'}</Button>}
+            {formData.assignedTo === user._id && <Button  onClick={()=>{setIsConfirmComplete(true)}} className="bg-gradient-to-r from-blue-500 to-purple-600" disabled={formData.taskStatus === 'Completed'}>{formData.taskStatus === 'Completed' ? 'Task Completed' : 'Complete Task'}</Button>}
+            </div>
       </DialogContent>
-    </Dialog>
+    </Dialog>}
+     </>
   );
 };
 
 const TaskCard = ({ task, onEdit, onDelete, employees }) => {
+  const {user}=useAuth()
   const getPriorityColor = (priority) => ({
     "High": "bg-red-500", "Medium": "bg-yellow-500", "Low": "bg-green-500"
   }[priority]);
@@ -387,14 +497,15 @@ const TaskCard = ({ task, onEdit, onDelete, employees }) => {
             <span className="text-gray-300">{assignee ? assignee.name : 'Unassigned'}</span>
         </div>
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onEdit(task)}><Edit className="w-3 h-3"/></Button>
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDelete(task)}><Trash2 className="w-3 h-3 text-red-400"/></Button>
+        {(user.role === 'Super Admin' || user.role === 'Admin') &&<Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDelete(task)}><Trash2 className="w-3 h-3 text-red-400"/></Button>}
       </div>
     </motion.div>
   );
 };
 
 const TasksPage = () => {
-  const { tasks, employees, addTask, updateTask, deleteTask } = useData();
+    const { user } = useAuth();
+  const { tasks, employees, addTask, updateTask } = useData();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [task,setTasks] = useState([])
@@ -405,6 +516,7 @@ const TasksPage = () => {
     Todo: task.filter(t => t.taskStatusId.name === 'To Do'),
     'In Progress': task.filter(t => t.taskStatusId.name === 'In Progress'),
     Completed: task.filter(t => t.taskStatusId.name === 'Completed'),
+    OverDue: task.filter(t => new Date(t.dueDate) < new Date())
   }), [task]);
 
   const handleAddNew = () => {
@@ -424,7 +536,7 @@ const TasksPage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({_id:user._id,role:user.role}),
       });
 
       if (!response.ok) {
@@ -456,6 +568,29 @@ const TasksPage = () => {
         const result = await response.json();
         setEmployees(result)
         // setState(result)
+        // setFilteredData(result)
+      } catch (error) {
+        console.error('Error:', error);
+        throw error;
+      }
+    }
+        const deleteTask = async (id) => {
+      try {
+        let url = config.Api + "Task/deleteTask/";
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({_id:id}),
+        });
+  
+        if (!response.ok) {
+          throw new Error('Failed to get State');
+        }
+  
+        const result = await response.json();
+        getAllTasks()
         // setFilteredData(result)
       } catch (error) {
         console.error('Error:', error);
@@ -497,19 +632,27 @@ const TasksPage = () => {
                 <h1 className="text-3xl font-bold text-white">Task Board</h1>
                 <p className="text-gray-400">Manage project tasks using a Kanban board.</p>
             </div>
-            <Button onClick={handleAddNew} className="bg-gradient-to-r from-blue-500 to-purple-600"><Plus className="w-4 h-4 mr-2"/>New Task</Button>
+           {(user.role === 'Super Admin' || user.role === 'Admin') && <Button onClick={handleAddNew} className="bg-gradient-to-r from-blue-500 to-purple-600"><Plus className="w-4 h-4 mr-2"/>New Task</Button>}
         </motion.div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-            {Object.entries(taskColumns).map(([status, tasksInColumn], i) => (
-                <motion.div key={status} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1}}>
-                    <Card className="glass-effect border-white/10 h-full">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+            {Object.entries(taskColumns).map(([status, tasksInColumn], i) => {
+  const cardColors  = {
+    "Todo": "bg-violet-600",
+    "In Progress": "bg-yellow-600",
+    "Completed": "bg-green-600",
+    "OverDue": "bg-red-600",
+  };
+              return   <motion.div key={status} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1}}>
+                    <Card
+        className={`border-white/10 h-full ${cardColors[status] || "glass-effect"}`}
+      >
                         <CardHeader><CardTitle className="text-white">{status} ({tasksInColumn.length})</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                             {tasksInColumn.map(task => <TaskCard key={task.id} task={task} onEdit={handleEdit} onDelete={handleDelete} employees={Employes}/>)}
                         </CardContent>
                     </Card>
                 </motion.div>
-            ))}
+})}
         </div>
       </div>
     </>

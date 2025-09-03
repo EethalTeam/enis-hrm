@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 
-const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, description }) => {
+const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, description, children }) => {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -21,11 +21,22 @@ const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, description }) 
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">{title}</h2>
               <p className="text-gray-400 mb-6">{description}</p>
+
+              {/* 🔽 Render custom children here */}
+              {children && <div className="mb-4">{children}</div>}
+
               <div className="flex justify-center gap-4">
-                <Button variant="outline" onClick={onClose} className="border-white/10 hover:bg-white/10">
+                <Button
+                  variant="outline"
+                  onClick={onClose}
+                  className="border-white/10 hover:bg-white/10"
+                >
                   Cancel
                 </Button>
-                <Button onClick={onConfirm} className="bg-red-600 hover:bg-red-700">
+                <Button
+                  onClick={onConfirm}
+                  className="bg-red-600 hover:bg-red-700"
+                >
                   Confirm
                 </Button>
               </div>

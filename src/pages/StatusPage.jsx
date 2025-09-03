@@ -95,7 +95,7 @@ const StatusForm = ({ open, setOpen, status,getStatus }) => {
 };
 
 const StatusPage = () => {
-  const { statuss, addStatus, updateStatus } = useData();
+  const { status, addStatus, updateStatus } = useData();
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -108,7 +108,7 @@ const StatusPage = () => {
   };
   let api=false
 useEffect(()=>{
-  if(Status.length === 0 && api ){
+  if(Status.length === 0 && !api){
 getStatus()
 api=true
   }
@@ -176,8 +176,8 @@ api=true
   return (
     <>
       <Helmet>
-        <title>Statuss - ENIS-HRMS</title>
-        <meta name="description" content="Manage company status." />
+        <title>Status - ENIS-HRMS</title>
+        <meta name="description" content="Manage employee status." />
       </Helmet>
       <AnimatePresence>
         {isFormOpen && <StatusForm open={isFormOpen} setOpen={setIsFormOpen} status={selectedWorkLoc} getStatus={getStatus}/>}
@@ -189,8 +189,8 @@ api=true
       <div className="space-y-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-white">Statuss</h1>
-            <p className="text-gray-400">Manage your company's status.</p>
+            <h1 className="text-3xl font-bold text-white">Status</h1>
+            <p className="text-gray-400">Manage your company's employee status.</p>
           </div>
           <Button onClick={handleAddNew} className="bg-gradient-to-r from-blue-500 to-purple-600"><Plus className="w-4 h-4 mr-2" />Add Status</Button>
         </motion.div>
