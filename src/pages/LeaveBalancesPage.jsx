@@ -1,18 +1,47 @@
-import React from 'react';
+import React ,{useState, useEffect}from 'react';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet';
 import { Users, PieChart, Calendar } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useData } from '@/contexts/DataContext';
+import { config } from '@/components/CustomComponents/config';
 
 const LeaveBalancesPage = () => {
   const { employees, leaves } = useData();
+  const [LeaveBalance,setLeaveBalance]=useState([])
 
+  useEffect(()=>{
+getAllLeaveBalances()
+  },[])
   const leaveTypes = [
     { name: 'Casual Leave', total: 12 },
     { name: 'Sick Leave', total: 10 },
     { name: 'Annual Leave', total: 20 },
   ];
+      const getAllLeaveBalances = async () => {
+        try {
+          let url = config.Api + "LeaveBalance/getAllLeaveBalances/";
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({}),
+          });
+    
+          if (!response.ok) {
+            throw new Error('Failed to get State');
+          }
+    
+          const result = await response.json();
+          setLeaveBalance(result)
+          // setState(result)
+          // setFilteredData(result)
+        } catch (error) {
+          console.error('Error:', error);
+          throw error;
+        }
+      }
 
   const employeeLeaveBalances = employees.map(employee => {
     const employeeLeaves = leaves.filter(l => l.employeeId === employee.id && l.status === 'Approved');
@@ -49,18 +78,18 @@ const LeaveBalancesPage = () => {
                   <thead>
                     <tr>
                       <th>Employee</th>
-                      {leaveTypes.map(type => <th key={type.name}>{type.name}</th>)}
+                      {LeaveBalance.length > 0 && LeaveBalance[0].leaveBalances.map(type => <th key={type.leaveTypeId?.LeaveTypeName}>{type.leaveTypeId?.LeaveTypeName}</th>)}
                     </tr>
                   </thead>
                   <tbody>
-                    {employeeLeaveBalances.map(employee => (
-                      <tr key={employee.id}>
-                        <td>{employee.name}</td>
-                        {employee.balances.map(balance => (
-                          <td key={balance.type}>
+                    {LeaveBalance.map(employee => (
+                      <tr key={employee.employeeId._id}>
+                        <td>{employee.employeeId.name}</td>
+                        {employee.leaveBalances.map(balance => (
+                          <td key={balance.leaveTypeId.LeaveTypeName}>
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-white">{balance.remaining}</span>
-                              <span className="text-xs text-gray-400">/ {balance.total}</span>
+                              <span className="text-xs text-gray-400">/ {balance.totalAllocated}</span>
                             </div>
                           </td>
                         ))}

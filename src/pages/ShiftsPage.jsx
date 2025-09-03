@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState ,useEffect} from 'react';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet';
 import { Clock, Plus, Edit, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { config } from '@/components/CustomComponents/config';
 import { Button } from '@/components/ui/button';
 import { useData } from '@/contexts/DataContext';
 import { useToast } from "@/components/ui/use-toast";
@@ -11,11 +12,34 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 
-const ShiftForm = ({ open, setOpen, shift, onSave }) => {
+const ShiftForm = ({ open, setOpen, shift, onSave, getShift  }) => {
   const [formData, setFormData] = useState(
-    shift || { name: '', startTime: '', endTime: '', hourlyRate: '' }
+    shift || { shiftName: '', startTime: '', endTime: '', hourlyRate: '',totalHours:'' }
   );
+   useEffect(() => {
+    // Only calculate if both times exist
+    if (!formData.startTime || !formData.endTime) return;
 
+    const calculateHours = (startTime, endTime) => {
+      const [sh, sm] = startTime.split(":").map(Number);
+      const [eh, em] = endTime.split(":").map(Number);
+
+      let startMinutes = sh * 60 + sm;
+      let endMinutes = eh * 60 + em;
+
+      // handle overnight shifts
+      if (endMinutes < startMinutes) {
+        endMinutes += 24 * 60; // add 24 hours
+      }
+
+      const totalMinutes = endMinutes - startMinutes;
+      return totalMinutes / 60; // return as decimal hours
+    };
+
+
+    const result = calculateHours(formData.startTime, formData.endTime);
+    setFormData(prev => ({ ...prev, totalHours: result }));
+  }, [formData.startTime, formData.endTime]);
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -24,8 +48,30 @@ const ShiftForm = ({ open, setOpen, shift, onSave }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
+    createShift(formData)
     setOpen(false);
   };
+    const createShift = async (data) => {
+      try {
+        let url = config.Api + "Shift/createShift";
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to create Shift');
+        }
+        const result = await response.json();
+        getShift()
+        return result;
+      } catch (error) {
+        console.error('Error:', error);
+        throw error;
+      }
+    };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -38,8 +84,8 @@ const ShiftForm = ({ open, setOpen, shift, onSave }) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="name" className="text-gray-300">Shift Name</Label>
-            <Input id="name" name="name" value={formData.name} onChange={handleChange} placeholder="e.g., Morning Shift" required className="bg-white/5 border-white/10" />
+            <Label htmlFor="shiftName" className="text-gray-300">Shift Name</Label>
+            <Input id="shiftName" name="shiftName" value={formData.shiftName} onChange={handleChange} placeholder="e.g., Morning Shift" required className="bg-white/5 border-white/10" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -74,12 +120,38 @@ const ShiftsPage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedShift, setSelectedShift] = useState(null);
+  const [Shift,setShift]= useState([])
 
   const handleAddNew = () => {
     setSelectedShift(null);
     setIsFormOpen(true);
   };
+useEffect(()=>{
+  if(Shift.length === 0){
+getShift()
+  }
+}),[Shift]
+  const getShift = async () => {
+    try {
+      let url = config.Api + "Shift/getAllShifts";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
 
+      if (!response.ok) {
+        throw new Error('Failed to get Shift');
+      }
+      const result = await response.json();
+      setShift(result)
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
   const handleEdit = (shift) => {
     setSelectedShift(shift);
     setIsFormOpen(true);
@@ -94,7 +166,7 @@ const ShiftsPage = () => {
     deleteShift(selectedShift.id);
     toast({
       title: "Shift Deleted",
-      description: `The shift "${selectedShift.name}" has been successfully deleted.`,
+      description: `The shift "${selectedShift.shiftName}" has been successfully deleted.`,
     });
     setIsConfirmOpen(false);
     setSelectedShift(null);
@@ -111,13 +183,13 @@ const ShiftsPage = () => {
       updateShift({ ...dataToSave, id: selectedShift.id });
       toast({
         title: "Shift Updated",
-        description: `The shift "${dataToSave.name}" has been successfully updated.`,
+        description: `The shift "${dataToSave.shiftName}" has been successfully updated.`,
       });
     } else {
       addShift(dataToSave);
       toast({
         title: "Shift Added",
-        description: `The shift "${dataToSave.name}" has been successfully created.`,
+        description: `The shift "${dataToSave.shiftName}" has been successfully created.`,
       });
     }
   };
@@ -179,7 +251,7 @@ const ShiftsPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {shifts.map((shift, index) => (
+                    {Shift.length > 0 && Shift.map((shift, index) => (
                       <motion.tr
                         key={shift.id}
                         initial={{ opacity: 0, x: -20 }}
@@ -188,8 +260,7 @@ const ShiftsPage = () => {
                       >
                         <td>
                           <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${shift.color}`} />
-                            <span className="font-medium text-white">{shift.name}</span>
+                            <span className="font-medium text-white">{shift.shiftName}</span>
                           </div>
                         </td>
                         <td className="text-gray-300">
@@ -234,6 +305,7 @@ const ShiftsPage = () => {
           setOpen={setIsFormOpen}
           shift={selectedShift}
           onSave={handleSave}
+          getShift={getShift}
         />
       )}
 
@@ -242,7 +314,7 @@ const ShiftsPage = () => {
           isOpen={isConfirmOpen}
           onClose={() => setIsConfirmOpen(false)}
           onConfirm={confirmDelete}
-          title={`Delete Shift: ${selectedShift.name}`}
+          title={`Delete Shift: ${selectedShift.shiftName}`}
           description="Are you sure you want to delete this shift? This action cannot be undone."
         />
       )}

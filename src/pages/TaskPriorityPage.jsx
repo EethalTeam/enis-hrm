@@ -12,9 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 
-const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
+const TaskPriorityForm = ({ open, setOpen, taskPriority,getTaskPriority }) => {
   const [formData, setFormData] = useState(
-    department || { departmentName: '', head: '',_id:'' }
+    taskPriority || { name: '',_id:''}
   );
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -24,15 +24,15 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if(formData._id){
-      updateDepartment(formData)
+      updateTaskPriority(formData)
     }else{
-      createDepartment(formData)
+      createTaskPriority(formData)
     }
     setOpen(false);
   };
-    const createDepartment = async (data) => {
+    const createTaskPriority = async (data) => {
       try {
-        let url = config.Api + "Department/createDepartment";
+        let url = config.Api + "TaskPriority/createTaskPriority";
         const response = await fetch(url, {
           method: 'POST',
           headers: {
@@ -41,19 +41,19 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
           body: JSON.stringify(data),
         });
         if (!response.ok) {
-          throw new Error('Failed to create Department');
+          throw new Error('Failed to create Task Status');
         }
         const result = await response.json();
-        getDepartment()
+        getTaskPriority()
         return result;
       } catch (error) {
         console.error('Error:', error);
         throw error;
       }
     };
-   const updateDepartment = async(data)=>{
+   const updateTaskPriority = async(data)=>{
  try {
-      let url = config.Api + "Department/updateDepartment";
+      let url = config.Api + "TaskPriority/updateTaskPriority";
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -62,9 +62,9 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
         body: JSON.stringify(data),
       });
       if (!response.ok) {
-        throw new Error('Failed to update Department');
+        throw new Error('Failed to update TaskPriority');
       }
-   getDepartment()
+   getTaskPriority()
       const result = await response.json();
       return result;
     } catch (error) {
@@ -77,16 +77,12 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="glass-effect border-white/10 text-white">
         <DialogHeader>
-          <DialogTitle>{department ? 'Edit Department' : 'Add New Department'}</DialogTitle>
+          <DialogTitle>{taskPriority ? 'Edit Task Status' : 'Add New Task Status'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="departmentName">Department Name</Label>
-            <Input id="departmentName" name="departmentName" value={formData.departmentName} onChange={handleChange} required className="bg-white/5" />
-          </div>
-          <div>
-            <Label htmlFor="head">Department Head</Label>
-            <Input id="head" name="head" value={formData.head} onChange={handleChange} required className="bg-white/5" />
+            <Label htmlFor="name">Task Status</Label>
+            <Input id="name" name="name" value={formData.name} onChange={handleChange} required className="bg-white/5" />
           </div>
           <DialogFooter>
             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
@@ -98,28 +94,28 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
   );
 };
 
-const DepartmentsPage = () => {
-  const { departments, addDepartment, updateDepartment } = useData();
+const TaskPriorityPage = () => {
+  const { taskPriority, addTaskPriority, updateTaskPriority } = useData();
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [selectedDept, setSelectedDept] = useState(null);
-  const [Department,setDepartment]= useState([])
+  const [selectedTaskStat, setSelectedTaskStat] = useState(null);
+  const [TaskPriority,setTaskPriority]= useState([])
 
   const handleAddNew = () => {
-    setSelectedDept(null);
+    setSelectedTaskStat(null);
     setIsFormOpen(true);
   };
   let api=false
 useEffect(()=>{
-  if(Department.length === 0){
-getDepartment()
+  if(TaskPriority.length === 0 && api){
+getTaskPriority()
 api=true
   }
-}),[Department]
-  const getDepartment = async () => {
+}),[TaskPriority]
+  const getTaskPriority = async () => {
     try {
-      let url = config.Api + "Department/getAllDepartments";
+      let url = config.Api + "TaskPriority/getAllTaskPriority";
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -129,18 +125,18 @@ api=true
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get department');
+        throw new Error('Failed to get Task Status');
       }
       const result = await response.json();
-      setDepartment(result)
+      setTaskPriority(result)
     } catch (error) {
       console.error('Error:', error);
       throw error;
     }
   }
-  const deleteDepartment = async(id)=>{
+  const deleteTaskPriority = async(id)=>{
     try {
-      let url = config.Api + "Department/deleteDepartment";
+      let url = config.Api + "TaskPriority/deleteTaskPriority";
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -150,73 +146,73 @@ api=true
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete Department');
+        throw new Error('Failed to delete TaskPriority');
       }
 
       const result = await response.json();
-      getDepartment();
+      getTaskPriority();
       return result;
     } catch (error) {
       console.error('Error:', error);
       throw error;
     }
   }
-  const handleEdit = (Department) => {
-    setSelectedDept(Department);
+  const handleEdit = (TaskPriority) => {
+    setSelectedTaskStat(TaskPriority);
     setIsFormOpen(true);
   };
 
-  const handleDelete = (dept) => {
-    setSelectedDept(dept);
+  const handleDelete = (id) => {
+    setSelectedTaskStat(id);
     setIsConfirmOpen(true);
   };
 
   const confirmDelete = () => {
-    deleteDepartment(selectedDept);
-    toast({ title: "Department Deleted" });
+    deleteTaskPriority(selectedTaskStat);
+    toast({ title: "Task Status Deleted" });
     setIsConfirmOpen(false);
   };
 
   return (
     <>
       <Helmet>
-        <title>Departments - ENIS-HRMS</title>
-        <meta name="description" content="Manage company departments." />
+        <title>Task Status - ENIS-HRMS</title>
+        <meta name="description" content="Manage company task status." />
       </Helmet>
       <AnimatePresence>
-        {isFormOpen && <DepartmentForm open={isFormOpen} setOpen={setIsFormOpen} department={selectedDept} getDepartment={getDepartment} />}
+        {isFormOpen && <TaskPriorityForm open={isFormOpen} setOpen={setIsFormOpen} taskPriority={selectedTaskStat} getTaskPriority={getTaskPriority}/>}
       </AnimatePresence>
       <AnimatePresence>
-        {isConfirmOpen && <ConfirmationDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete} title="Delete Department?" description="This action cannot be undone." />}
+        {isConfirmOpen && <ConfirmationDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete} title="Delete Task Status?" description="This action cannot be undone." />}
       </AnimatePresence>
 
+\
       <div className="space-y-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-white">Departments</h1>
-            <p className="text-gray-400">Manage your company's departments.</p>
+            <h1 className="text-3xl font-bold text-white">Task Status</h1>
+            <p className="text-gray-400">Manage your company's task status.</p>
           </div>
-          <Button onClick={handleAddNew} className="bg-gradient-to-r from-blue-500 to-purple-600"><Plus className="w-4 h-4 mr-2" />Add Department</Button>
+          <Button onClick={handleAddNew} className="bg-gradient-to-r from-blue-500 to-purple-600"><Plus className="w-4 h-4 mr-2" />Add Task Status</Button>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Card className="glass-effect border-white/10">
             <CardHeader>
-              <CardTitle className="text-white">Department List</CardTitle>
+              <CardTitle className="text-white">Task Status List</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="data-table">
-                  <thead><tr><th>Department Name</th><th>Department Head</th><th>Actions</th></tr></thead>
+                  <thead><tr><th>Task Status</th><th>Actions</th></tr></thead>
                   <tbody>
-                    {(Department || []).map(dept => (
-                      <tr key={dept.id}>
-                        <td>{dept.departmentName}</td>
-                        <td>{dept.head}</td>
+                    {(TaskPriority || []).map(taskStat => (
+                      <tr key={taskStat.id}>
+                        <td>{taskStat.name}</td>
                         <td>
                           <div className="flex gap-2">
-                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEdit(dept)}><Edit className="w-4 h-4" /></Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400" onClick={() => handleDelete(dept._id)}><Trash2 className="w-4 h-4" /></Button>
+                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEdit(taskStat)}><Edit className="w-4 h-4" /></Button>
+        <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400" onClick={() => handleDelete(taskStat._id)}><Trash2 className="w-4 h-4" /></Button>
                           </div>
                         </td>
                       </tr>
@@ -232,4 +228,4 @@ api=true
   );
 };
 
-export default DepartmentsPage;
+export default TaskPriorityPage;

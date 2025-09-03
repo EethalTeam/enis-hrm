@@ -4,7 +4,6 @@ import { Helmet } from 'react-helmet';
 import { Shield, Plus, Edit, Trash2, Settings, Save } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useData } from '@/contexts/DataContext';
 import { useToast } from "@/components/ui/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -12,20 +11,79 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { ALL_MENU_ITEMS } from '@/config/roles';
+import { config } from '@/components/CustomComponents/config';
 
+// ------------------ API FUNCTIONS ------------------
+const getRole = async (setRoles) => {
+  try {
+    let url = config.Api + "Role/getAllRoles";
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+    const result = await response.json();
+    setRoles(result);
+  } catch (error) {
+    console.error("Failed to fetch roles", error);
+  }
+};
+
+const createRole = async (data, setRoles) => {
+  let url = config.Api + "Role/createRole";
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('Failed to create Role');
+  const result = await response.json();
+  await getRole(setRoles);
+  return result;
+};
+
+const updateRoleApi = async (data, setRoles) => {
+  let url = config.Api + "Role/updateRole";
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('Failed to update Role');
+  const result = await response.json();
+  await getRole(setRoles);
+  return result;
+};
+
+const deleteRoleApi = async (id, setRoles) => {
+  let url = config.Api + "Role/deleteRole";
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id }),
+  });
+  if (!response.ok) throw new Error('Failed to delete Role');
+  const result = await response.json();
+  await getRole(setRoles);
+  return result;
+};
+
+// ------------------ ROLE FORM ------------------
 const RoleForm = ({ open, setOpen, role, onSave }) => {
-  const [name, setName] = useState('');
+  const [RoleName, setRoleName] = useState('');
 
   useEffect(() => {
     if (open) {
-      setName(role ? role.name : '');
+      setRoleName(role ? role.RoleName : '');
     }
   }, [role, open]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (name.trim()) {
-      onSave({ ...role, name: name.trim() });
+    if (RoleName.trim()) {
+      onSave({ ...role, RoleName: RoleName.trim() });
       setOpen(false);
     }
   };
@@ -39,7 +97,7 @@ const RoleForm = ({ open, setOpen, role, onSave }) => {
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
             <Label htmlFor="name" className="text-gray-300">Role Name</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required className="glass-effect border-white/10" />
+            <Input id="name" value={RoleName} onChange={(e) => setRoleName(e.target.value)} required className="glass-effect border-white/10" />
           </div>
           <DialogFooter>
             <DialogClose asChild><Button type="button" variant="outline" className="border-white/10 hover:bg-white/10">Cancel</Button></DialogClose>
@@ -51,13 +109,14 @@ const RoleForm = ({ open, setOpen, role, onSave }) => {
   );
 };
 
+// ------------------ PERMISSIONS DIALOG ------------------
 const PermissionsDialog = ({ open, setOpen, role, menuPermissions, onSave }) => {
   const [currentPermissions, setCurrentPermissions] = useState([]);
-  const isSuperAdmin = role?.name === 'Super Admin';
+  const isSuperAdmin = role?.RoleName === 'Super Admin';
 
   useEffect(() => {
     if (role && menuPermissions) {
-      setCurrentPermissions(isSuperAdmin ? ['*'] : menuPermissions[role.name] || []);
+      setCurrentPermissions(isSuperAdmin ? ['*'] : menuPermissions[role.RoleName] || []);
     }
   }, [role, menuPermissions, isSuperAdmin, open]);
 
@@ -75,7 +134,7 @@ const PermissionsDialog = ({ open, setOpen, role, menuPermissions, onSave }) => 
   };
 
   const handleSave = () => {
-    onSave(role.name, currentPermissions);
+    onSave(role.RoleName, currentPermissions);
     setOpen(false);
   };
 
@@ -83,7 +142,7 @@ const PermissionsDialog = ({ open, setOpen, role, menuPermissions, onSave }) => 
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="glass-effect border-white/10 text-white max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Manage Permissions for {role?.name}</DialogTitle>
+          <DialogTitle>Manage Permissions for {role?.RoleName}</DialogTitle>
           <DialogDescription>Select the menus and actions this role can access.</DialogDescription>
         </DialogHeader>
         <div className="max-h-[60vh] overflow-y-auto space-y-4 p-1 pr-4">
@@ -130,15 +189,20 @@ const PermissionsDialog = ({ open, setOpen, role, menuPermissions, onSave }) => 
   );
 };
 
-
+// ------------------ MAIN COMPONENT ------------------
 const RolesPage = () => {
-  const { roles, addRole, updateRole, deleteRole, menuPermissions, updatePermissions } = useData();
   const { toast } = useToast();
+  const [roles, setRoles] = useState([]);
+  const [menuPermissions, setMenuPermissions] = useState({});
   const [isRoleFormOpen, setIsRoleFormOpen] = useState(false);
   const [isPermissionsOpen, setIsPermissionsOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [roleToEdit, setRoleToEdit] = useState(null);
   const [roleForPermissions, setRoleForPermissions] = useState(null);
+
+  useEffect(() => {
+    getRole(setRoles);
+  }, []);
 
   const handleAddNewRole = () => {
     setRoleToEdit(null);
@@ -146,7 +210,7 @@ const RolesPage = () => {
   };
 
   const handleEditRole = (role) => {
-    if (role.name === 'Super Admin') {
+    if (role.RoleName === 'Super Admin') {
       toast({ title: "Cannot Edit Super Admin", description: "The Super Admin role is locked.", variant: "destructive" });
       return;
     }
@@ -155,44 +219,50 @@ const RolesPage = () => {
   };
 
   const handleDeleteRole = (role) => {
-     if (role.name === 'Super Admin') {
+    if (role.RoleName === 'Super Admin') {
       toast({ title: "Cannot Delete Super Admin", description: "The Super Admin role is protected.", variant: "destructive" });
       return;
     }
     setRoleToEdit(role);
     setIsConfirmOpen(true);
   };
-  
+
   const handleManagePermissions = (role) => {
     setRoleForPermissions(role);
     setIsPermissionsOpen(true);
   };
 
-  const confirmDeleteRole = () => {
-    deleteRole(roleToEdit.id);
-    toast({ title: "Role Deleted" });
-    setIsConfirmOpen(false);
-    setRoleToEdit(null);
+  const confirmDeleteRole = async () => {
+    try {
+      await deleteRoleApi(roleToEdit.id, setRoles);
+      toast({ title: "Role Deleted" });
+      setIsConfirmOpen(false);
+      setRoleToEdit(null);
+    } catch (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
   };
 
-  const handleSaveRole = (roleData) => {
-    if (roleToEdit) {
-      updateRole({ ...roleData, id: roleToEdit.id });
-      toast({ title: "Role Updated" });
-    } else {
-      const newRole = addRole(roleData);
-      if (newRole) {
-        updatePermissions({ ...menuPermissions, [newRole.name]: [] });
-        toast({ title: "Role Added" });
+  const handleSaveRole = async (roleData) => {
+    try {
+      if (roleToEdit) {
+        await updateRoleApi({ ...roleData, id: roleToEdit.id }, setRoles);
+        toast({ title: "Role Updated" });
       } else {
-        toast({ title: "Error", description: "Could not add role.", variant: "destructive" });
+        const newRole = await createRole(roleData, setRoles);
+        if (newRole) {
+          setMenuPermissions({ ...menuPermissions, [newRole.RoleName]: [] });
+          toast({ title: "Role Added" });
+        }
       }
+    } catch (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     }
   };
 
   const handleSavePermissions = (roleName, permissions) => {
     const newPermissions = { ...menuPermissions, [roleName]: permissions };
-    updatePermissions(newPermissions);
+    setMenuPermissions(newPermissions);
     toast({ title: "Permissions Saved", description: `Permissions for ${roleName} have been updated.` });
   };
 
@@ -202,7 +272,7 @@ const RolesPage = () => {
         <title>Roles & Permissions - ENIS-HRMS</title>
         <meta name="description" content="Manage user roles and their access permissions across the application." />
       </Helmet>
-      
+
       <AnimatePresence>
         {isRoleFormOpen && <RoleForm open={isRoleFormOpen} setOpen={setIsRoleFormOpen} role={roleToEdit} onSave={handleSaveRole} />}
         {isPermissionsOpen && <PermissionsDialog open={isPermissionsOpen} setOpen={setIsPermissionsOpen} role={roleForPermissions} menuPermissions={menuPermissions || {}} onSave={handleSavePermissions} />}
@@ -225,48 +295,48 @@ const RolesPage = () => {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Card className="glass-effect border-white/10">
-              <CardHeader>
-                <CardTitle className="text-white">Manage Roles</CardTitle>
-                <CardDescription className="text-gray-400">Add, edit, or delete roles and manage their permissions.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                    <table className="data-table">
-                        <thead>
-                            <tr>
-                                <th>Role Name</th>
-                                <th>Users</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {(roles || []).map(role => (
-                                <tr key={role.id}>
-                                    <td className="font-medium text-white">{role.name}</td>
-                                    <td>
-                                        <span className="text-gray-300">N/A</span>
-                                    </td>
-                                    <td>
-                                        <div className="flex items-center gap-2">
-                                            <Button variant="ghost" size="icon" className="hover:bg-white/10 h-8 w-8" onClick={() => handleManagePermissions(role)}>
-                                                <Settings className="w-4 h-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="hover:bg-white/10 h-8 w-8" onClick={() => handleEditRole(role)}>
-                                                <Edit className="w-4 h-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="text-red-400 hover:bg-red-400/10 h-8 w-8" onClick={() => handleDeleteRole(role)}>
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-              </CardContent>
-            </Card>
+          <Card className="glass-effect border-white/10">
+            <CardHeader>
+              <CardTitle className="text-white">Manage Roles</CardTitle>
+              <CardDescription className="text-gray-400">Add, edit, or delete roles and manage their permissions.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Role Name</th>
+                      {/* <th>Users</th> */}
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(roles || []).map(role => (
+                      <tr key={role.id}>
+                        <td className="font-medium text-white">{role.RoleName}</td>
+                        {/* <td>
+                          <span className="text-gray-300">N/A</span>
+                        </td> */}
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="icon" className="hover:bg-white/10 h-8 w-8" onClick={() => handleManagePermissions(role)}>
+                              <Settings className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="hover:bg-white/10 h-8 w-8" onClick={() => handleEditRole(role)}>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="text-red-400 hover:bg-red-400/10 h-8 w-8" onClick={() => handleDeleteRole(role)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
       </div>
     </>

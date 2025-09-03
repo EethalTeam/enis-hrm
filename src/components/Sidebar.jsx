@@ -15,7 +15,8 @@ const Sidebar = ({ onClose }) => {
     const userRole = user.role;
     if (userRole === 'Super Admin') return true;
 
-    const rolePermissions = menuPermissions[userRole];
+    // const rolePermissions = menuPermissions[userRole];
+    const rolePermissions = ['*'];
 
     if (!rolePermissions) return false;
     if (rolePermissions.includes('*')) return true;

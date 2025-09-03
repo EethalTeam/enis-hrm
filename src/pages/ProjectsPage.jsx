@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet';
 import { FolderKanban, Plus, Search, Filter, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
@@ -18,30 +18,143 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { config } from '@/components/CustomComponents/config';
 
-const ProjectForm = ({ open, setOpen, project, onSave }) => {
-  const { employees } = useData();
+const ProjectForm = ({ open, setOpen, project, onSave, employees ,getAllProjects}) => {
   const [formData, setFormData] = useState(
-    project || { name: '', status: 'Planning', budget: '', startDate: '', endDate: '', assignees: [] }
+    project || {_id:'', projectName: '', status: '',statusId:'', budget: '', startDate: '', endDate: '', assignees: [] }
   );
-
+  const [Data,SetData]= useState([])
+  useEffect(()=>{
+  if(project){
+setFormData({
+   _id: project._id,
+   projectName: project.projectName,
+   status: project.projectStatusId.name,
+   statusId: project.projectStatusId._id,
+   budget: project.budget,
+   startDate: project.startDate.split('T')[0],
+   endDate: project.endDate.split('T')[0],
+   assignees: project.assignedEmployees.map(val=>val._id)})
+}
+},[project])
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-
-  const handleSelectChange = (name, value) => {
+ const getProjectStatusList = async () => {
+      try {
+         SetData([]); // clear Data once
+        let url = config.Api + "ProjectStatus/getAllProjectStatus/";
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
+  
+        if (!response.ok) {
+          throw new Error('Failed to get State');
+        }
+  
+        const result = await response.json();
+        SetData(result)
+        // setState(result)
+        // setFilteredData(result)
+      } catch (error) {
+        console.error('Error:', error);
+        throw error;
+      }
+    }
+const handleSelectChange = (id, name, key, value) => {
+  if (key && name) {
+    setFormData(prev => ({
+      ...prev,
+      [id]: key,    
+      [name]: value 
+    }));
+    SetData([]); // clear Data once
+  }
+};
+    const handleSelectAssignee = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+const createProject = async (data) => {
+    try {
+      let url = config.Api + "Project/createProject/";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+ const result = await response.json();
+      if (!response.ok) {
+         toast({
+            title: 'Project Added',
+            description: `${result.message}`,
+          });
+          return
+      }
+ toast({
+            title: 'Project Added',
+            description: `${formData.name} has been added to the system.`,
+          });
+    setOpen(false);
+      SetData([])
+      getAllProjects()
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
+    const updateProject = async (data) => {
+    try {
+      let url = config.Api + "Project/updateProject/";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get State');
+      }
+    setOpen(false);
+      SetData([])
+      getAllProjects()
+      // setFilteredData(result)
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave({
-      ...formData,
+    // onSave({
+    //   ...formData,
+    //   budget: parseFloat(formData.budget),
+    //   teamSize: formData.assignees.length,
+    // });
+     if (formData._id) {
+          updateProject({ ...formData,
       budget: parseFloat(formData.budget),
-      teamSize: formData.assignees.length,
-    });
-    setOpen(false);
+      teamSize: formData.assignees.length});
+          toast({
+            title: 'Project Updated',
+            description: "Project has been updated successfully.",
+          });
+        } else {
+          createProject({ ...formData,
+      budget: parseFloat(formData.budget),
+      teamSize: formData.assignees.length});
+        }
   };
 
   return (
@@ -55,21 +168,42 @@ const ProjectForm = ({ open, setOpen, project, onSave }) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="name" className="text-gray-300">Project Name</Label>
-            <Input id="name" name="name" value={formData.name} onChange={handleChange} placeholder="e.g., Q4 Marketing Campaign" required className="bg-white/5 border-white/10" />
+            <Label htmlFor="projectName" className="text-gray-300">Project Name</Label>
+            <Input id="projectName" name="projectName" value={formData.projectName} onChange={handleChange} placeholder="e.g., Q4 Marketing Campaign" required className="bg-white/5 border-white/10" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="status" className="text-gray-300">Status</Label>
-              <Select name="status" value={formData.status} onValueChange={(v) => handleSelectChange('status', v)}>
-                <SelectTrigger className="bg-white/5 border-white/10"><SelectValue /></SelectTrigger>
-                <SelectContent className="glass-effect border-white/10 text-white">
-                  <SelectItem value="Planning">Planning</SelectItem>
-                  <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                  <SelectItem value="On Hold">On Hold</SelectItem>
-                </SelectContent>
-              </Select>
+              <Select
+                                            name="status"
+                                            value={formData.statusId} // store only _id
+                                            onOpenChange={async (open) => {
+                                              if (open && (!Data || Data.length === 0)) {
+                                                await getProjectStatusList();
+                                              }
+                                            }}
+                                            onValueChange={(id) => {
+                                              if (!id) return;
+                                              const dept = Data.find(d => d._id === id);
+                                              if (dept) {
+                                                handleSelectChange('statusId', 'status', dept._id, dept.name);
+                                              }
+                                            }}
+                                            // required
+                                          >
+                                            <SelectTrigger className="glass-effect border-white/10">
+                                              <SelectValue placeholder="Select Status" >
+                                                {formData.status}
+                                              </SelectValue>
+                                            </SelectTrigger>
+                                            <SelectContent className="glass-effect border-white/10 text-white">
+                                              {(Data || []).map((dept) => (
+                                                <SelectItem key={dept._id} value={dept._id} className="hover:bg-white/10">
+                                                  {dept.name}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
             </div>
             <div>
               <Label htmlFor="budget" className="text-gray-300">Budget ($)</Label>
@@ -94,11 +228,11 @@ const ProjectForm = ({ open, setOpen, project, onSave }) => {
                 name="assignees"
                 multiple
                 value={formData.assignees}
-                onChange={(e) => handleSelectChange('assignees', Array.from(e.target.selectedOptions, option => option.value))}
+                onChange={(e) => handleSelectAssignee('assignees', Array.from(e.target.selectedOptions, option => option.value))}
                 className="w-full h-32 glass-effect border-white/10 rounded-md bg-transparent p-2"
               >
                   {employees.map(emp => (
-                      <option key={emp.id} value={emp.id} className="bg-slate-800 p-1">{emp.name}</option>
+                      <option key={emp._id} value={emp._id} className="bg-slate-800 p-1">{emp.name}</option>
                   ))}
               </select>
             </div>
@@ -119,14 +253,66 @@ const ProjectsPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
+  const [Projects,setProjects]=useState([])
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [Employees,setEmployees]=useState([])
 
-  const filteredProjects = useMemo(() => projects.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredProjects = useMemo(() => Projects.filter(p => {
+    const matchesSearch = p.projectName?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
     return matchesSearch && matchesStatus;
-  }), [projects, searchTerm, statusFilter]);
+  }), [Projects, searchTerm, statusFilter]);
+    useEffect(()=>{
+    getEmployeeList()
+    getAllProjects()
+  },[])
+    const getAllProjects = async () => {
+      try {
+        let url = config.Api + "Project/getAllProjects/";
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
   
+        if (!response.ok) {
+          throw new Error('Failed to get State');
+        }
+  
+        const result = await response.json();
+        setProjects(result)
+      } catch (error) {
+        console.error('Error:', error);
+        throw error;
+      }
+    }
+  const getEmployeeList = async () => {
+      try {
+        let url = config.Api + "Employee/getAllEmployees/";
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
+  
+        if (!response.ok) {
+          throw new Error('Failed to get State');
+        }
+  
+        const result = await response.json();
+        setEmployees(result)
+        // setState(result)
+        // setFilteredData(result)
+      } catch (error) {
+        console.error('Error:', error);
+        throw error;
+      }
+    }
+
   const handleAddNew = () => {
     setSelectedProject(null);
     setIsFormOpen(true);
@@ -144,7 +330,7 @@ const ProjectsPage = () => {
 
   const confirmDelete = () => {
     deleteProject(selectedProject.id);
-    toast({ title: "Project Deleted", description: `"${selectedProject.name}" has been deleted.` });
+    toast({ title: "Project Deleted", description: `"${selectedProject.projectName}" has been deleted.` });
     setIsConfirmOpen(false);
     setSelectedProject(null);
   };
@@ -152,10 +338,10 @@ const ProjectsPage = () => {
   const handleSave = (projectData) => {
     if (selectedProject) {
       updateProject({ ...projectData, id: selectedProject.id });
-      toast({ title: "Project Updated", description: `"${projectData.name}" has been updated.` });
+      toast({ title: "Project Updated", description: `"${projectData.projectName}" has been updated.` });
     } else {
       addProject(projectData);
-      toast({ title: "Project Created", description: `"${projectData.name}" has been created.` });
+      toast({ title: "Project Created", description: `"${projectData.projectName}" has been created.` });
     }
   };
 
@@ -174,10 +360,10 @@ const ProjectsPage = () => {
       </Helmet>
 
       <AnimatePresence>
-        {isFormOpen && <ProjectForm open={isFormOpen} setOpen={setIsFormOpen} project={selectedProject} onSave={handleSave} />}
+        {isFormOpen && <ProjectForm open={isFormOpen} setOpen={setIsFormOpen} project={selectedProject} onSave={handleSave} employees={Employees} getAllProjects={getAllProjects}/>}
       </AnimatePresence>
       
-      {isConfirmOpen && <ConfirmationDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete} title={`Delete Project: ${selectedProject.name}`} description="This will delete the project and all associated tasks. This action is irreversible."/>}
+      {isConfirmOpen && <ConfirmationDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete} title={`Delete Project: ${selectedProject.projectName}`} description="This will delete the project and all associated tasks. This action is irreversible."/>}
 
       <div className="space-y-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="flex justify-between items-center">
@@ -218,7 +404,7 @@ const ProjectsPage = () => {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="text-white text-lg">{project.name}</CardTitle>
+                      <CardTitle className="text-white text-lg">{project.projectName}</CardTitle>
                       <CardDescription className={`text-xs font-semibold px-2 py-1 rounded-full inline-block mt-2 ${getStatusColor(project.status)}`}>{project.status}</CardDescription>
                     </div>
                      <DropdownMenu>
@@ -234,25 +420,31 @@ const ProjectsPage = () => {
                   <div className="space-y-4">
                     <div>
                       <p className="text-sm text-gray-400">Timeline</p>
-                      <p className="text-white font-medium">{new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}</p>
+                      <p className="text-white font-medium">{new Date(project.startDate.split('T')[0]).toLocaleDateString()} - {new Date(project.endDate.split('T')[0]).toLocaleDateString()}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-400">Budget</p>
-                      <p className="text-white font-medium">${project.budget.toLocaleString()}</p>
+                      <p className="text-white font-medium">${project.budget  }</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-400 mb-2">Team</p>
                       <div className="flex -space-x-2">
-                        {project.assignees.map(empId => employees.find(e => e.id === empId)).filter(Boolean).slice(0, 5).map(emp => (
-                          <img key={emp.id} src={emp.avatar} alt={emp.name} className="w-8 h-8 rounded-full border-2 border-slate-700"/>
+                        {project.assignedEmployees.map(empId => Employees.find(e => e._id === empId._id)).filter(Boolean).slice(0, 5).map(emp => (
+                          // <img key={emp.id} src={emp.avatar} alt={emp.name} className="w-8 h-8 rounded-full border-2 border-slate-700"/>
+                            <Avatar className="w-8 h-8">
+                                            <AvatarImage src={emp?.avatar} alt={emp?.name} />
+                                            <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                                              {emp.name?.split(' ').map(n => n[0]).join('')}
+                                            </AvatarFallback>
+                                          </Avatar>
                         ))}
                          {project.teamSize > 5 && <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-xs font-bold border-2 border-slate-700">+{project.teamSize - 5}</div>}
                       </div>
                     </div>
                     <div>
-                      <div className="flex justify-between text-sm text-gray-400 mb-1"><span>Progress</span><span>{project.progress}%</span></div>
+                      <div className="flex justify-between text-sm text-gray-400 mb-1"><span>Progress</span><span>{project.progress || 0}%</span></div>
                       <div className="w-full bg-slate-700 rounded-full h-2.5">
-                        <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-2.5 rounded-full" style={{ width: `${project.progress}%` }}></div>
+                        <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-2.5 rounded-full" style={{ width: `${project.progress || 0}%` }}></div>
                       </div>
                     </div>
                   </div>

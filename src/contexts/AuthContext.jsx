@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
+import { config } from '@/components/CustomComponents/config';
 
 const AuthContext = createContext();
 
@@ -15,7 +16,6 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     const storedUser = localStorage.getItem('hrms_user');
     if (storedUser) {
@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
+  const loginpage = async (email, password) => {
     try {
       // Mock authentication - in production, this would be an API call
       const mockUsers = [
@@ -81,13 +81,77 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('hrms_user');
+  const login = async (email, password) => {
+  try {
+    let url = config.Api + "Employee/login/";
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+          });
+        const data = await response.json();
+    // Handle mobile restriction (403)
+    if (response.status == 403) {
+      toast({
+        title: "Login failed",
+        description: data.message || "Login not allowed",
+      });
+      return { success: false };
+    }
+
+    // Handle other errors
+    if (!response.ok) {
+      toast({
+        title: "Login failed",
+        description: data.message || "Login failed",
+      });
+      throw new Error(data.message || "Login failed");
+    }
+ toast({
+          title: "Login Successful",
+          description: `Welcome back, ${data.employee.name}!`,
+        });
+
+    // store token in localStorage for later API calls
+    if (data.token) {
+      localStorage.setItem("token", data.token);
+    }
+    setUser(data.employee);
+localStorage.setItem('hrms_user', JSON.stringify(data.employee));
+localStorage.setItem('hrms_userEmail', JSON.stringify(data.employee.email));
+     return { success: true };
+  } catch (error) {
+    console.error("Login Error:", error.message);
+    throw error;
+  }
+};
+
+  const logout = async() => {
+      try {
+        let email=JSON.parse(localStorage.getItem("hrms_userEmail"));
+    let url = config.Api + "Employee/logout/";
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({email}),
+          });
+        const data = await response.json();
+   setUser(null);
+    // localStorage.removeItem('hrms_user');
+    localStorage.clear()
     toast({
       title: "Logged Out",
       description: "You have been successfully logged out.",
     });
+
+  } catch (error) {
+    console.error("Login Error:", error.message);
+    throw error;
+  }
   };
 
   const value = {

@@ -12,9 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 
-const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
+const LeaveTypeForm = ({ open, setOpen, leaveType,getLeaveType }) => {
   const [formData, setFormData] = useState(
-    department || { departmentName: '', head: '',_id:'' }
+    leaveType || { LeaveTypeName: '',_id:''}
   );
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -24,15 +24,15 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if(formData._id){
-      updateDepartment(formData)
+      updateLeaveType(formData)
     }else{
-      createDepartment(formData)
+      createLeaveType(formData)
     }
     setOpen(false);
   };
-    const createDepartment = async (data) => {
+    const createLeaveType = async (data) => {
       try {
-        let url = config.Api + "Department/createDepartment";
+        let url = config.Api + "LeaveType/createLeaveType";
         const response = await fetch(url, {
           method: 'POST',
           headers: {
@@ -41,19 +41,19 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
           body: JSON.stringify(data),
         });
         if (!response.ok) {
-          throw new Error('Failed to create Department');
+          throw new Error('Failed to create Leave Type');
         }
         const result = await response.json();
-        getDepartment()
+        getLeaveType()
         return result;
       } catch (error) {
         console.error('Error:', error);
         throw error;
       }
     };
-   const updateDepartment = async(data)=>{
+   const updateLeaveType = async(data)=>{
  try {
-      let url = config.Api + "Department/updateDepartment";
+      let url = config.Api + "LeaveType/updateLeaveType";
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -62,9 +62,9 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
         body: JSON.stringify(data),
       });
       if (!response.ok) {
-        throw new Error('Failed to update Department');
+        throw new Error('Failed to update LeaveType');
       }
-   getDepartment()
+   getLeaveType()
       const result = await response.json();
       return result;
     } catch (error) {
@@ -77,16 +77,12 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="glass-effect border-white/10 text-white">
         <DialogHeader>
-          <DialogTitle>{department ? 'Edit Department' : 'Add New Department'}</DialogTitle>
+          <DialogTitle>{leaveType ? 'Edit Leave Type' : 'Add New Leave Type'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="departmentName">Department Name</Label>
-            <Input id="departmentName" name="departmentName" value={formData.departmentName} onChange={handleChange} required className="bg-white/5" />
-          </div>
-          <div>
-            <Label htmlFor="head">Department Head</Label>
-            <Input id="head" name="head" value={formData.head} onChange={handleChange} required className="bg-white/5" />
+            <Label htmlFor="LeaveTypeName">Leave Type</Label>
+            <Input id="LeaveTypeName" name="LeaveTypeName" value={formData.LeaveTypeName} onChange={handleChange} required className="bg-white/5" />
           </div>
           <DialogFooter>
             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
@@ -98,28 +94,28 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
   );
 };
 
-const DepartmentsPage = () => {
-  const { departments, addDepartment, updateDepartment } = useData();
+const LeaveTypePage = () => {
+  const { leaveType, addLeaveType, updateLeaveType } = useData();
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [selectedDept, setSelectedDept] = useState(null);
-  const [Department,setDepartment]= useState([])
+  const [selectedTaskStat, setSelectedTaskStat] = useState(null);
+  const [LeaveType,setLeaveType]= useState([])
 
   const handleAddNew = () => {
-    setSelectedDept(null);
+    setSelectedTaskStat(null);
     setIsFormOpen(true);
   };
   let api=false
 useEffect(()=>{
-  if(Department.length === 0){
-getDepartment()
+  if(LeaveType.length === 0){
+getLeaveType()
 api=true
   }
-}),[Department]
-  const getDepartment = async () => {
+}),[LeaveType]
+  const getLeaveType = async () => {
     try {
-      let url = config.Api + "Department/getAllDepartments";
+      let url = config.Api + "LeaveType/getAllLeaveType";
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -129,18 +125,18 @@ api=true
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get department');
+        throw new Error('Failed to get Leave Type');
       }
       const result = await response.json();
-      setDepartment(result)
+      setLeaveType(result)
     } catch (error) {
       console.error('Error:', error);
       throw error;
     }
   }
-  const deleteDepartment = async(id)=>{
+  const deleteLeaveType = async(id)=>{
     try {
-      let url = config.Api + "Department/deleteDepartment";
+      let url = config.Api + "LeaveType/deleteLeaveType";
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -150,73 +146,72 @@ api=true
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete Department');
+        throw new Error('Failed to delete LeaveType');
       }
 
       const result = await response.json();
-      getDepartment();
+      getLeaveType();
       return result;
     } catch (error) {
       console.error('Error:', error);
       throw error;
     }
   }
-  const handleEdit = (Department) => {
-    setSelectedDept(Department);
+  const handleEdit = (LeaveType) => {
+    setSelectedTaskStat(LeaveType);
     setIsFormOpen(true);
   };
 
-  const handleDelete = (dept) => {
-    setSelectedDept(dept);
+  const handleDelete = (id) => {
+    setSelectedTaskStat(id);
     setIsConfirmOpen(true);
   };
 
   const confirmDelete = () => {
-    deleteDepartment(selectedDept);
-    toast({ title: "Department Deleted" });
+    deleteLeaveType(selectedTaskStat);
+    toast({ title: "Leave Type Deleted" });
     setIsConfirmOpen(false);
   };
 
   return (
     <>
       <Helmet>
-        <title>Departments - ENIS-HRMS</title>
-        <meta name="description" content="Manage company departments." />
+        <title>Leave Type - ENIS-HRMS</title>
+        <meta name="description" content="Manage company leave type." />
       </Helmet>
       <AnimatePresence>
-        {isFormOpen && <DepartmentForm open={isFormOpen} setOpen={setIsFormOpen} department={selectedDept} getDepartment={getDepartment} />}
+        {isFormOpen && <LeaveTypeForm open={isFormOpen} setOpen={setIsFormOpen} leaveType={selectedTaskStat} getLeaveType={getLeaveType}/>}
       </AnimatePresence>
       <AnimatePresence>
-        {isConfirmOpen && <ConfirmationDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete} title="Delete Department?" description="This action cannot be undone." />}
+        {isConfirmOpen && <ConfirmationDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete} title="Delete Leave Type?" description="This action cannot be undone." />}
       </AnimatePresence>
 
       <div className="space-y-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-white">Departments</h1>
-            <p className="text-gray-400">Manage your company's departments.</p>
+            <h1 className="text-3xl font-bold text-white">Leave Type</h1>
+            <p className="text-gray-400">Manage your company's leave type.</p>
           </div>
-          <Button onClick={handleAddNew} className="bg-gradient-to-r from-blue-500 to-purple-600"><Plus className="w-4 h-4 mr-2" />Add Department</Button>
+          <Button onClick={handleAddNew} className="bg-gradient-to-r from-blue-500 to-purple-600"><Plus className="w-4 h-4 mr-2" />Add Leave Type</Button>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Card className="glass-effect border-white/10">
             <CardHeader>
-              <CardTitle className="text-white">Department List</CardTitle>
+              <CardTitle className="text-white">Leave Type List</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="data-table">
-                  <thead><tr><th>Department Name</th><th>Department Head</th><th>Actions</th></tr></thead>
+                  <thead><tr><th>Leave Type</th><th>Actions</th></tr></thead>
                   <tbody>
-                    {(Department || []).map(dept => (
-                      <tr key={dept.id}>
-                        <td>{dept.departmentName}</td>
-                        <td>{dept.head}</td>
+                    {(LeaveType || []).map(taskStat => (
+                      <tr key={taskStat.id}>
+                        <td>{taskStat.LeaveTypeName}</td>
                         <td>
                           <div className="flex gap-2">
-                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEdit(dept)}><Edit className="w-4 h-4" /></Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400" onClick={() => handleDelete(dept._id)}><Trash2 className="w-4 h-4" /></Button>
+                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEdit(taskStat)}><Edit className="w-4 h-4" /></Button>
+        <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400" onClick={() => handleDelete(taskStat._id)}><Trash2 className="w-4 h-4" /></Button>
                           </div>
                         </td>
                       </tr>
@@ -232,4 +227,4 @@ api=true
   );
 };
 
-export default DepartmentsPage;
+export default LeaveTypePage;

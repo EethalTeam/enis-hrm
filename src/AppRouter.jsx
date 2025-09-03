@@ -22,8 +22,16 @@ import TicketsPage from '@/pages/TicketsPage';
 import ChatPage from '@/pages/ChatPage';
 import SettingsPage from '@/pages/SettingsPage';
 import ShiftsPage from '@/pages/ShiftsPage';
+import WorkLocationPage from '@/pages/WorkLocationPage';
 import PayrollSettingsPage from '@/pages/PayrollSettingsPage';
 import RolesPage from '@/pages/RolesPage';
+import StatusPage from '@/pages/StatusPage';
+import LeadStatusPage from '@/pages/LeadStatusPage';
+import ProjectStatusPage from '@/pages/ProjectStatusPage';
+import TaskStatusPage from '@/pages/TaskStatusPage';
+import TaskPriorityPage from '@/pages/TaskPriorityPage';
+import LeaveTypePage from '@/pages/LeaveTypePage';
+import LeaveStatusPage from '@/pages/LeaveStatusPage';
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -59,6 +67,8 @@ export default function AppRouter() {
                   <Route path="payroll" element={<PayrollPage />} />
                   <Route path="payroll/settings" element={<PayrollSettingsPage />} />
                   <Route path="shifts" element={<ShiftsPage />} />
+                  <Route path="workLocation" element={<WorkLocationPage />} />
+                  <Route path="status" element={<StatusPage />} />
                   <Route path="projects" element={<ProjectsPage />} />
                   <Route path="tasks" element={<TasksPage />} />
                   <Route path="timesheets" element={<TimesheetsPage />} />
@@ -68,6 +78,12 @@ export default function AppRouter() {
                   <Route path="chat" element={<ChatPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="settings/roles" element={<RolesPage />} />
+                  <Route path="settings/leadStatus" element={<LeadStatusPage />} />
+                  <Route path="settings/projectStatus" element={<ProjectStatusPage />} />
+                  <Route path="settings/taskStatus" element={<TaskStatusPage />} />
+                  <Route path="settings/taskPriority" element={<TaskPriorityPage />} />
+                  <Route path="settings/leaveType" element={<LeaveTypePage />} />
+                  <Route path="settings/leaveStatus" element={<LeaveStatusPage />} />
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Routes>
               </Layout>

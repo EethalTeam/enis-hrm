@@ -59,7 +59,6 @@ const PayrollPage = () => {
       };
     });
   }, [employees, shifts, earnings, deductions, processedPayroll]);
-console.log(payrollData,"payrollData")
 
   const payrollStats = useMemo(() => {
     const totalPayroll = payrollData.reduce((acc, curr) => acc + curr.netSalary, 0);

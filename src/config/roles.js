@@ -38,6 +38,8 @@ export const ALL_MENU_ITEMS = [
       { label: 'Payslip', path: '/payslip', id: 'payroll.payslip' },
       { label: 'Payroll Items', path: '/payroll/settings', id: 'payroll.settings' },
       { label: 'Shifts', path: '/shifts', id: 'payroll.shifts' },
+      { label: 'Work Location', path: '/workLocation', id: 'payroll.workLocation' },
+      { label: 'Status', path: '/status', id: 'payroll.status' },
     ]
   },
   { icon: FolderOpen, label: 'Projects', path: '/projects', id: 'projects' },
@@ -95,6 +97,12 @@ export const ALL_MENU_ITEMS = [
     subItems: [
       { label: 'General', path: '/settings', id: 'settings.general' },
       { label: 'Roles & Permissions', path: '/settings/roles', id: 'settings.roles' },
+      { label: 'Lead Status Master', path: '/settings/leadStatus', id: 'settings.leadStatus' },
+      { label: 'Project Status Master', path: '/settings/projectStatus', id: 'settings.projectStatus' },
+      { label: 'Task Status Master', path: '/settings/taskStatus', id: 'settings.taskStatus' },
+      { label: 'Task Priority Master', path: '/settings/taskPriority', id: 'settings.taskPriority' },
+      { label: 'Leave Type Master', path: '/settings/leaveType', id: 'settings.leaveType' },
+      { label: 'Leave Status Master', path: '/settings/leaveStatus', id: 'settings.leaveStatus' },
       { label: 'Notifications', path: '/settings/notifications', id: 'settings.notifications' },
       { label: 'Appearance', path: '/settings/appearance', id: 'settings.appearance' },
     ]

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Menu, Bell, Search, LogOut, User, Check, X, LogIn, Coffee, Briefcase } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,19 +12,66 @@ const AttendanceActions = () => {
   const { attendanceStatus, setAttendanceStatus } = useData();
   const { toast } = useToast();
 
+  const [elapsed, setElapsed] = useState(localStorage.getItem('attendanceElapsed')||"00:00:00");
+  const intervalRef = useRef(null);
+
+  // Parse hh:mm:ss to total seconds
+  const parseTime = (timeStr) => {
+    const [hh, mm, ss] = timeStr.split(':').map(Number);
+    return hh * 3600 + mm * 60 + ss;
+  };
+
+  // Format seconds to hh:mm:ss
+  const formatTime = (seconds) => {
+    const hrs = String(Math.floor(seconds / 3600)).padStart(2, '0');
+    const mins = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+    const secs = String(seconds % 60).padStart(2, '0');
+    return `${hrs}:${mins}:${secs}`;
+  };
+
+  // Timer logic
+  useEffect(() => {
+    if (attendanceStatus.status === 'in' && !attendanceStatus.break) {
+      // Get last saved time from localStorage
+      const lastTime = localStorage.getItem("attendanceElapsed") || "00:00:00";
+      let totalSeconds = parseTime(lastTime);
+
+      intervalRef.current = setInterval(() => {
+        totalSeconds += 1;
+        setElapsed(formatTime(totalSeconds));
+
+        // Save to localStorage every minute
+        if (totalSeconds % 1 === 0) {
+          localStorage.setItem("attendanceElapsed", formatTime(totalSeconds));
+        }
+      }, 1000);
+    } else {
+      clearInterval(intervalRef.current);
+    }
+
+    return () => clearInterval(intervalRef.current);
+  }, [attendanceStatus.status, attendanceStatus.break]);
+
   const handleDayIn = () => {
     setAttendanceStatus({ status: 'in', break: false });
     toast({ title: "Day In", description: "You've successfully clocked in for the day." });
+    setElapsed("00:00:00");
+    localStorage.setItem("attendanceElapsed", "00:00:00");
   };
 
   const handleDayOut = () => {
     setAttendanceStatus({ status: 'out', break: false });
     toast({ title: "Day Out", description: "You've successfully clocked out. Have a great day!" });
+    setElapsed("00:00:00");
+    localStorage.removeItem("attendanceElapsed");
   };
 
   const handleBreak = () => {
     setAttendanceStatus(prev => ({ ...prev, break: !prev.break }));
-    toast({ title: attendanceStatus.break ? "Back to Work" : "Break Time", description: attendanceStatus.break ? "Your break is over." : "Enjoy your break!" });
+    toast({
+      title: attendanceStatus.break ? "Back to Work" : "Break Time",
+      description: attendanceStatus.break ? "Your break is over." : "Enjoy your break!"
+    });
   };
 
   if (attendanceStatus.status === 'out') {
@@ -36,21 +83,30 @@ const AttendanceActions = () => {
   }
 
   return (
-    <div className="flex gap-2">
-      <Button onClick={handleBreak} variant="outline" className={`border-white/10 ${attendanceStatus.break ? 'bg-yellow-500/20 text-yellow-400' : 'hover:bg-white/10'}`}>
-        {attendanceStatus.break ? <Briefcase className="w-4 h-4 mr-2" /> : <Coffee className="w-4 h-4 mr-2" />}
-        {attendanceStatus.break ? 'End Break' : 'Take Break'}
-      </Button>
-      <Button onClick={handleDayOut} className="bg-red-600 hover:bg-red-700">
-        <LogOut className="w-4 h-4 mr-2" /> Day Out
-      </Button>
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-2 items-center">
+        <div className="text-sm text-gray-300 ml-4">
+          <strong>Elapsed Time:</strong> {elapsed}
+        </div>
+        <Button
+          onClick={handleBreak}
+          variant="outline"
+          className={`border-white/10 ${attendanceStatus.break ? 'bg-yellow-500/20 text-yellow-400' : 'hover:bg-white/10'}`}
+        >
+          {attendanceStatus.break ? <Briefcase className="w-4 h-4 mr-2" /> : <Coffee className="w-4 h-4 mr-2" />}
+          {attendanceStatus.break ? 'End Break' : 'Take Break'}
+        </Button>
+        <Button onClick={handleDayOut} className="bg-red-600 hover:bg-red-700">
+          <LogOut className="w-4 h-4 mr-2" /> Day Out
+        </Button>
+      </div>
     </div>
   );
 };
 
 const Header = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
-  const { notifications, updateNotification, updatePermission } = useData();
+  const { notifications, updateNotification, updatePermission, attendanceStatus } = useData();
   const { toast } = useToast();
 
   const userNotifications = notifications.filter(n => n.recipientId === user.id && !n.read);
@@ -59,13 +115,8 @@ const Header = ({ onMenuClick }) => {
     if (notification.type === 'permission_request') {
       const newStatus = action === 'approve' ? 'Approved' : 'Rejected';
       updatePermission({ id: notification.entityId, status: newStatus });
-      
       updateNotification({ ...notification, read: true });
-
-      toast({
-        title: `Permission ${newStatus}`,
-        description: `The request has been ${newStatus.toLowerCase()}.`,
-      });
+      toast({ title: `Permission ${newStatus}`, description: `The request has been ${newStatus.toLowerCase()}.` });
     }
   };
 
@@ -75,7 +126,7 @@ const Header = ({ onMenuClick }) => {
 
   return (
     <motion.header 
-      className="glass-effect border-b border-white/10 px-6 py-4"
+      className="glass-effect border-b border-white/10 px-4 py-4"
       initial={{ y: -50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
@@ -96,7 +147,9 @@ const Header = ({ onMenuClick }) => {
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Attendance Actions with Timer */}
           <AttendanceActions />
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative hover:bg-white/10">
@@ -134,16 +187,16 @@ const Header = ({ onMenuClick }) => {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-3 hover:bg-white/10 px-3 py-2 h-auto">
+              <Button variant="ghost" className="flex items-center gap-3 hover:bg-white/10 px-3 py-2 h-auto w-auto">
                 <Avatar className="w-8 h-8">
                   <AvatarImage src={user?.avatar} alt={user?.name} />
                   <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                    {user?.name?.split(' ').map(n => n[0]).join('')}
+                    {user.name?.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden md:block text-left">
-                  <p className="text-sm font-medium text-white">{user?.name}</p>
-                  <p className="text-xs text-gray-400">{user?.role}</p>
+                  <p className="text-sm font-medium text-white">{user.name}</p>
+                  <p className="text-xs text-gray-400">{user.role}</p>
                 </div>
               </Button>
             </DropdownMenuTrigger>

@@ -1,37 +1,172 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet';
 import { Hourglass, Plus, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
 import { useData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from "@/components/ui/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { config } from '@/components/CustomComponents/config';
 
-const PermissionForm = ({ open, setOpen, permission, onSave }) => {
+const PermissionForm = ({ open, setOpen, permission, onSave, getAllPermissions }) => {
   const { employees, roles } = useData();
   const { user } = useAuth();
   const [formData, setFormData] = useState(
-    permission || { employeeId: user.id, date: '', hours: '', reason: '', status: 'Pending' }
+    permission || {_id:'', employee:user.name,employeeId: user._id, permissionDate: '',fromTime:'',toTime:'', totalHours: 0, reason: '', RequestStatus: '',RequestStatusId:'',requestedTo:'',requestedToName:''  }
   );
+    const [Data,SetData] = useState([])
+  useEffect(()=>{
+  if(permission){
+  setFormData({
+     _id: permission._id,
+     employeeId: permission.employeeId._id,
+     employee: permission.employeeId.name,
+     permissionDate: permission.permissionDate.split('T')[0],
+     RequestStatus: permission.RequestStatusId?.StatusName,
+     RequestStatusId: permission.RequestStatusId?._id,
+     fromTime: permission.fromTime,
+     toTime: permission.toTime,
+     requestedTo: permission.requestedTo._id,
+     requestedToName: permission.requestedTo.name,
+     totalHours: permission.totalHours || 0,
+     reason: permission.reason})
+  }
+  },[permission])
+  useEffect(()=>{
+    let hours=calculateTotalHours(formData.fromTime,formData.toTime)
+ setFormData(prev => ({ ...prev, totalHours: hours.toFixed(1) }));
+  },[formData.fromTime,formData.toTime])
+  function calculateTotalHours(fromTime, toTime) {
+  if (!fromTime || !toTime) return 0;
+
+  // Convert HH:MM (24h format) to Date objects
+  const [fromHours, fromMinutes] = fromTime.split(":").map(Number);
+  const [toHours, toMinutes] = toTime.split(":").map(Number);
+
+  const fromDate = new Date(0, 0, 0, fromHours, fromMinutes, 0);
+  const toDate = new Date(0, 0, 0, toHours, toMinutes, 0);
+
+  let diff = (toDate - fromDate) / (1000 * 60 * 60); // in hours
+
+  // Handle case when toTime is past midnight (next day)
+  if (diff < 0) {
+    diff += 24;
+  }
+
+  return diff;
+}
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+const handleSelectChange = (id, name, key, value) => {
+  if (key && name) {
+    setFormData(prev => ({
+      ...prev,
+      [id]: key,    
+      [name]: value 
+    }));
+    SetData([]); // clear Data once
+  }
+};
+
+  const getEmployeeList = async () => {
+      try {
+         SetData([]); // clear Data once
+        let url = config.Api + "Employee/getAllEmployees/";
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
+  
+        if (!response.ok) {
+          throw new Error('Failed to get State');
+        }
+  
+        const result = await response.json();
+        SetData(result)
+        // setState(result)
+        // setFilteredData(result)
+      } catch (error) {
+        console.error('Error:', error);
+        throw error;
+      }
+    }
+      const createPermission = async (data) => {
+        try {
+          let url = config.Api + "Permission/createPermission/";
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+          });
+    
+          if (!response.ok) {
+            throw new Error('Failed to get State');
+          }
+    
+          SetData([])
+          getAllPermissions()
+          // setFilteredData(result)
+        } catch (error) {
+          console.error('Error:', error);
+          throw error;
+        }
+      }
+        const updatePermission = async (data) => {
+        try {
+          let url = config.Api + "Permission/updatePermission/";
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+          });
+    
+          if (!response.ok) {
+            throw new Error('Failed to get State');
+          }
+    
+          SetData([])
+          getAllPermissions()
+          // setFilteredData(result)
+        } catch (error) {
+          console.error('Error:', error);
+          throw error;
+        }
+      }
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave({ ...formData, hours: parseFloat(formData.hours) });
+    // onSave({ ...formData, totalHours: parseFloat(formData.totalHours) });
+     if (formData._id) {
+              updatePermission({ ...formData, totalHours: parseFloat(formData.totalHours) });
+              toast({
+                title: 'Permission Updated',
+                description: "Permission has been updated successfully.",
+              });
+            } else {
+              createPermission({ ...formData, totalHours: parseFloat(formData.totalHours) });
+              toast({
+                title: 'Permission Added',
+                description: `Permission Request has been added to the system.`,
+              });
+            }
     setOpen(false);
   };
 
@@ -44,13 +179,72 @@ const PermissionForm = ({ open, setOpen, permission, onSave }) => {
           <DialogTitle>{permission ? 'Edit Permission' : 'Request Permission'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <Select name="employeeId" value={formData.employeeId} onValueChange={(v) => handleSelectChange('employeeId', v)} required disabled={!canSelectEmployee}>
-            <SelectTrigger className="bg-white/5"><SelectValue placeholder="Select Employee" /></SelectTrigger>
-            <SelectContent className="glass-effect">{employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}</SelectContent>
-          </Select>
+            <Select
+                                                 name="employee"
+                                                 value={formData.employeeId} // store only _id
+                                                 disabled={!canSelectEmployee}
+                                                 onOpenChange={async (open) => {
+                                                   if (open && (!Data || Data.length === 0)) {
+                                                     await getEmployeeList();
+                                                   }
+                                                 }}
+                                                 onValueChange={(id) => {
+                                                   if (!id) return;
+                                                   const dept = Data.find(d => d._id === id);
+                                                   if (dept) {
+                                                     handleSelectChange('employeeId', 'employee', dept._id, dept.name);
+                                                   }
+                                                 }}
+                                                 // required
+                                               >
+                                                 <SelectTrigger className="glass-effect border-white/10">
+                                                   <SelectValue placeholder="Select Employee" >
+                                                     {formData.employee}
+                                                   </SelectValue>
+                                                 </SelectTrigger>
+                                                 <SelectContent className="glass-effect border-white/10 text-white">
+                                                   {(Data || []).map((dept) => (
+                                                     <SelectItem key={dept._id} value={dept._id} className="hover:bg-white/10">
+                                                       {dept.name}
+                                                     </SelectItem>
+                                                   ))}
+                                                 </SelectContent>
+                                               </Select>
+                                               <Select
+                                                                                      name="requestedToName"
+                                                                                      value={formData.requestedTo} // store only _id
+                                                                                      onOpenChange={async (open) => {
+                                                                                        if (open && (!Data || Data.length === 0)) {
+                                                                                          await getEmployeeList();
+                                                                                        }
+                                                                                      }}
+                                                                                      onValueChange={(id) => {
+                                                                                        if (!id) return;
+                                                                                        const dept = Data.find(d => d._id === id);
+                                                                                        if (dept) {
+                                                                                          handleSelectChange('requestedTo', 'requestedToName', dept._id, dept.name);
+                                                                                        }
+                                                                                      }}
+                                                                                      // required
+                                                                                    >
+                                                                                      <SelectTrigger className="glass-effect border-white/10">
+                                                                                        <SelectValue placeholder="Request To" >
+                                                                                          {formData.requestedToName}
+                                                                                        </SelectValue>
+                                                                                      </SelectTrigger>
+                                                                                      <SelectContent className="glass-effect border-white/10 text-white">
+                                                                                        {(Data || []).map((dept) => (
+                                                                                          <SelectItem key={dept._id} value={dept._id} className="hover:bg-white/10">
+                                                                                            {dept.name}
+                                                                                          </SelectItem>
+                                                                                        ))}
+                                                                                      </SelectContent>
+                                                                                    </Select>
           <div className="grid grid-cols-2 gap-4">
-            <div><Label>Date</Label><Input type="date" name="date" value={formData.date} onChange={handleChange} required className="bg-white/5" /></div>
-            <div><Label>Hours</Label><Input type="number" name="hours" value={formData.hours} onChange={handleChange} placeholder="e.g., 2" required className="bg-white/5" /></div>
+            <div><Label>Date</Label><Input type="date" name="permissionDate" value={formData.permissionDate} onChange={handleChange} required className="bg-white/5" /></div>
+            <div><Label>From Time</Label><Input type="time" name="fromTime" value={formData.fromTime} onChange={handleChange} required className="bg-white/5" /></div>
+            <div><Label>To Time</Label><Input type="time" name="toTime" value={formData.toTime} onChange={handleChange} required className="bg-white/5" /></div>
+            <div><Label>Total Hours</Label><Input type="number" name="totalHours" value={formData.totalHours} onChange={handleChange} placeholder="e.g., 2" required className="bg-white/5" disabled/></div>
           </div>
           <Input name="reason" value={formData.reason} onChange={handleChange} placeholder="Reason for permission" required className="bg-white/5" />
           <DialogFooter>
@@ -64,13 +258,40 @@ const PermissionForm = ({ open, setOpen, permission, onSave }) => {
 };
 
 const PermissionsPage = () => {
-  const { permissions, employees, addPermission, updatePermission, deletePermission } = useData();
+  const { permissions, employees, addPermission, deletePermission } = useData();
   const { user } = useAuth();
-  const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedPermission, setSelectedPermission] = useState(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [ Permissions,setPermissions]=useState([])
 
+    useEffect(()=>{
+      getAllPermissions()
+    },[])
+      const getAllPermissions = async () => {
+        try {
+          let url = config.Api + "Permission/getAllPermissions/";
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({}),
+          });
+    
+          if (!response.ok) {
+            throw new Error('Failed to get State');
+          }
+    
+          const result = await response.json();
+          setPermissions(result)
+          // setState(result)
+          // setFilteredData(result)
+        } catch (error) {
+          console.error('Error:', error);
+          throw error;
+        }
+      }
   const handleAddNew = () => {
     setSelectedPermission(null);
     setIsFormOpen(true);
@@ -87,14 +308,35 @@ const PermissionsPage = () => {
   };
 
   const confirmDelete = () => {
-    deletePermission(selectedPermission.id);
+    deletePermission(selectedPermission._id);
     toast({ title: "Permission Deleted" });
     setIsConfirmOpen(false);
   };
+const updatePermission = async (data) => {
+        try {
+          let url = config.Api + "Permission/updatePermissionStatus/";
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+          });
+    
+          if (!response.ok) {
+            throw new Error('Failed to get State');
+          }
+          getAllPermissions()
+          // setFilteredData(result)
+        } catch (error) {
+          console.error('Error:', error);
+          throw error;
+        }
+      }
 
   const handleSave = (permissionData) => {
     if (selectedPermission) {
-      updatePermission({ ...permissionData, id: selectedPermission.id });
+      updatePermission({ ...permissionData, _id: selectedPermission._id });
       toast({ title: "Permission Updated" });
     } else {
       addPermission(permissionData);
@@ -108,8 +350,7 @@ const PermissionsPage = () => {
   };
 
   const canManage = user.role === 'Admin' || user.role === 'Super Admin';
-
-  const userPermissions = canManage ? permissions : permissions.filter(p => p.employeeId === user.id);
+  const userPermissions = canManage ? Permissions : Permissions.filter(p => p.employeeId._id === user._id);
 
   return (
     <>
@@ -118,7 +359,7 @@ const PermissionsPage = () => {
         <meta name="description" content="Manage employee permissions for late coming or early leaving." />
       </Helmet>
       <AnimatePresence>
-        {isFormOpen && <PermissionForm open={isFormOpen} setOpen={setIsFormOpen} permission={selectedPermission} onSave={handleSave} />}
+        {isFormOpen && <PermissionForm open={isFormOpen} setOpen={setIsFormOpen} permission={selectedPermission} onSave={handleSave} getAllPermissions={getAllPermissions} />}
       </AnimatePresence>
       <AnimatePresence>
         {isConfirmOpen && <ConfirmationDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete} title="Delete Permission?" description="This action cannot be undone." />}
@@ -144,17 +385,16 @@ const PermissionsPage = () => {
                   <thead><tr><th>Employee</th><th>Date</th><th>Hours</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
                   <tbody>
                     {userPermissions.map(permission => {
-                      const employee = employees.find(e => e.id === permission.employeeId);
                       return (
-                        <tr key={permission.id}>
-                          <td>{employee?.name || 'Unknown'}</td>
-                          <td>{permission.date}</td>
-                          <td>{permission.hours}</td>
+                        <tr key={permission._id}>
+                          <td>{permission.employeeId.name || 'Unknown'}</td>
+                          <td>{permission.permissionDate.split('T')[0].split('-').reverse().join('-')}</td>
+                          <td>{permission.totalHours}</td>
                           <td>{permission.reason}</td>
-                          <td><span className={`status-badge ${permission.status === 'Approved' ? 'status-active' : permission.status === 'Pending' ? 'status-pending' : 'status-inactive'}`}>{permission.status}</span></td>
+                          <td><span className={`status-badge ${permission.RequestStatusId?.StatusName === 'Approved' ? 'status-active' : permission.RequestStatusId?.StatusName === 'Pending' ? 'status-pending' : 'status-inactive'}`}>{permission.RequestStatusId?.StatusName}</span></td>
                           <td>
                             <div className="flex gap-2">
-                              {canManage && permission.status === 'Pending' && (
+                              {canManage && permission.RequestStatusId?.StatusName === 'Pending' && (
                                 <>
                                   <Button size="icon" variant="ghost" className="h-8 w-8 text-green-400" onClick={() => handleStatusChange(permission, 'Approved')}><CheckCircle className="w-4 h-4" /></Button>
                                   <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400" onClick={() => handleStatusChange(permission, 'Rejected')}><XCircle className="w-4 h-4" /></Button>

@@ -32,16 +32,6 @@ const LoginPage = () => {
     setLoading(false);
   };
 
-  const handleDemoLogin = (account) => {
-    setEmail(account.email);
-    setPassword('password123');
-  };
-
-  const demoAccounts = [
-    { email: 'admin@company.com', role: 'Super Admin', name: 'Karthi' },
-    { email: 'hr@company.com', role: 'HR Manager', name: 'Madhan  Kumar' }
-  ];
-
   return (
     <>
       <Helmet>

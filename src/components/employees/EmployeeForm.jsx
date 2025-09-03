@@ -1,54 +1,120 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useReducer, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useData } from '@/contexts/DataContext';
+import Reducer from '@/components/Reducer/commonReducer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { X, User, Mail, Briefcase, DollarSign, Building, Calendar, Clock, Home, Shield } from 'lucide-react';
+import { config } from '@/components/CustomComponents/config';
+import { X, User, Mail, Briefcase, DollarSign, Building, Calendar, Clock, Home, Shield, BookLock } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const EmployeeForm = ({ isOpen, setIsOpen, employee }) => {
-  const { addEmployee, updateEmployee, departments, shifts, roles } = useData();
+const initialState = {
+  _id: '',
+  name: '',
+  email: '',
+  password: '',
+  designation: '',
+  designationId: '',
+  department: '',
+  departmentId: '',
+  joinDate: '',
+  salary: '',
+  status: '',
+  statusId: '',
+  avatar: '',
+  shiftId: '',
+  shift: '',
+  workingHours: '',
+  workLocation: 'Office',
+  role: '',
+  roleId: ''
+}
+const EmployeeForm = ({ isOpen, setIsOpen, employee,getAllEmployees }) => {
+  const { addEmployee, departments, shifts, roles } = useData();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
+    _id: '',
     name: '',
     email: '',
+    password: '',
     designation: '',
+    designationId: '',
     department: '',
+    departmentId: '',
     joinDate: '',
     salary: '',
-    status: 'Active',
+    status: '',
+    statusId: '',
     avatar: '',
+    shift: '',
     shiftId: '',
     workingHours: '',
-    workLocation: 'Office',
-    role: 'Employee',
+    workLocation: '',
+    workLocationId:'',
+    role: '',
+    roleId: ''
   });
+  const [state, dispatch] = useReducer(Reducer, initialState);
+  const [Employee, setEmployee] = useState([])
+  const [isEdit, setIsEdit] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredData, setFilteredData] = useState([]);
+  const [Department, setDepartment] = useState([])
+  const [Data, SetData] = useState([])
 
   useEffect(() => {
     if (employee) {
+      let employeeData={
+         _id: employee._id,
+    name: employee.name,
+    email: employee.email,
+    password: employee.password,
+    designation: employee.designationName,
+    designationId: employee.designationId,
+    department: employee.departmentName,
+    departmentId: employee.departmentId,
+    joinDate: employee.joinDate.split('T')[0],
+    salary: employee.salary,
+    status: employee.statusName,
+    statusId: employee.statusId,
+    avatar: employee.avatar,
+    shift: employee.shiftName,
+    shiftId: employee.shiftId,
+    workingHours: employee.workingHours,
+    workLocation: employee.workLocationName,
+    workLocationId:employee.workLocationId,
+    role: employee.roleName,
+    roleId: employee.roleId
+      }
       setFormData({
-        ...employee,
+        ...employeeData,
         salary: employee.salary.toString(),
-        workingHours: employee.workingHours?.toString() || '8',
-        workLocation: employee.workLocation || 'Office',
-        role: employee.role || 'Employee',
+        workingHours: employee.workingHours?.toString() || '8'
       });
     } else {
       setFormData({
+        _id:'',
         name: '',
         email: '',
+        password: '',
         designation: '',
+        designationId:'',
         department: '',
+        departmentId:'',
         joinDate: '',
         salary: '',
-        status: 'Active',
+        status: '',
+        statusId:'',
         avatar: '',
-        shiftId: '',
         workingHours: '8',
-        workLocation: 'Office',
-        role: 'Employee',
+        workLocation: '',
+        workLocationId:'',
+        role: '',
+        roleId:'',
+        shift: '',
+        shiftId: '',
       });
     }
   }, [employee, isOpen]);
@@ -57,11 +123,215 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee }) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-  
-  const handleSelectChange = (name, value) => {
-    setFormData(prev => ({...prev, [name]: value}));
-  };
 
+const handleSelectChange = (id, name, key, value) => {
+  if (key && name) {
+    setFormData(prev => ({
+      ...prev,
+      [id]: key,      // e.g. shiftId
+      [name]: value   // e.g. shiftName
+    }));
+    SetData([]); // clear Data once
+  }
+};
+  const getDepartmentList = async () => {
+    try {
+       SetData([]); // clear Data once
+      let url = config.Api + "Employee/getAllDepartments/";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get State');
+      }
+
+      const result = await response.json();
+      SetData(result)
+      // setState(result)
+      // setFilteredData(result)
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
+  const createEmployee = async (data) => {
+    try {
+      let url = config.Api + "Employee/createEmployee/";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get State');
+      }
+
+      SetData([])
+      getAllEmployees()
+      // setState(result)
+      // setFilteredData(result)
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
+    const updateEmployee = async (data) => {
+    try {
+      let url = config.Api + "Employee/updateEmployee/";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get State');
+      }
+
+      SetData([])
+      getAllEmployees()
+      // setState(result)
+      // setFilteredData(result)
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
+  const getDesignationList = async () => {
+    try {
+       SetData([]); // clear Data once
+      let url = config.Api + "Employee/getAllDesignations/";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get State');
+      }
+
+      const result = await response.json();
+      SetData(result)
+      // setState(result)
+      // setFilteredData(result)
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
+  const getShiftList = async () => {
+    try {
+       SetData([]); // clear Data once
+      let url = config.Api + "Employee/getAllShifts/";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get State');
+      }
+
+      const result = await response.json();
+      SetData(result)
+      // setState(result)
+      // setFilteredData(result)
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
+  const getWorkLocationList = async () => {
+    try {
+       SetData([]); // clear Data once
+      let url = config.Api + "Employee/getAllWorkLocations/";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get State');
+      }
+
+      const result = await response.json();
+      SetData(result)
+      // setState(result)
+      // setFilteredData(result)
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
+  const getRoleList = async () => {
+    try {
+       SetData([]); // clear Data once
+      let url = config.Api + "Employee/getAllRoles/";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get State');
+      }
+
+      const result = await response.json();
+      SetData(result)
+      // setState(result)
+      // setFilteredData(result)
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
+  const getStatusList = async () => {
+    try {
+       SetData([]); // clear Data once
+      let url = config.Api + "Employee/getAllStatus/";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get State');
+      }
+
+      const result = await response.json();
+      SetData(result)
+      // setState(result)
+      // setFilteredData(result)
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
   const handleSubmit = (e) => {
     e.preventDefault();
     const employeeData = {
@@ -71,13 +341,13 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee }) => {
     };
 
     if (employee) {
-      updateEmployee({ ...employeeData, id: employee.id });
+      updateEmployee({ ...employeeData, _id: employee._id });
       toast({
         title: 'Employee Updated',
         description: `${employee.name} has been updated successfully.`,
       });
     } else {
-      addEmployee(employeeData);
+      createEmployee(employeeData);
       toast({
         title: 'Employee Added',
         description: `${formData.name} has been added to the system.`,
@@ -96,6 +366,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee }) => {
         exit={{ opacity: 0, scale: 0.9 }}
         transition={{ duration: 0.3 }}
         className="glass-effect border-white/10 rounded-xl w-full max-w-4xl relative"
+        style={{ overflowY: 'auto', height: '90vh', scrollbarWidth: 'none' }}
       >
         <button
           onClick={() => setIsOpen(false)}
@@ -121,30 +392,118 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee }) => {
                 <div className="relative"><Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="e.g. john.doe@company.com" required className="pl-10 glass-effect border-white/10" /></div>
               </div>
               <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Password</label>
+                <div className="relative"><BookLock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="password" type="password" value={formData.password} onChange={handleChange} placeholder="please enter password" required className="pl-10 glass-effect border-white/10" /></div>
+              </div>
+              <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Designation</label>
-                <div className="relative"><Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="designation" value={formData.designation} onChange={handleChange} placeholder="e.g. Software Engineer" required className="pl-10 glass-effect border-white/10" /></div>
+                <Select
+                  name="designation"
+                  value={formData.designationId} // store only _id
+                  onOpenChange={async (open) => {
+                    if (open && (!Data || Data.length === 0)) {
+                      await getDesignationList();
+                    }
+                  }}
+                  onValueChange={(id) => {
+                    if (!id) return;
+                    const dept = Data.find(d => d._id === id);
+                    if (dept) {
+                      handleSelectChange('designationId', 'designation', dept._id, dept.designationName);
+                    }
+                  }}
+                  // required
+                >
+                  <SelectTrigger className="glass-effect border-white/10">
+                    <SelectValue placeholder="Select Designation" >
+                      {formData.designation}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="glass-effect border-white/10 text-white">
+                    {(Data || []).map((dept) => (
+                      <SelectItem key={dept._id} value={dept._id} className="hover:bg-white/10">
+                        {dept.designationName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Department</label>
-                 <Select name="department" value={formData.department} onValueChange={(value) => handleSelectChange('department', value)} required>
-                  <SelectTrigger className="glass-effect border-white/10"><SelectValue placeholder="Select Department" /></SelectTrigger>
-                  <SelectContent className="glass-effect border-white/10 text-white">{(departments || []).map(dept => (<SelectItem key={dept.id} value={dept.name} className="hover:bg-white/10">{dept.name}</SelectItem>))}</SelectContent>
+                <Select
+                  name="department"
+                  value={formData.department} // store only _id
+                  onOpenChange={async (open) => {
+                    if (open && (!Data || Data.length === 0)) {
+                      await getDepartmentList();
+                    }
+                  }}
+                  onValueChange={(id) => {
+                    if (!id) return;
+                    const dept = Data.find(d => d._id === id);
+                    if (dept) {
+                      handleSelectChange('departmentId', 'department', dept._id, dept.departmentName);
+                    }
+                  }}
+                  // required
+                >
+                  <SelectTrigger className="glass-effect border-white/10">
+                    <SelectValue placeholder="Select Department">
+                      {formData.department}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="glass-effect border-white/10 text-white">
+                    {(Data || []).map((dept) => (
+                      <SelectItem key={dept._id} value={dept._id} className="hover:bg-white/10">
+                        {dept.departmentName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+              </div>
+                <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Shift</label>
+                 <Select
+                  name="Shift"
+                  value={formData.shift} // store only _id
+                  onOpenChange={async (open) => {
+                    if (open && (!Data || Data.length === 0)) {
+                      await getShiftList();
+                    }
+                  }}
+                  onValueChange={(id) => {
+                    if (!id) return;
+                    const dept = Data.find(d => d._id === id);
+                    if (dept) {
+                      handleSelectChange('shiftId', 'shift', dept._id, dept.shiftName);
+                    }
+                  }}
+                  // required
+                >
+                  <SelectTrigger className="glass-effect border-white/10">
+                    <SelectValue placeholder="Select Shift">
+                      {formData.shift}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="glass-effect border-white/10 text-white">
+                    {(Data || []).map((dept) => (
+                      <SelectItem key={dept._id} value={dept._id} className="hover:bg-white/10">
+                        {dept.shiftName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Work Shift</label>
-                <Select name="shiftId" value={formData.shiftId} onValueChange={(value) => handleSelectChange('shiftId', value)} required>
-                  <SelectTrigger className="glass-effect border-white/10"><SelectValue placeholder="Select Shift" /></SelectTrigger>
-                  <SelectContent className="glass-effect border-white/10 text-white">{(shifts || []).map(shift => (<SelectItem key={shift.id} value={shift.id} className="hover:bg-white/10">{shift.name}</SelectItem>))}</SelectContent>
-                </Select>
-              </div>
-               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Working Hours/Day</label>
                 <div className="relative"><Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="workingHours" type="number" value={formData.workingHours} onChange={handleChange} placeholder="e.g. 8" required className="pl-10 glass-effect border-white/10" /></div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Joining Date</label>
-                <div className="relative"><Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="joinDate" type="date" value={formData.joinDate} onChange={handleChange} required className="pl-10 glass-effect border-white/10" /></div>
+                <div className="relative">
+                  {/* <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /> */}
+                  <Input name="joinDate" type="date" value={formData.joinDate} onChange={handleChange} required className="pl-10 glass-effect border-white/10" /></div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Annual Salary ($)</label>
@@ -152,27 +511,101 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee }) => {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Work Location</label>
-                <Select name="workLocation" value={formData.workLocation} onValueChange={(value) => handleSelectChange('workLocation', value)}>
-                  <SelectTrigger className="glass-effect border-white/10"><SelectValue placeholder="Select Location" /></SelectTrigger>
-                  <SelectContent className="glass-effect border-white/10 text-white"><SelectItem value="Office">Office</SelectItem><SelectItem value="Remote (WFH)">Remote (WFH)</SelectItem><SelectItem value="Hybrid">Hybrid</SelectItem></SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Role</label>
-                <Select name="role" value={formData.role} onValueChange={(value) => handleSelectChange('role', value)}>
-                  <SelectTrigger className="glass-effect border-white/10"><SelectValue placeholder="Select Role" /></SelectTrigger>
+                 <Select
+                  name="Work Location"
+                  value={formData.workLocation} // store only _id
+                  onOpenChange={async (open) => {
+                    if (open && (!Data || Data.length === 0)) {
+                      await getWorkLocationList();
+                    }
+                  }}
+                  onValueChange={(id) => {
+                    if (!id) return;
+                    const dept = Data.find(d => d._id === id);
+                    if (dept) {
+                      handleSelectChange('workLocationId', 'workLocation', dept._id, dept.locationName);
+                    }
+                  }}
+                  // required
+                >
+                  <SelectTrigger className="glass-effect border-white/10">
+                    <SelectValue placeholder="Select Work Location">
+                      {formData.workLocation}
+                    </SelectValue>
+                  </SelectTrigger>
                   <SelectContent className="glass-effect border-white/10 text-white">
-                    {(roles || []).map(role => (
-                      <SelectItem key={role.id} value={role.name} className="hover:bg-white/10">{role.name}</SelectItem>
+                    {(Data || []).map((dept) => (
+                      <SelectItem key={dept._id} value={dept._id} className="hover:bg-white/10">
+                        {dept.locationName}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2 lg:col-span-2">
+               <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Role</label>
+                 <Select
+                  name="Role"
+                  value={formData.role} // store only _id
+                  onOpenChange={async (open) => {
+                    if (open && (!Data || Data.length === 0)) {
+                      await getRoleList();
+                    }
+                  }}
+                  onValueChange={(id) => {
+                    if (!id) return;
+                    const dept = Data.find(d => d._id === id);
+                    if (dept) {
+                      handleSelectChange('roleId', 'role', dept._id, dept.RoleName);
+                    }
+                  }}
+                  // required
+                >
+                  <SelectTrigger className="glass-effect border-white/10">
+                    <SelectValue placeholder="Select Role">
+                      {formData.role}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="glass-effect border-white/10 text-white">
+                    {(Data || []).map((dept) => (
+                      <SelectItem key={dept._id} value={dept._id} className="hover:bg-white/10">
+                        {dept.RoleName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+             <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Status</label>
-                 <Select name="status" value={formData.status} onValueChange={(value) => handleSelectChange('status', value)}>
-                  <SelectTrigger className="glass-effect border-white/10"><SelectValue placeholder="Select Status" /></SelectTrigger>
-                  <SelectContent className="glass-effect border-white/10 text-white"><SelectItem value="Active">Active</SelectItem><SelectItem value="Inactive">Inactive</SelectItem></SelectContent>
+                 <Select
+                  name="Status"
+                  value={formData.status} // store only _id
+                  onOpenChange={async (open) => {
+                    if (open && (!Data || Data.length === 0)) {
+                      await getStatusList();
+                    }
+                  }}
+                  onValueChange={(id) => {
+                    if (!id) return;
+                    const dept = Data.find(d => d._id === id);
+                    if (dept) {
+                      handleSelectChange('statusId', 'status', dept._id, dept.statusName);
+                    }
+                  }}
+                  // required
+                >
+                  <SelectTrigger className="glass-effect border-white/10">
+                    <SelectValue placeholder="Select Status">
+                      {formData.status}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="glass-effect border-white/10 text-white">
+                    {(Data || []).map((dept) => (
+                      <SelectItem key={dept._id} value={dept._id} className="hover:bg-white/10">
+                        {dept.statusName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
             </div>

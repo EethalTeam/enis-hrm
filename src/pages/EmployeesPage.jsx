@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet';
 import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Eye, Home, Briefcase } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { config } from '@/components/CustomComponents/config';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -24,7 +25,12 @@ const EmployeesPage = () => {
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10); // default
-  const filteredEmployees = employees.filter(employee => {
+  const [Employee,setEmployee] = useState([])
+
+  useEffect(()=>{
+getAllEmployees()
+},[])
+  const filteredEmployees = Employee.filter(employee => {
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          employee.designation.toLowerCase().includes(searchTerm.toLowerCase());
@@ -57,7 +63,28 @@ const EmployeesPage = () => {
     setEmployeeToDelete(employee);
     setIsConfirmOpen(true);
   };
+  const getAllEmployees = async () => {
+    try {
+      let url = config.Api + "Employee/getAllEmployees/";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
 
+      if (!response.ok) {
+        throw new Error('Failed to get State');
+      }
+
+      const result = await response.json();
+      setEmployee(result)
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
   const confirmDelete = () => {
     if (employeeToDelete) {
       deleteEmployee(employeeToDelete.id);
@@ -100,6 +127,7 @@ const EmployeesPage = () => {
             isOpen={isFormOpen} 
             setIsOpen={setIsFormOpen} 
             employee={selectedEmployee} 
+            getAllEmployees={getAllEmployees}
           />
         )}
       </AnimatePresence>
@@ -173,7 +201,7 @@ const EmployeesPage = () => {
             <CardHeader>
               <CardTitle className="text-white">Employee Directory</CardTitle>
               <CardDescription className="text-gray-400">
-                {filteredEmployees.length} of {employees.length} employees
+                {filteredEmployees.length} of {Employee.length} employees
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -189,7 +217,7 @@ const EmployeesPage = () => {
             </tr>
           </thead>
           <tbody>
-            {currentEmployees.map((employee, index) => (
+            {Employee.map((employee, index) => (
               <motion.tr
                 key={employee.id}
                 initial={{ opacity: 0, x: -20 }}
@@ -208,16 +236,16 @@ const EmployeesPage = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="text-gray-300">{employee.department}</td>
+                        <td className="text-gray-300">{employee.departmentName}</td>
                         <td>
                           <div className="flex items-center gap-2 text-gray-300">
-                            {getLocationIcon(employee.workLocation)}
-                            <span>{employee.workLocation}</span>
+                            {getLocationIcon(employee.workLocationName)}
+                            <span>{employee.workLocationName}</span>
                           </div>
                         </td>
                         <td>
-                          <span className={`status-badge ${employee.status === 'Active' ? 'status-active' : 'status-inactive'}`}>
-                            {employee.status}
+                          <span className={`status-badge ${employee.statusName === 'Active' ? 'status-active' : 'status-inactive'}`}>
+                            {employee.statusName}
                           </span>
                         </td>
                         <td>

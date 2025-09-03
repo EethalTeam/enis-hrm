@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect,useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet';
-import { UserPlus, Search, Filter, MoreHorizontal, Phone, Mail, Edit, Trash2, Briefcase, DollarSign, Globe, Users } from 'lucide-react';
+import { UserPlus, Search, Filter, MoreHorizontal, Phone, Mail, Edit, Trash2, Briefcase, DollarSign, Globe, Users, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,27 +13,164 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { config } from '@/components/CustomComponents/config';
 
-const LeadForm = ({ open, setOpen, lead, onSave }) => {
+const LeadForm = ({ open, setOpen, lead, onSave ,getAllLeads}) => {
   const { employees } = useData();
   const [formData, setFormData] = useState(
-    lead || { name: '', contact: '', email: '', phone: '', status: 'Cold', value: '', source: '', assignedTo: '', lastContact: new Date().toISOString().slice(0,10), nextFollowUp: '' }
+    lead || {_id:'', companyName: '', contactPerson: '', contactEmail: '', contactPhone: '', status: '',statusId:'', estimatedValue: '', source: '', employee:'',assignedTo:'', lastContact: new Date().toISOString().slice(0,10), nextFollowUp: '' }
   );
-
+  const [Data,SetData] = useState([])
+useEffect(()=>{
+if(lead){
+setFormData({
+   _id: lead._id,
+   companyName: lead.companyName,
+   contactPerson: lead.contactPerson,
+   contactEmail: lead.contactEmail,
+   contactPhone: lead.contactPhone,
+   status: lead.statusId.statusName,
+   statusId: lead.statusId._id,
+   estimatedValue: lead.estimatedValue,
+   source: lead.source,
+   employee: lead.assignedTo.name,
+   assignedTo: lead.assignedTo._id,
+   lastContact: new Date().toISOString().slice(0, 10),
+   nextFollowUp: lead.nextFollowUp.split('T')[0] })
+}
+},[lead])
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+const handleSelectChange = (id, name, key, value) => {
+  if (key && name) {
+    setFormData(prev => ({
+      ...prev,
+      [id]: key,    
+      [name]: value 
+    }));
+    SetData([]); // clear Data once
+  }
+};
 
+  const getEmployeeList = async () => {
+      try {
+         SetData([]); // clear Data once
+        let url = config.Api + "Employee/getAllEmployees/";
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
+  
+        if (!response.ok) {
+          throw new Error('Failed to get State');
+        }
+  
+        const result = await response.json();
+        SetData(result)
+        // setState(result)
+        // setFilteredData(result)
+      } catch (error) {
+        console.error('Error:', error);
+        throw error;
+      }
+    }
+
+ const getLeadStatusList = async () => {
+      try {
+         SetData([]); // clear Data once
+        let url = config.Api + "LeadStatus/getAllLeadStatus/";
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
+  
+        if (!response.ok) {
+          throw new Error('Failed to get State');
+        }
+  
+        const result = await response.json();
+        SetData(result)
+        // setState(result)
+        // setFilteredData(result)
+      } catch (error) {
+        console.error('Error:', error);
+        throw error;
+      }
+    }
+  const createLead = async (data) => {
+    try {
+      let url = config.Api + "Lead/createLead/";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get State');
+      }
+
+      SetData([])
+      getAllLeads()
+      // setFilteredData(result)
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
+    const updateLead = async (data) => {
+    try {
+      let url = config.Api + "Lead/updateLead/";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get State');
+      }
+
+      SetData([])
+      getAllLeads()
+      // setFilteredData(result)
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave({ ...formData, value: parseFloat(formData.value) });
+    // onSave({ ...formData, estimatedValue: parseFloat(formData.estimatedValue) });
+    // createLead({ ...formData, estimatedValue: parseFloat(formData.estimatedValue) })
+    if (formData._id) {
+      updateLead({ ...formData, estimatedValue: parseFloat(formData.estimatedValue) ,_id:formData._id});
+      toast({
+        title: 'Lead Updated',
+        description: "Lead has been updated successfully.",
+      });
+    } else {
+      createLead({ ...formData, estimatedValue: parseFloat(formData.estimatedValue) });
+      toast({
+        title: 'Lead Added',
+        description: `${formData.name} has been added to the system.`,
+      });
+    }
     setOpen(false);
-  };
+  };  
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -46,14 +183,76 @@ const LeadForm = ({ open, setOpen, lead, onSave }) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
-            <div><Label>Company Name</Label><Input name="name" value={formData.name} onChange={handleChange} placeholder="e.g., Acme Corp" required className="bg-white/5" /></div>
-            <div><Label>Contact Person</Label><Input name="contact" value={formData.contact} onChange={handleChange} placeholder="e.g., John Doe" required className="bg-white/5" /></div>
-            <div><Label>Email</Label><Input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="e.g., john@acme.com" required className="bg-white/5" /></div>
-            <div><Label>Phone</Label><Input name="phone" value={formData.phone} onChange={handleChange} placeholder="e.g., +1 555-1234" required className="bg-white/5" /></div>
-            <div><Label>Status</Label><Select name="status" value={formData.status} onValueChange={(v) => handleSelectChange('status', v)}><SelectTrigger className="bg-white/5"><SelectValue/></SelectTrigger><SelectContent className="glass-effect"><SelectItem value="Hot">Hot</SelectItem><SelectItem value="Warm">Warm</SelectItem><SelectItem value="Cold">Cold</SelectItem><SelectItem value="Qualified">Qualified</SelectItem><SelectItem value="Lost">Lost</SelectItem></SelectContent></Select></div>
-            <div><Label>Lead Value ($)</Label><Input name="value" type="number" value={formData.value} onChange={handleChange} placeholder="e.g., 50000" required className="bg-white/5" /></div>
+            <div><Label>Company Name</Label><Input name="companyName" value={formData.companyName} onChange={handleChange} placeholder="e.g., Acme Corp" required className="bg-white/5" /></div>
+            <div><Label>Contact Person</Label><Input name="contactPerson" value={formData.contactPerson} onChange={handleChange} placeholder="e.g., John Doe" required className="bg-white/5" /></div>
+            <div><Label>Email</Label><Input name="contactEmail" type="email" value={formData.contactEmail} onChange={handleChange} placeholder="e.g., john@acme.com" required className="bg-white/5" /></div>
+            <div><Label>Phone</Label><Input name="contactPhone" value={formData.contactPhone} onChange={handleChange} placeholder="e.g., +1 555-1234" required className="bg-white/5" /></div>
+            <div><Label>Status</Label>
+            <Select
+                              name="status"
+                              value={formData.statusId} // store only _id
+                              onOpenChange={async (open) => {
+                                if (open && (!Data || Data.length === 0)) {
+                                  await getLeadStatusList();
+                                }
+                              }}
+                              onValueChange={(id) => {
+                                if (!id) return;
+                                const dept = Data.find(d => d._id === id);
+                                if (dept) {
+                                  handleSelectChange('statusId', 'status', dept._id, dept.statusName);
+                                }
+                              }}
+                              // required
+                            >
+                              <SelectTrigger className="glass-effect border-white/10">
+                                <SelectValue placeholder="Select Status" >
+                                  {formData.status}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent className="glass-effect border-white/10 text-white">
+                                {(Data || []).map((dept) => (
+                                  <SelectItem key={dept._id} value={dept._id} className="hover:bg-white/10">
+                                    {dept.statusName}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+            </div>
+            <div><Label>Lead Value ($)</Label><Input name="estimatedValue" type="number" value={formData.estimatedValue} onChange={handleChange} placeholder="e.g., 50000" required className="bg-white/5" /></div>
             <div><Label>Source</Label><Input name="source" value={formData.source} onChange={handleChange} placeholder="e.g., Website" required className="bg-white/5" /></div>
-            <div><Label>Assigned To</Label><Select name="assignedTo" value={formData.assignedTo} onValueChange={(v) => handleSelectChange('assignedTo', v)}><SelectTrigger className="bg-white/5"><SelectValue placeholder="Select Employee"/></SelectTrigger><SelectContent className="glass-effect">{employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Assigned To</Label>
+             <Select
+                              name="employee"
+                              value={formData.assignedTo} // store only _id
+                              onOpenChange={async (open) => {
+                                if (open && (!Data || Data.length === 0)) {
+                                  await getEmployeeList();
+                                }
+                              }}
+                              onValueChange={(id) => {
+                                if (!id) return;
+                                const dept = Data.find(d => d._id === id);
+                                if (dept) {
+                                  handleSelectChange('assignedTo', 'employee', dept._id, dept.name);
+                                }
+                              }}
+                              // required
+                            >
+                              <SelectTrigger className="glass-effect border-white/10">
+                                <SelectValue placeholder="Select Employee" >
+                                  {formData.employee}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent className="glass-effect border-white/10 text-white">
+                                {(Data || []).map((dept) => (
+                                  <SelectItem key={dept._id} value={dept._id} className="hover:bg-white/10">
+                                    {dept.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+            </div>
             <div><Label>Next Follow-up</Label><Input name="nextFollowUp" type="date" value={formData.nextFollowUp} onChange={handleChange} className="bg-white/5" /></div>
           </div>
           <DialogFooter>
@@ -67,26 +266,87 @@ const LeadForm = ({ open, setOpen, lead, onSave }) => {
 };
 
 const LeadsPage = () => {
-  const { leads, employees, addLead, updateLead, deleteLead } = useData();
+  const { deleteLead } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
+  const [leads,setLeads] = useState([])
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-
+ const fileInputRef = useRef(null);
   const filteredLeads = useMemo(() => leads.filter(lead => {
-    const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.contact.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = lead.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         lead.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         lead.contactEmail.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || lead.status.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
   }), [leads, searchTerm, statusFilter]);
+  const [loading, setLoading] = useState(false);
 
+const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setLoading(true);
+
+    const excelData = new FormData();
+    excelData.append('file', file);
+
+    try {
+        let url = config.Api + "importLeadsExcel/";
+      const response = await fetch(url, {
+        method: 'POST',
+        body: excelData,
+      });
+
+      const data = await response.json();
+      if (res.ok) {
+        alert('Leads imported successfully');
+      } else {
+        alert('Failed to import leads: ' + data.message);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Error importing leads');
+    } finally {
+      setLoading(false);
+      e.target.value = null; // reset file input
+    }
+  };
+
+  
+  const handleImportClick = () => {
+    fileInputRef.current.click(); // trigger hidden input
+  };
   const handleAddLead = () => {
     setSelectedLead(null);
     setIsFormOpen(true);
   };
+  useEffect(()=>{
+    getAllLeads()
+  },[])
+  const getAllLeads = async () => {
+    try {
+      let url = config.Api + "Lead/getAllLeads/";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
 
+      if (!response.ok) {
+        throw new Error('Failed to get State');
+      }
+
+      const result = await response.json();
+      setLeads(result.leads)
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
   const handleEditLead = (lead) => {
     setSelectedLead(lead);
     setIsFormOpen(true);
@@ -98,8 +358,8 @@ const LeadsPage = () => {
   };
 
   const confirmDelete = () => {
-    deleteLead(selectedLead.id);
-    toast({ title: "Lead Deleted", description: `"${selectedLead.name}" has been deleted.` });
+    deleteLead(selectedLead._id);
+    toast({ title: "Lead Deleted", description: `"${selectedLead.companyName}" has been deleted.` });
     setIsConfirmOpen(false);
     setSelectedLead(null);
   };
@@ -107,17 +367,18 @@ const LeadsPage = () => {
   const handleSaveLead = (leadData) => {
     if (selectedLead) {
       updateLead({ ...leadData, id: selectedLead.id });
-      toast({ title: "Lead Updated", description: `"${leadData.name}" has been updated.` });
+      toast({ title: "Lead Updated", description: `"${leadData.companyName}" has been updated.` });
     } else {
-      addLead(leadData);
-      toast({ title: "Lead Added", description: `"${leadData.name}" has been created.` });
+      createLead(leadData);
+      toast({ title: "Lead Added", description: `"${leadData.companyName}" has been created.` });
     }
   };
 
   const handleContactLead = (lead, method) => {
     toast({
       title: `Simulating ${method} Action`,
-      description: `Contacting ${lead.contact} from ${lead.name} via ${method}.`,
+      // description: `Contacting ${lead.contactPerson} from ${lead.companyName} via ${method}.`,
+      description: "This feature is not yet enabled",
     });
   };
 
@@ -133,14 +394,14 @@ const LeadsPage = () => {
     <>
       <Helmet>
         <title>Lead Management - ENIS-HRMS</title>
-        <meta name="description" content="Comprehensive lead management system with pipeline tracking, contact management, and sales analytics for business growth." />
+        <meta name="description" content="Comprehensive lead management system with pipeline tracking, contactPerson management, and sales analytics for business growth." />
       </Helmet>
 
       <AnimatePresence>
-        {isFormOpen && <LeadForm open={isFormOpen} setOpen={setIsFormOpen} lead={selectedLead} onSave={handleSaveLead} />}
+        {isFormOpen && <LeadForm open={isFormOpen} setOpen={setIsFormOpen} lead={selectedLead} onSave={handleSaveLead} getAllLeads={getAllLeads}/>}
       </AnimatePresence>
       <AnimatePresence>
-        {isConfirmOpen && <ConfirmationDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete} title={`Delete Lead: ${selectedLead?.name}`} description="This action cannot be undone." />}
+        {isConfirmOpen && <ConfirmationDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete} title={`Delete Lead: ${selectedLead?.companyName}`} description="This action cannot be undone." />}
       </AnimatePresence>
 
       <div className="space-y-8">
@@ -149,6 +410,19 @@ const LeadsPage = () => {
             <h1 className="text-3xl font-bold text-white">Lead Management</h1>
             <p className="text-gray-400">Track and manage sales leads from all channels.</p>
           </div>
+<div>
+      <Button onClick={handleImportClick} className="bg-gradient-to-r from-red-500 to-white-600">
+        <FileText className="w-4 h-4 mr-2" />
+        {loading ? 'Importing...' : 'Import Leads'}
+      </Button>
+      <input
+        type="file"
+        accept=".xlsx, .xls"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        style={{ display: 'none' }} // hide input
+      />
+    </div>
           <Button onClick={handleAddLead} className="bg-gradient-to-r from-blue-500 to-purple-600"><UserPlus className="w-4 h-4 mr-2" />Add Lead</Button>
         </motion.div>
 
@@ -180,7 +454,7 @@ const LeadsPage = () => {
           <Card className="metric-card"><CardContent className="p-6"><p className="text-gray-400">Total Leads</p><h3 className="text-3xl font-bold">{leads.length}</h3></CardContent></Card>
           <Card className="metric-card"><CardContent className="p-6"><p className="text-gray-400">Hot Leads</p><h3 className="text-3xl font-bold">{leads.filter(l => l.status === 'Hot').length}</h3></CardContent></Card>
           <Card className="metric-card"><CardContent className="p-6"><p className="text-gray-400">Qualified</p><h3 className="text-3xl font-bold">{leads.filter(l => l.status === 'Qualified').length}</h3></CardContent></Card>
-          <Card className="metric-card"><CardContent className="p-6"><p className="text-gray-400">Pipeline Value</p><h3 className="text-3xl font-bold">${leads.reduce((s, l) => s + l.value, 0).toLocaleString()}</h3></CardContent></Card>
+          <Card className="metric-card"><CardContent className="p-6"><p className="text-gray-400">Pipeline Value</p><h3 className="text-3xl font-bold">${leads.reduce((s, l) => s + l.estimatedValue, 0).toLocaleString()}</h3></CardContent></Card>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
@@ -194,14 +468,13 @@ const LeadsPage = () => {
                   </thead>
                   <tbody>
                     {filteredLeads.map(lead => {
-                      const assignee = employees.find(e => e.id === lead.assignedTo);
                       return (
                         <tr key={lead.id}>
-                          <td><div className="font-medium text-white">{lead.name}</div><div className="text-xs text-gray-400">{lead.source}</div></td>
-                          <td><div className="text-white">{lead.contact}</div><div className="text-xs text-gray-400">{lead.email}</div></td>
-                          <td className="text-green-400">${lead.value.toLocaleString()}</td>
+                          <td><div className="font-medium text-white">{lead.companyName}</div><div className="text-xs text-gray-400">{lead.source}</div></td>
+                          <td><div className="text-white">{lead.contactPerson}</div><div className="text-xs text-gray-400">{lead.contactEmail}</div></td>
+                          <td className="text-green-400">${lead.estimatedValue.toLocaleString()}</td>
                           <td><span className={`status-badge ${getStatusColor(lead.status)}`}>{lead.status}</span></td>
-                          <td>{assignee?.name || 'Unassigned'}</td>
+                          <td>{lead?.assignedTo?.name || 'Unassigned'}</td>
                           <td>
                             <div className="flex gap-1">
                               <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleContactLead(lead, 'Email')}><Mail className="w-4 h-4"/></Button>
