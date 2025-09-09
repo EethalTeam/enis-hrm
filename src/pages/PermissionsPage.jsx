@@ -241,9 +241,9 @@ const handleSelectChange = (id, name, key, value) => {
                                                                                       </SelectContent>
                                                                                     </Select>
           <div className="grid grid-cols-2 gap-4">
-            <div><Label>Date</Label><Input type="date" name="permissionDate" value={formData.permissionDate} onChange={handleChange} required className="bg-white/5" /></div>
-            <div><Label>From Time</Label><Input type="time" name="fromTime" value={formData.fromTime} onChange={handleChange} required className="bg-white/5" /></div>
-            <div><Label>To Time</Label><Input type="time" name="toTime" value={formData.toTime} onChange={handleChange} required className="bg-white/5" /></div>
+            <div><Label>Date</Label><Input type="date" name="permissionDate" value={formData.permissionDate} onChange={handleChange} required className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
+            <div><Label>From Time</Label><Input type="time" name="fromTime" value={formData.fromTime} onChange={handleChange} required className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
+            <div><Label>To Time</Label><Input type="time" name="toTime" value={formData.toTime} onChange={handleChange} required className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
             <div><Label>Total Hours</Label><Input type="number" name="totalHours" value={formData.totalHours} onChange={handleChange} placeholder="e.g., 2" required className="bg-white/5" disabled/></div>
           </div>
           <Input name="reason" value={formData.reason} onChange={handleChange} placeholder="Reason for permission" required className="bg-white/5" />
@@ -266,7 +266,11 @@ const PermissionsPage = () => {
   const [ Permissions,setPermissions]=useState([])
 
     useEffect(()=>{
-      getAllPermissions()
+      let api=false
+      if(Permissions.length === 0 && !api){
+getAllPermissions()
+      }
+      api=true
     },[])
       const getAllPermissions = async () => {
         try {

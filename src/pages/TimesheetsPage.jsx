@@ -50,7 +50,7 @@ const TimesheetForm = ({ open, setOpen, entry, onSave }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="date">Date</Label>
-              <Input id="date" name="date" type="date" value={formData.date} onChange={handleChange} required className="bg-white/5" />
+              <Input id="date" name="date" type="date" value={formData.date} onChange={handleChange} required className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" />
             </div>
             <div>
               <Label htmlFor="hours">Hours</Label>

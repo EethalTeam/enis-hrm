@@ -7,21 +7,65 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/components/ui/use-toast';
+import socket from '@/socket/Socket';
+import { config } from '@/components/CustomComponents/config';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const AttendanceActions = () => {
-  const { attendanceStatus, setAttendanceStatus } = useData();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
-
-  const [elapsed, setElapsed] = useState(localStorage.getItem('attendanceElapsed')||"00:00:00");
+  // const [attendanceStatus, setAttendanceStatus] = useState({ status: 'out', break: false });
+    const { attendanceStatus, setAttendanceStatus } = useData();
+  const [elapsed, setElapsed] = useState(localStorage.getItem('attendanceElapsed') || "00:00:00");
   const intervalRef = useRef(null);
+// let isRefreshing = false;
 
-  // Parse hh:mm:ss to total seconds
+// document.addEventListener('keydown', (event) => {
+//   if (event.key === 'F5' || 
+//       (event.ctrlKey && event.key === 'r') || 
+//       (event.metaKey && event.key === 'r')) {
+//     isRefreshing = true;
+//     console.log('🔄 Refresh keyboard shortcut detected');
+//   }
+// });
+
+window.addEventListener('load', () => {
+  const entries = performance.getEntriesByType('navigation');
+  const navigationType = entries.length > 0 ? entries[0].type : performance.navigation.type;
+  if(navigationType !== 'reload'){
+    socket.emit('tabClosing', { employeeId: user._id });
+    localStorage.removeItem('hrms_user');
+    localStorage.removeItem('attendanceElapsed')
+    localStorage.setItem('hrms_attendance_status',{ status: 'out', break: false })
+  }
+});
+
+// let wasVisible = true;
+// document.addEventListener('visibilitychange', () => {
+//   if (document.visibilityState === 'visible') {
+//     wasVisible = true;
+//   } else {
+//     wasVisible = false;
+//   }
+// });
+
+// let socketWasConnected = false;
+// socket.on('connect', () => {
+//   if (socketWasConnected) {
+//     isRefreshing = true;
+//   }
+//   socketWasConnected = true;
+// });
+
+// window.addEventListener('beforeunload', (event) => {
+//   isUnloading = true;
+// });
+
   const parseTime = (timeStr) => {
     const [hh, mm, ss] = timeStr.split(':').map(Number);
     return hh * 3600 + mm * 60 + ss;
   };
 
-  // Format seconds to hh:mm:ss
   const formatTime = (seconds) => {
     const hrs = String(Math.floor(seconds / 3600)).padStart(2, '0');
     const mins = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
@@ -29,7 +73,6 @@ const AttendanceActions = () => {
     return `${hrs}:${mins}:${secs}`;
   };
 
-  // Timer logic
   useEffect(() => {
     if (attendanceStatus.status === 'in' && !attendanceStatus.break) {
       // Get last saved time from localStorage
@@ -52,7 +95,43 @@ const AttendanceActions = () => {
     return () => clearInterval(intervalRef.current);
   }, [attendanceStatus.status, attendanceStatus.break]);
 
+
+  const DayIn = async () => {
+  try {
+    let url = config.Api + "Attendance/dayIn/";
+     const res = await apiRequest("Attendance/dayIn/", {
+      method: "POST",
+      body: JSON.stringify({ employeeId: user._id })
+    });
+    const data = res;
+  } catch (err) {
+    console.error("Failed to fetch notifications:", err);
+  }
+};
+function timeToDecimalHours(timeStr) {
+  const [hh, mm, ss] = timeStr.split(":").map(Number);
+
+  const totalSeconds = hh * 3600 + mm * 60 + ss;
+  const hours = totalSeconds / 3600;
+
+  return parseFloat(hours.toFixed(2)); // e.g., 0.02
+}
+
+  const DayOut = async () => {
+  try {
+    let url = config.Api + "Attendance/dayOut/";
+     const res = await apiRequest("Attendance/dayOut/", {
+      method: "POST",
+      body: JSON.stringify({ employeeId: user._id ,workedHours:timeToDecimalHours(elapsed)})
+    });
+    const data = res;
+  } catch (err) {
+    console.error("Failed to fetch notifications:", err);
+  }
+};
+
   const handleDayIn = () => {
+    DayIn()
     setAttendanceStatus({ status: 'in', break: false });
     toast({ title: "Day In", description: "You've successfully clocked in for the day." });
     setElapsed("00:00:00");
@@ -60,6 +139,7 @@ const AttendanceActions = () => {
   };
 
   const handleDayOut = () => {
+    DayOut()
     setAttendanceStatus({ status: 'out', break: false });
     toast({ title: "Day Out", description: "You've successfully clocked out. Have a great day!" });
     setElapsed("00:00:00");
@@ -106,26 +186,125 @@ const AttendanceActions = () => {
 
 const Header = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
-  const { notifications, updateNotification, updatePermission, attendanceStatus } = useData();
   const { toast } = useToast();
 
-  const userNotifications = notifications.filter(n => n.recipientId === user.id && !n.read);
+  const [notifications, setNotifications] = useState([]);
 
-  const handleNotificationAction = (notification, action) => {
-    if (notification.type === 'permission_request') {
-      const newStatus = action === 'approve' ? 'Approved' : 'Rejected';
-      updatePermission({ id: notification.entityId, status: newStatus });
-      updateNotification({ ...notification, read: true });
-      toast({ title: `Permission ${newStatus}`, description: `The request has been ${newStatus.toLowerCase()}.` });
+    const userNotifications = notifications.filter(n => n.toEmployeeId === user._id && n.status === 'unseen');
+  //    useEffect(() => {
+  //   if (!user?._id) return;
+
+  //   // Join employee room
+  //   socket.emit("joinRoom", { employeeId: user._id });
+
+  //   // Send heartbeat every 15 seconds
+  //   const heartbeatInterval = setInterval(() => {
+  //     socket.emit("heartbeat", { employeeId: user._id });
+  //   }, 15000); // 15s
+
+  //   // Handle tab close
+  //   const handleTabClose = () => {
+  //     socket.emit("tabClosed", { employeeId: user._id });
+  //   };
+  //   window.addEventListener("beforeunload", handleTabClose);
+
+  //   // Optional: handle forced logout from server
+  //   socket.on("forceLogout", ({ message }) => {
+  //     alert(message); // or call logout function from AuthContext
+  //     // logout(); <-- if you want to auto logout in frontend too
+  //   });
+
+  //   return () => {
+  //     clearInterval(heartbeatInterval);
+  //     window.removeEventListener("beforeunload", handleTabClose);
+  //     socket.off("forceLogout");
+  //   };
+  // }, [user?._id]);
+// useEffect(() => {
+//   // Join the employee room
+//   socket.emit("joinRoom", { employeeId: user._id });
+
+//   // Listen to server event for new notifications
+//   socket.on("receiveNotification", () => {
+//     // Whenever a new notification is triggered, fetch all notifications again
+//     fetchNotifications();
+//   });
+
+//   // Cleanup on unmount
+//   return () => {
+//     socket.off("receiveNotification");
+//   };
+// }, [user._id]);
+
+// ---------------- Fetch function ----------------
+const fetchNotifications = async () => {
+  try {
+    let url = config.Api + "Notifications/getNotifications/";
+     const res = await apiRequest("Notifications/getNotifications", {
+      method: "POST",
+      body: JSON.stringify({ employeeId: user._id })
+    });
+    const data = res;
+    if (data?.data) setNotifications(data.data);
+  } catch (err) {
+    console.error("Failed to fetch notifications:", err);
+  }
+};
+
+// Call once on mount
+useEffect(() => {
+  fetchNotifications();
+}, [user._id]);
+
+const markAsRead = async (notificationId) => {
+  try {
+    let url = config.Api + "Notifications/markAsSeen";
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notificationId }),
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      // Re-fetch updated notifications
+      fetchNotifications();
+      toast({ title: "Marked as read", description: "Notification marked as seen." });
+    } else {
+      toast({ title: "Error", description: data.message, variant: "destructive" });
     }
-  };
+  } catch (err) {
+    console.error("Error marking notification:", err);
+    toast({ title: "Error", description: "Failed to mark notification as seen.", variant: "destructive" });
+  }
+};
 
-  const markAsRead = (notificationId) => {
-    updateNotification({ id: notificationId, read: true });
-  };
+const handleNotificationAction = async (notification, action) => {
+  try {
+    let url = config.Api + "Notifications/updateNotificationStatus";
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notificationId: notification._id, action }),
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      // Re-fetch updated notifications
+      fetchNotifications();
+      toast({ title: `Request ${action}d`, description: `The request has been ${action}d.` });
+    } else {
+      toast({ title: "Error", description: data.message, variant: "destructive" });
+    }
+  } catch (err) {
+    console.error("Error updating notification:", err);
+    toast({ title: "Error", description: "Failed to update notification.", variant: "destructive" });
+  }
+};
+
 
   return (
-    <motion.header 
+    <motion.header
       className="glass-effect border-b border-white/10 px-4 py-4"
       initial={{ y: -50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -161,21 +340,21 @@ const Header = ({ onMenuClick }) => {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 glass-effect border-white/10">
+            <DropdownMenuContent align="end" className="w-80 glass-effect border-white/10" style={{ overflowY: 'auto', height: '300px', scrollbarWidth: 'none' }}>
               <div className="p-2 font-semibold">Notifications</div>
               <DropdownMenuSeparator />
               {userNotifications.length > 0 ? (
                 userNotifications.map(notification => (
-                  <div key={notification.id} className="px-2 py-1.5 text-sm">
+                  <div key={notification._id} className="px-2 py-1.5 text-sm">
                     <p className="mb-2">{notification.message}</p>
-                    {notification.type === 'permission_request' && notification.metadata.requesterId !== user.id && (
+                    {(notification.type === 'permission_request' || notification.type === 'leave-request') && notification.fromEmployeeId !== user._id && notification.status !=='approved' && notification.status !=='rejected' && (
                       <div className="flex gap-2 mt-1">
                         <Button size="sm" className="bg-green-500/80 hover:bg-green-500 h-7" onClick={() => handleNotificationAction(notification, 'approve')}><Check className="w-4 h-4 mr-1"/>Approve</Button>
                         <Button size="sm" className="bg-red-500/80 hover:bg-red-500 h-7" onClick={() => handleNotificationAction(notification, 'reject')}><X className="w-4 h-4 mr-1"/>Reject</Button>
                       </div>
                     )}
-                     {notification.type !== 'permission_request' && (
-                       <Button size="sm" variant="outline" className="h-7" onClick={() => markAsRead(notification.id)}>Mark as read</Button>
+                     {(notification.type !== 'permission-request' && notification.type !== 'leave-request') && (
+                       <Button size="sm" variant="outline" className="h-7" onClick={() => markAsRead(notification._id)}>Mark as read</Button>
                      )}
                   </div>
                 ))

@@ -32,6 +32,7 @@ import TaskStatusPage from '@/pages/TaskStatusPage';
 import TaskPriorityPage from '@/pages/TaskPriorityPage';
 import LeaveTypePage from '@/pages/LeaveTypePage';
 import LeaveStatusPage from '@/pages/LeaveStatusPage';
+import HolidayPage from '@/pages/HolidayPage';
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -84,6 +85,7 @@ export default function AppRouter() {
                   <Route path="settings/taskPriority" element={<TaskPriorityPage />} />
                   <Route path="settings/leaveType" element={<LeaveTypePage />} />
                   <Route path="settings/leaveStatus" element={<LeaveStatusPage />} />
+                  <Route path="settings/holiday" element={<HolidayPage />} />
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Routes>
               </Layout>

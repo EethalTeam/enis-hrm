@@ -103,6 +103,7 @@ export const ALL_MENU_ITEMS = [
       { label: 'Task Priority Master', path: '/settings/taskPriority', id: 'settings.taskPriority' },
       { label: 'Leave Type Master', path: '/settings/leaveType', id: 'settings.leaveType' },
       { label: 'Leave Status Master', path: '/settings/leaveStatus', id: 'settings.leaveStatus' },
+      { label: 'Holiday Master', path: '/settings/holiday', id: 'settings.holiday' },
       { label: 'Notifications', path: '/settings/notifications', id: 'settings.notifications' },
       { label: 'Appearance', path: '/settings/appearance', id: 'settings.appearance' },
     ]

@@ -158,7 +158,7 @@ export const DataProvider = ({ children }) => {
   } = useCrud('hrms_roles', initialData.roles);
 
   const [menuPermissions, setMenuPermissions] = useState(() => getInitialData('hrms_permissions', initialData.menuPermissions));
-  const [attendanceStatus, setAttendanceStatus] = useState(() => getInitialData('hrms_attendance_status', { status: 'out', break: false }));
+  const [attendanceStatus, setAttendanceStatus] = useState(() => getInitialData('hrms_attendance_status', { status: 'out', break: false }) || { status: 'out', break: false });
 
   useEffect(() => {
     saveData('hrms_attendance_status', attendanceStatus);

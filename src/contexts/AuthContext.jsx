@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { config } from '@/components/CustomComponents/config';
+import socket  from '@/socket/Socket';
 
 const AuthContext = createContext();
 
@@ -108,11 +109,15 @@ export const AuthProvider = ({ children }) => {
         description: data.message || "Login failed",
       });
       throw new Error(data.message || "Login failed");
-    }
+    }else{
+       socket.connect();
+      socket.emit("joinRoom", { employeeId:data.employee._id });
  toast({
           title: "Login Successful",
           description: `Welcome back, ${data.employee.name}!`,
         });
+    }
+
 
     // store token in localStorage for later API calls
     if (data.token) {
@@ -120,39 +125,50 @@ export const AuthProvider = ({ children }) => {
     }
     setUser(data.employee);
 localStorage.setItem('hrms_user', JSON.stringify(data.employee));
+localStorage.setItem('userId', json.stringify(data.employee._id))
 localStorage.setItem('hrms_userEmail', JSON.stringify(data.employee.email));
-     return { success: true };
+     return {...data.employee, success: true };
   } catch (error) {
     console.error("Login Error:", error.message);
     throw error;
   }
 };
 
-  const logout = async() => {
-      try {
-        let email=JSON.parse(localStorage.getItem("hrms_userEmail"));
+const logout = async () => {
+  try {
+    let email = JSON.parse(localStorage.getItem("hrms_user"));
     let url = config.Api + "Employee/logout/";
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({email}),
-          });
-        const data = await response.json();
-   setUser(null);
-    // localStorage.removeItem('hrms_user');
-    localStorage.clear()
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email:email.email }),
+    });
+    
+    const data = await response.json();
+
+    // Clear user state and localStorage
+    setUser(null);
+    localStorage.clear();
+
+    // Disconnect socket
+    if (socket.connected) {
+      socket.disconnect();
+    }
+
     toast({
       title: "Logged Out",
       description: "You have been successfully logged out.",
     });
 
   } catch (error) {
-    console.error("Login Error:", error.message);
+    console.error("Logout Error:", error.message);
     throw error;
   }
-  };
+};
+
 
   const value = {
     user,

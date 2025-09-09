@@ -20,7 +20,7 @@ const LeadForm = ({ open, setOpen, lead, onSave ,getAllLeads}) => {
      const { user } = useAuth();
   const { employees } = useData();
   const [formData, setFormData] = useState(
-    lead || {_id:'', companyName: '', contactPerson: '', contactEmail: '', contactPhone: '', status: '',statusId:'', estimatedValue: '', source: '', employee:'',assignedTo:'', lastContact: new Date().toISOString().slice(0,10), nextFollowUp: '' }
+    lead || {_id:'', companyName: '', contactPerson: '', contactEmail: '', contactPhone: '', status: '',statusId:'', estimatedValue: '', source: '', employee:'',assignedTo:'', lastContact: new Date().toISOString().slice(0,10), nextFollowUp: '',notes:'' }
   );
   const [Data,SetData] = useState([])
 useEffect(()=>{
@@ -38,7 +38,10 @@ setFormData({
    employee: lead.assignedTo.name,
    assignedTo: lead.assignedTo._id,
    lastContact: new Date().toISOString().slice(0, 10),
-   nextFollowUp: lead.nextFollowUp.split('T')[0] })
+   nextFollowUp: lead.nextFollowUp.split('T')[0] ,
+   notes:lead.notes
+  })
+  
 }
 },[lead])
   const handleChange = (e) => {
@@ -176,7 +179,7 @@ const handleSelectChange = (id, name, key, value) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="glass-effect border-white/10 text-white max-w-2xl">
+      <DialogContent className="glass-effect border-white/10 text-white max-w-2xl" style={{ overflowY: 'auto', height: '90vh', scrollbarWidth: 'none' }}>
         <DialogHeader>
           <DialogTitle>{lead ? 'Edit Lead' : 'Add New Lead'}</DialogTitle>
           <DialogDescription className="text-gray-400">
@@ -185,10 +188,10 @@ const handleSelectChange = (id, name, key, value) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
-            <div><Label>Company Name</Label><Input name="companyName" value={formData.companyName} onChange={handleChange} placeholder="e.g., Acme Corp" required className="bg-white/5" /></div>
-            <div><Label>Contact Person</Label><Input name="contactPerson" value={formData.contactPerson} onChange={handleChange} placeholder="e.g., John Doe" required className="bg-white/5" /></div>
-            <div><Label>Email</Label><Input name="contactEmail" type="email" value={formData.contactEmail} onChange={handleChange} placeholder="e.g., john@acme.com" required className="bg-white/5" /></div>
-            <div><Label>Phone</Label><Input name="contactPhone" value={formData.contactPhone} onChange={handleChange} placeholder="e.g., +1 555-1234" required className="bg-white/5" /></div>
+            <div><Label>Company Name</Label><Input name="companyName" value={formData.companyName} onChange={handleChange} placeholder="e.g., Acme Corp" required className="bg-white/5" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}/></div>
+            <div><Label>Contact Person</Label><Input name="contactPerson" value={formData.contactPerson} onChange={handleChange} placeholder="e.g., John Doe" required className="bg-white/5" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}/></div>
+            <div><Label>Email</Label><Input name="contactEmail" type="email" value={formData.contactEmail} onChange={handleChange} placeholder="e.g., john@acme.com" required className="bg-white/5" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}/></div>
+            <div><Label>Phone</Label><Input name="contactPhone" value={formData.contactPhone} onChange={handleChange} placeholder="e.g., +1 555-1234" required className="bg-white/5" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}/></div>
             <div><Label>Status</Label>
             <Select
                               name="status"
@@ -212,7 +215,7 @@ const handleSelectChange = (id, name, key, value) => {
                                   {formData.status}
                                 </SelectValue>
                               </SelectTrigger>
-                              <SelectContent className="glass-effect border-white/10 text-white">
+                              <SelectContent className="glass-effect border-white/10 text-white" style={{ overflowY: 'auto', height: '250px', scrollbarWidth: 'none' }}>
                                 {(Data || []).map((dept) => (
                                   <SelectItem key={dept._id} value={dept._id} className="hover:bg-white/10">
                                     {dept.statusName}
@@ -221,8 +224,8 @@ const handleSelectChange = (id, name, key, value) => {
                               </SelectContent>
                             </Select>
             </div>
-            <div><Label>Lead Value ($)</Label><Input name="estimatedValue" type="number" value={formData.estimatedValue} onChange={handleChange} placeholder="e.g., 50000" required className="bg-white/5" /></div>
-            <div><Label>Source</Label><Input name="source" value={formData.source} onChange={handleChange} placeholder="e.g., Website" required className="bg-white/5" /></div>
+            <div><Label>Lead Value (₹)</Label><Input name="estimatedValue" type="number" value={formData.estimatedValue} onChange={handleChange} placeholder="e.g., 50000" required className="bg-white/5" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}/></div>
+            <div><Label>Source</Label><Input name="source" value={formData.source} onChange={handleChange} placeholder="e.g., Website" required className="bg-white/5" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}/></div>
             <div><Label>Assigned To</Label>
              <Select
                               name="employee"
@@ -232,6 +235,7 @@ const handleSelectChange = (id, name, key, value) => {
                                   await getEmployeeList();
                                 }
                               }}
+                              disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}
                               onValueChange={(id) => {
                                 if (!id) return;
                                 const dept = Data.find(d => d._id === id);
@@ -255,7 +259,8 @@ const handleSelectChange = (id, name, key, value) => {
                               </SelectContent>
                             </Select>
             </div>
-            <div><Label>Next Follow-up</Label><Input name="nextFollowUp" type="date" value={formData.nextFollowUp} onChange={handleChange} className="bg-white/5" /></div>
+            <div><Label>Next Follow-up</Label><Input name="nextFollowUp" type="date" value={formData.nextFollowUp} onChange={handleChange} className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
+            <div><Label>Notes</Label><Input name="notes" value={formData.notes} onChange={handleChange} placeholder="e.g., lead contacted and negotiated" className="bg-white/5" /></div>
           </div>
           <DialogFooter>
             <DialogClose asChild><Button type="button" variant="outline" className="border-white/10">Cancel</Button></DialogClose>

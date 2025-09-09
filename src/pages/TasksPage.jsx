@@ -24,7 +24,7 @@ const TaskForm = ({ open, setOpen, task, onSave,getAllTasks }) => {
   const [feedback,setFeedback] = useState('')
   const [ProgressMessage,setProgressMessage] = useState('')
   const [formData, setFormData] = useState(
-    task || {_id:'', taskName: '', description: '', taskPriority: '',taskPriorityId:'', taskStatus: '',taskStatusId:'', assignee: '',assignedTo:'',project:'', projectId: '', dueDate: '' }
+    task || {_id:'', taskName: '', description: '', taskPriority: '',taskPriorityId:'', taskStatus: '',taskStatusId:'', assignee: '',assignedTo:'',project:'', projectId: '', dueDate: '' ,createdBy:user._id}
   );
     const [Data,SetData] = useState([])
   useEffect(()=>{
@@ -458,7 +458,7 @@ const handleSubmit = (e) => {
           </div>
           <div>
              <Label htmlFor="dueDate" className="text-gray-300">Due Date</Label>
-             <Input disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} id="dueDate" name="dueDate" type="date" value={formData.dueDate} onChange={handleChange} className="bg-white/5 border-white/10" />
+             <Input disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} id="dueDate" name="dueDate" type="date" value={formData.dueDate} onChange={handleChange} className="bg-white/5 border-white/10 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" />
           </div>
           <DialogFooter>
             {(user.role === 'Super Admin' || user.role === 'Admin') &&<DialogClose asChild><Button type="button" variant="outline" className="border-white/10 hover:bg-white/10">Cancel</Button></DialogClose>}

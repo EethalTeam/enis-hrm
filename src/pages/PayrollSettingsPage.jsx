@@ -55,7 +55,7 @@ const PayrollComponentForm = ({ open, setOpen, component, onSave, componentType 
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent className="glass-effect border-white/10 text-white">
-                  <SelectItem value="fixed">Fixed Amount ($)</SelectItem>
+                  <SelectItem value="fixed">Fixed Amount (₹)</SelectItem>
                   <SelectItem value="percentage">Percentage (%)</SelectItem>
                 </SelectContent>
               </Select>

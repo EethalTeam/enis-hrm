@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const initialState = {
   _id: '',
+  code:'',
   name: '',
   email: '',
   password: '',
@@ -37,6 +38,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee,getAllEmployees }) => {
   const [formData, setFormData] = useState({
     _id: '',
     name: '',
+    code:'',
     email: '',
     password: '',
     designation: '',
@@ -69,6 +71,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee,getAllEmployees }) => {
       let employeeData={
          _id: employee._id,
     name: employee.name,
+    code:employee.code,
     email: employee.email,
     password: employee.password,
     designation: employee.designationName,
@@ -97,6 +100,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee,getAllEmployees }) => {
       setFormData({
         _id:'',
         name: '',
+        code:'',
         email: '',
         password: '',
         designation: '',
@@ -384,6 +388,10 @@ const handleSelectChange = (id, name, key, value) => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Employee Code</label>
+                <div className="relative"><User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="code" value={formData.code} onChange={handleChange} placeholder="e.g. EMP001" required className="pl-10 glass-effect border-white/10" /></div>
+              </div>
+              <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Full Name</label>
                 <div className="relative"><User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="name" value={formData.name} onChange={handleChange} placeholder="e.g. John Doe" required className="pl-10 glass-effect border-white/10" /></div>
               </div>
@@ -503,10 +511,10 @@ const handleSelectChange = (id, name, key, value) => {
                 <label className="text-sm font-medium text-gray-300">Joining Date</label>
                 <div className="relative">
                   {/* <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /> */}
-                  <Input name="joinDate" type="date" value={formData.joinDate} onChange={handleChange} required className="pl-10 glass-effect border-white/10" /></div>
+                  <Input name="joinDate" type="date" value={formData.joinDate} onChange={handleChange} required className="pl-10 glass-effect border-white/10 bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Annual Salary ($)</label>
+                <label className="text-sm font-medium text-gray-300">Annual Salary (₹)</label>
                 <div className="relative"><DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="salary" type="number" value={formData.salary} onChange={handleChange} placeholder="e.g. 75000" required className="pl-10 glass-effect border-white/10" /></div>
               </div>
               <div className="space-y-2">
