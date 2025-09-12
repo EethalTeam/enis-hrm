@@ -85,7 +85,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
   try {
-    let url = config.Api + "Employee/login/";
+    let url = config.Api + "/api/Employee/login/";
           const response = await fetch(url, {
             method: 'POST',
             headers: {
@@ -138,7 +138,7 @@ localStorage.setItem('hrms_userEmail', JSON.stringify(data.employee.email));
 const logout = async () => {
   try {
     let email = JSON.parse(localStorage.getItem("hrms_user"));
-    let url = config.Api + "Employee/logout/";
+    let url = config.Api + "/api/Employee/logout/";
     
     const response = await fetch(url, {
       method: 'POST',

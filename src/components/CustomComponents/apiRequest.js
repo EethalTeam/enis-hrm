@@ -22,7 +22,7 @@ const storedUser = JSON.parse(localStorage.getItem('hrms_user'));
     },
   };
   try {
-    const response = await fetch(config.Api + endpoint, finalOptions);
+    const response = await fetch(config.Api +"/api/"+ endpoint, finalOptions);
       if (!response.ok) {
         throw new Error('Failed to get datas');
       }
