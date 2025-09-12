@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { config } from '@/components/CustomComponents/config';
 import socket  from '@/socket/Socket';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const AuthContext = createContext();
 
@@ -169,12 +170,37 @@ const logout = async () => {
   }
 };
 
+// utils/getPermissions.js
+const getPermissionsByPath = async(path) => {
+  const roleName = user.role; // read role from localStorage
+  if (!roleName) return null;
+
+  try {
+      const res = await apiRequest("RoleBased/getPermissions", {
+      method: "POST",
+      body: JSON.stringify({ roleName, path }),
+    });
+
+    const data = res
+    if (data.success) {
+      return data.permissions;
+    } else {
+      console.warn("No permissions found:", data.message);
+      return null;
+    }
+  } catch (err) {
+    console.error("Error fetching permissions:", err);
+    return null;
+  }
+}
+
 
   const value = {
     user,
     login,
     logout,
-    loading
+    loading,
+    getPermissionsByPath
   };
 
   return (

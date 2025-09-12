@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { config } from '@/components/CustomComponents/config';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const TaskForm = ({ open, setOpen, task, onSave,getAllTasks }) => {
    const { user } = useAuth();
@@ -65,21 +66,12 @@ const handleSelectChange = (id, name, key, value) => {
   const getEmployeeList = async () => {
       try {
          SetData([]); // clear Data once
-        let url = config.Api + "Employee/getAllEmployees/";
-        const response = await fetch(url, {
+         const response = await apiRequest("Employee/getAllEmployees/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({}),
         });
   
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
-        SetData(result)
+        SetData(response)
         // setState(result)
         // setFilteredData(result)
       } catch (error) {
@@ -91,21 +83,12 @@ const handleSelectChange = (id, name, key, value) => {
  const getTaskStatusList = async () => {
       try {
          SetData([]); // clear Data once
-        let url = config.Api + "TaskStatus/getAllTaskStatus/";
-        const response = await fetch(url, {
+         const response = await apiRequest("TaskStatus/getAllTaskStatus/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({}),
         });
   
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
-        SetData(result)
+        SetData(response)
         // setState(result)
         // setFilteredData(result)
       } catch (error) {
@@ -116,21 +99,12 @@ const handleSelectChange = (id, name, key, value) => {
  const getProjectList = async () => {
       try {
          SetData([]); // clear Data once
-        let url = config.Api + "Project/getAllProjects/";
-        const response = await fetch(url, {
+         const response = await apiRequest("Project/getAllProjects/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({}),
         });
   
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
-        SetData(result)
+        SetData(response)
         // setState(result)
         // setFilteredData(result)
       } catch (error) {
@@ -141,21 +115,12 @@ const handleSelectChange = (id, name, key, value) => {
  const getTaskPriorityList = async () => {
       try {
          SetData([]); // clear Data once
-        let url = config.Api + "TaskPriority/getAllTaskPriority/";
-        const response = await fetch(url, {
+         const response = await apiRequest("TaskPriority/getAllTaskPriority/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({}),
         });
   
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
-        SetData(result)
+        SetData(response)
         // setState(result)
         // setFilteredData(result)
       } catch (error) {
@@ -165,18 +130,10 @@ const handleSelectChange = (id, name, key, value) => {
     }
   const createTask = async (data) => {
     try {
-      let url = config.Api + "Task/createTask/";
-      const response = await fetch(url, {
+       const response = await apiRequest("Task/createTask/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
 
       SetData([])
       getAllTasks()
@@ -188,18 +145,10 @@ const handleSelectChange = (id, name, key, value) => {
   }
     const updateTask = async (data) => {
     try {
-      let url = config.Api + "Task/updateTask/";
-      const response = await fetch(url, {
+       const response = await apiRequest("Task/updateTask/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
 
       SetData([])
       getAllTasks()
@@ -224,23 +173,14 @@ const handleSelectChange = (id, name, key, value) => {
           });
           return ;
       }
-      let url = config.Api + "Task/updateTaskStatus/";
-      const response = await fetch(url, {
+       const response = await apiRequest("Task/updateTaskStatus/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({taskId,status,progressDetails:ProgressMessage,feedback:feedback}),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
-   let result=await response.json()
       SetData([])
       toast({
             title: 'Status Updated',
-            description: `${result.message}`,
+            description: `${response.message}`,
           });
     setOpen(false);
       getAllTasks()
@@ -530,21 +470,12 @@ const TasksPage = () => {
   },[])
   const getAllTasks = async () => {
     try {
-      let url = config.Api + "Task/getAllTasks/";
-      const response = await fetch(url, {
+       const response = await apiRequest("Task/getAllTasks/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({_id:user._id,role:user.role}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
-
-      const result = await response.json();
-      setTasks(result)
+      setTasks(response)
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -552,21 +483,12 @@ const TasksPage = () => {
   }
     const getEmployeeList = async () => {
       try {
-        let url = config.Api + "Employee/getAllEmployees/";
-        const response = await fetch(url, {
+         const response = await apiRequest("Employee/getAllEmployees/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({}),
         });
   
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
-        setEmployees(result)
+        setEmployees(response)
         // setState(result)
         // setFilteredData(result)
       } catch (error) {
@@ -576,20 +498,11 @@ const TasksPage = () => {
     }
         const deleteTask = async (id) => {
       try {
-        let url = config.Api + "Task/deleteTask/";
-        const response = await fetch(url, {
+         const response = await apiRequest("Task/deleteTask/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({_id:id}),
         });
   
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
         getAllTasks()
         // setFilteredData(result)
       } catch (error) {

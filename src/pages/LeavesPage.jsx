@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { config } from '@/components/CustomComponents/config';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const LeaveForm = ({ open, setOpen, leave, onSave, getAllLeaves }) => {
   const { employees } = useData();
@@ -58,21 +59,12 @@ const handleSelectChange = (id, name, key, value) => {
   const getEmployeeList = async () => {
       try {
          SetData([]); // clear Data once
-        let url = config.Api + "Employee/getAllEmployees/";
-        const response = await fetch(url, {
+        const response = await apiRequest("Employee/getAllEmployees/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({}),
         });
-  
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
-        SetData(result)
+
+        SetData(response)
         // setState(result)
         // setFilteredData(result)
       } catch (error) {
@@ -84,21 +76,12 @@ const handleSelectChange = (id, name, key, value) => {
  const getLeaveTypeList = async () => {
       try {
          SetData([]); // clear Data once
-        let url = config.Api + "LeaveType/getAllLeaveType/";
-        const response = await fetch(url, {
+        const response = await apiRequest("LeaveType/getAllLeaveType/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({}),
         });
   
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
-        SetData(result)
+        SetData(response)
         // setState(result)
         // setFilteredData(result)
       } catch (error) {
@@ -108,18 +91,10 @@ const handleSelectChange = (id, name, key, value) => {
     }
   const createLeave = async (data) => {
     try {
-      let url = config.Api + "Leave/createLeave/";
-      const response = await fetch(url, {
+      const response = await apiRequest("Leave/createLeave/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
 
       SetData([])
       getAllLeaves()
@@ -131,18 +106,10 @@ const handleSelectChange = (id, name, key, value) => {
   }
     const updateLeave = async (data) => {
     try {
-      let url = config.Api + "Leave/updateLeave/";
-      const response = await fetch(url, {
+      const response = await apiRequest("Leave/updateLeave/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
 
       SetData([])
       getAllLeaves()
@@ -314,21 +281,12 @@ const LeavesPage = () => {
 
     const getAllLeaves = async () => {
       try {
-        let url = config.Api + "Leave/getAllLeaves/";
-        const response = await fetch(url, {
+        const response = await apiRequest("Leave/getAllLeaves/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({}),
         });
   
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
-        setLeaves(result)
+        setLeaves(response)
         // setState(result)
         // setFilteredData(result)
       } catch (error) {
@@ -338,21 +296,12 @@ const LeavesPage = () => {
     }
         const getAllEmployees = async () => {
       try {
-        let url = config.Api + "Employee/getAllEmployees/";
-        const response = await fetch(url, {
+        const response = await apiRequest("Employee/getAllEmployees/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({}),
         });
   
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
-        setEmployees(result)
+        setEmployees(response)
         // setState(result)
         // setFilteredData(result)
       } catch (error) {
@@ -362,21 +311,12 @@ const LeavesPage = () => {
     }
         const getAllLeaveStatus = async () => {
       try {
-        let url = config.Api + "LeaveStatus/getAllLeaveStatus/";
-        const response = await fetch(url, {
+        const response = await apiRequest("LeaveStatus/getAllLeaveStatus/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({}),
         });
   
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
-        setStatus(result)
+        setStatus(response)
         // setState(result)
         // setFilteredData(result)
       } catch (error) {

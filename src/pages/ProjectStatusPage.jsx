@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const ProjectStatusForm = ({ open, setOpen, projectStatus,getProjectStatus }) => {
   const [formData, setFormData] = useState(
@@ -32,20 +33,12 @@ const ProjectStatusForm = ({ open, setOpen, projectStatus,getProjectStatus }) =>
   };
     const createProjectStatus = async (data) => {
       try {
-        let url = config.Api + "ProjectStatus/createProjectStatus";
-        const response = await fetch(url, {
+        const response = await apiRequest("ProjectStatus/createProjectStatus", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify(data),
         });
-        if (!response.ok) {
-          throw new Error('Failed to create Project Status');
-        }
-        const result = await response.json();
         getProjectStatus()
-        return result;
+        return response;
       } catch (error) {
         console.error('Error:', error);
         throw error;
@@ -53,20 +46,12 @@ const ProjectStatusForm = ({ open, setOpen, projectStatus,getProjectStatus }) =>
     };
    const updateProjectStatus = async(data)=>{
  try {
-      let url = config.Api + "ProjectStatus/updateProjectStatus";
-      const response = await fetch(url, {
+      const response = await apiRequest("ProjectStatus/updateProjectStatus", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
-      if (!response.ok) {
-        throw new Error('Failed to update ProjectStatus');
-      }
    getProjectStatus()
-      const result = await response.json();
-      return result;
+      return response;
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -115,20 +100,11 @@ api=true
 }),[ProjectStatus]
   const getProjectStatus = async () => {
     try {
-      let url = config.Api + "ProjectStatus/getAllProjectStatus";
-      const response = await fetch(url, {
+      const response = await apiRequest("ProjectStatus/getAllProjectStatus", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get Project Status');
-      }
-      const result = await response.json();
-      setProjectStatus(result)
+      setProjectStatus(response)
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -136,23 +112,14 @@ api=true
   }
   const deleteProjectStatus = async(id)=>{
     try {
-      let url = config.Api + "ProjectStatus/deleteProjectStatus";
-      const response = await fetch(url, {
+      const response = await apiRequest("ProjectStatus/deleteProjectStatus", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({_id:id}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete ProjectStatus');
-      }
-
-      const result = await response.json();
       getProjectStatus();
-      return result;
-    } catch (error) {
+      return response;
+    } catch (error) {0
       console.error('Error:', error);
       throw error;
     }

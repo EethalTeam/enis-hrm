@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const LeadStatusForm = ({ open, setOpen, leadStatus,getLeadStatus }) => {
   const [formData, setFormData] = useState(
@@ -32,20 +33,12 @@ const LeadStatusForm = ({ open, setOpen, leadStatus,getLeadStatus }) => {
   };
     const createLeadStatus = async (data) => {
       try {
-        let url = config.Api + "LeadStatus/createLeadStatus";
-        const response = await fetch(url, {
+        const response = await apiRequest("LeadStatus/createLeadStatus", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify(data),
         });
-        if (!response.ok) {
-          throw new Error('Failed to create Lead Status');
-        }
-        const result = await response.json();
         getLeadStatus()
-        return result;
+        return response;
       } catch (error) {
         console.error('Error:', error);
         throw error;
@@ -53,20 +46,12 @@ const LeadStatusForm = ({ open, setOpen, leadStatus,getLeadStatus }) => {
     };
    const updateLeadStatus = async(data)=>{
  try {
-      let url = config.Api + "LeadStatus/updateLeadStatus";
-      const response = await fetch(url, {
+      const response = await apiRequest("LeadStatus/updateLeadStatus", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
-      if (!response.ok) {
-        throw new Error('Failed to update LeadStatus');
-      }
    getLeadStatus()
-      const result = await response.json();
-      return result;
+      return response;
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -115,20 +100,12 @@ api=true
 }),[LeadStatus]
   const getLeadStatus = async () => {
     try {
-      let url = config.Api + "LeadStatus/getAllLeadStatus";
-      const response = await fetch(url, {
+      const response = await apiRequest("LeadStatus/getAllLeadStatus", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get Lead Status');
-      }
-      const result = await response.json();
-      setLeadStatus(result)
+      setLeadStatus(response)
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -136,22 +113,13 @@ api=true
   }
   const deleteLeadStatus = async(id)=>{
     try {
-      let url = config.Api + "LeadStatus/deleteLeadStatus";
-      const response = await fetch(url, {
+      const response = await apiRequest("LeadStatus/deleteLeadStatus", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({_id:id}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete LeadStatus');
-      }
-
-      const result = await response.json();
       getLeadStatus();
-      return result;
+      return response;
     } catch (error) {
       console.error('Error:', error);
       throw error;

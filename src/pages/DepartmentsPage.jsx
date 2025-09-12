@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
   const [formData, setFormData] = useState(
@@ -43,21 +44,11 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
     const getEmployeeList = async () => {
         try {
            SetData([]); // clear Data once
-          let url = config.Api + "Employee/getAllEmployees/";
-          const response = await fetch(url, {
+          const res = await apiRequest("Employee/getAllEmployees/", {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
             body: JSON.stringify({}),
           });
-    
-          if (!response.ok) {
-            throw new Error('Failed to get State');
-          }
-    
-          const result = await response.json();
-          SetData(result)
+          SetData(res)
           // setState(result)
           // setFilteredData(result)
         } catch (error) {
@@ -68,20 +59,12 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
   
     const createDepartment = async (data) => {
       try {
-        let url = config.Api + "Department/createDepartment";
-        const response = await fetch(url, {
+        const res = await apiRequest("Department/createDepartment", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify(data),
         });
-        if (!response.ok) {
-          throw new Error('Failed to create Department');
-        }
-        const result = await response.json();
         getDepartment()
-        return result;
+        return res;
       } catch (error) {
         console.error('Error:', error);
         throw error;
@@ -89,20 +72,12 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
     };
    const updateDepartment = async(data)=>{
  try {
-      let url = config.Api + "Department/updateDepartment";
-      const response = await fetch(url, {
+      const res = await apiRequest("Department/updateDepartment", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
-      if (!response.ok) {
-        throw new Error('Failed to update Department');
-      }
    getDepartment()
-      const result = await response.json();
-      return result;
+      return res;
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -193,20 +168,11 @@ api=true
 }),[Department]
   const getDepartment = async () => {
     try {
-      let url = config.Api + "Department/getAllDepartments";
-      const response = await fetch(url, {
+      const res = await apiRequest("Department/getAllDepartments", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get department');
-      }
-      const result = await response.json();
-      setDepartment(result)
+      setDepartment(res)
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -214,22 +180,13 @@ api=true
   }
   const deleteDepartment = async(id)=>{
     try {
-      let url = config.Api + "Department/deleteDepartment";
-      const response = await fetch(url, {
+      const res = await apiRequest("Department/deleteDepartment", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({_id:id}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete Department');
-      }
-
-      const result = await response.json();
       getDepartment();
-      return result;
+      return res;
     } catch (error) {
       console.error('Error:', error);
       throw error;

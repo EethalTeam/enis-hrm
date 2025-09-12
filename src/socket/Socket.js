@@ -1,6 +1,7 @@
 import { io } from "socket.io-client";
+import { config } from '@/components/CustomComponents/config';
 
-const socket = io("http://localhost:8001", {
+const socket = io(config.Api, {
   transports: ["websocket"],
 });
 

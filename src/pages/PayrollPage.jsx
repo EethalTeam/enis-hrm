@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet';
-import { DollarSign, Calendar, Users, TrendingUp, Download, Play, Settings } from 'lucide-react';
+import { IndianRupee, Calendar, Users, TrendingUp, Download, Play, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -72,7 +72,7 @@ const PayrollPage = () => {
         value: `$${(totalPayroll / 1000).toFixed(1)}K`,
         change: '+3.2%',
         color: 'from-green-500 to-emerald-500',
-        icon: DollarSign
+        icon: IndianRupee
       },
       {
         title: 'Employees Paid',
@@ -322,7 +322,7 @@ const PayrollPage = () => {
           <Card className="glass-effect border-white/10">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
+                <IndianRupee className="w-5 h-5" />
                 Master-Based Payroll Details
               </CardTitle>
               <CardDescription className="text-gray-400">

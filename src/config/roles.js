@@ -3,7 +3,7 @@ import {
   Users, 
   Clock, 
   Calendar, 
-  DollarSign,
+  IndianRupee,
   FolderOpen,
   CheckSquare,
   Timer,
@@ -23,18 +23,18 @@ export const ALL_MENU_ITEMS = [
     path: '/employees',
     id: 'employees',
     subItems: [
-      { label: 'All Employees', path: '/employees', id: 'employees.all' },
+      { label: 'All Employees', path: '/employees/allEmployees', id: 'employees.all' },
       { label: 'Departments', path: '/departments', id: 'employees.departments' },
       { label: 'Designations', path: '/designations', id: 'employees.designations' },
     ]
   },
   { 
-    icon: DollarSign, 
+    icon: IndianRupee, 
     label: 'Payroll', 
     path: '/payroll',
     id: 'payroll',
     subItems: [
-      { label: 'Employee Salary', path: '/payroll', id: 'payroll.salary' },
+      { label: 'Employee Salary', path: '/salary', id: 'payroll.salary' },
       { label: 'Payslip', path: '/payslip', id: 'payroll.payslip' },
       { label: 'Payroll Items', path: '/payroll/settings', id: 'payroll.settings' },
       { label: 'Shifts', path: '/shifts', id: 'payroll.shifts' },
@@ -50,7 +50,7 @@ export const ALL_MENU_ITEMS = [
     path: '/attendance',
     id: 'attendance',
     subItems: [
-      { label: 'Daily Log', path: '/attendance', id: 'attendance.log' },
+      { label: 'Daily Log', path: '/dailyLog', id: 'attendance.log' },
       { label: 'Reports', path: '/attendance/reports', id: 'attendance.reports' },
     ]
   },
@@ -60,7 +60,7 @@ export const ALL_MENU_ITEMS = [
     path: '/leaves',
     id: 'leaves',
      subItems: [
-      { label: 'Leave Requests', path: '/leaves', id: 'leaves.requests' },
+      { label: 'Leave Requests', path: '/leaveRequest', id: 'leaves.requests' },
       { label: 'Leave Balances', path: '/leaves/balances', id: 'leaves.balances' },
       { label: 'Permissions', path: '/leaves/permissions', id: 'leaves.permissions' },
     ]
@@ -72,7 +72,7 @@ export const ALL_MENU_ITEMS = [
     path: '/finance',
     id: 'finance',
      subItems: [
-      { label: 'Transactions', path: '/finance', id: 'finance.transactions' },
+      { label: 'Transactions', path: '/transactions', id: 'finance.transactions' },
       { label: 'Invoices', path: '/finance/invoices', id: 'finance.invoices' },
       { label: 'Reports', path: '/finance/reports', id: 'finance.reports' },
     ]
@@ -83,7 +83,7 @@ export const ALL_MENU_ITEMS = [
     path: '/leads',
     id: 'leads',
     subItems: [
-      { label: 'All Leads', path: '/leads', id: 'leads.all' },
+      { label: 'All Leads', path: '/allLeads', id: 'leads.all' },
       { label: 'Lead Funnel', path: '/leads/funnel', id: 'leads.funnel' },
     ]
   },
@@ -95,7 +95,7 @@ export const ALL_MENU_ITEMS = [
     path: '/settings',
     id: 'settings',
     subItems: [
-      { label: 'General', path: '/settings', id: 'settings.general' },
+      { label: 'General', path: '/settings/general', id: 'settings.general' },
       { label: 'Roles & Permissions', path: '/settings/roles', id: 'settings.roles' },
       { label: 'Lead Status Master', path: '/settings/leadStatus', id: 'settings.leadStatus' },
       { label: 'Project Status Master', path: '/settings/projectStatus', id: 'settings.projectStatus' },
@@ -104,6 +104,7 @@ export const ALL_MENU_ITEMS = [
       { label: 'Leave Type Master', path: '/settings/leaveType', id: 'settings.leaveType' },
       { label: 'Leave Status Master', path: '/settings/leaveStatus', id: 'settings.leaveStatus' },
       { label: 'Holiday Master', path: '/settings/holiday', id: 'settings.holiday' },
+      { label: 'Menu Master', path: '/settings/menu', id: 'settings.menu' },
       { label: 'Notifications', path: '/settings/notifications', id: 'settings.notifications' },
       { label: 'Appearance', path: '/settings/appearance', id: 'settings.appearance' },
     ]

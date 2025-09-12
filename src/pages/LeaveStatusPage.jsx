@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const LeaveStatusForm = ({ open, setOpen, leaveStatus,getLeaveStatus }) => {
   const [formData, setFormData] = useState(
@@ -32,20 +33,13 @@ const LeaveStatusForm = ({ open, setOpen, leaveStatus,getLeaveStatus }) => {
   };
     const createLeaveStatus = async (data) => {
       try {
-        let url = config.Api + "LeaveStatus/createLeaveStatus";
-        const response = await fetch(url, {
+        const response = await apiRequest("LeaveStatus/createLeaveStatus", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify(data),
         });
-        if (!response.ok) {
-          throw new Error('Failed to create Leave Status');
-        }
-        const result = await response.json();
+        
         getLeaveStatus()
-        return result;
+        return response;
       } catch (error) {
         console.error('Error:', error);
         throw error;
@@ -53,20 +47,12 @@ const LeaveStatusForm = ({ open, setOpen, leaveStatus,getLeaveStatus }) => {
     };
    const updateLeaveStatus = async(data)=>{
  try {
-      let url = config.Api + "LeaveStatus/updateLeaveStatus";
-      const response = await fetch(url, {
+      const response = await apiRequest("LeaveStatus/updateLeaveStatus", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
-      if (!response.ok) {
-        throw new Error('Failed to update LeaveStatus');
-      }
    getLeaveStatus()
-      const result = await response.json();
-      return result;
+      return response;
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -115,20 +101,11 @@ api=true
 }),[LeaveStatus]
   const getLeaveStatus = async () => {
     try {
-      let url = config.Api + "LeaveStatus/getAllLeaveStatus";
-      const response = await fetch(url, {
+      const response = await apiRequest("LeaveStatus/getAllLeaveStatus", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get Leave Status');
-      }
-      const result = await response.json();
-      setLeaveStatus(result)
+      setLeaveStatus(response)
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -136,22 +113,13 @@ api=true
   }
   const deleteLeaveStatus = async(id)=>{
     try {
-      let url = config.Api + "LeaveStatus/deleteLeaveStatus";
-      const response = await fetch(url, {
+      const response = await apiRequest("LeaveStatus/deleteLeaveStatus", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({_id:id}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete LeaveStatus');
-      }
-
-      const result = await response.json();
       getLeaveStatus();
-      return result;
+      return response;
     } catch (error) {
       console.error('Error:', error);
       throw error;

@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const WorkLocationForm = ({ open, setOpen, workLocation,getWorkLocation }) => {
   const [formData, setFormData] = useState(
@@ -32,20 +33,13 @@ const WorkLocationForm = ({ open, setOpen, workLocation,getWorkLocation }) => {
   };
     const createWorkLocation = async (data) => {
       try {
-        let url = config.Api + "WorkLocation/createWorkLocation";
-        const response = await fetch(url, {
+        const response = await apiRequest("WorkLocation/createWorkLocation", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify(data),
         });
-        if (!response.ok) {
-          throw new Error('Failed to create Work Location');
-        }
-        const result = await response.json();
+
         getWorkLocation()
-        return result;
+        return response;
       } catch (error) {
         console.error('Error:', error);
         throw error;
@@ -53,20 +47,13 @@ const WorkLocationForm = ({ open, setOpen, workLocation,getWorkLocation }) => {
     };
    const updateWorkLocation = async(data)=>{
  try {
-      let url = config.Api + "WorkLocation/updateWorkLocation";
-      const response = await fetch(url, {
+      const response = await apiRequest("WorkLocation/updateWorkLocation", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
-      if (!response.ok) {
-        throw new Error('Failed to update WorkLocation');
-      }
+      
    getWorkLocation()
-      const result = await response.json();
-      return result;
+      return response;
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -115,20 +102,12 @@ api=true
 }),[WorkLocation]
   const getWorkLocation = async () => {
     try {
-      let url = config.Api + "WorkLocation/getAllWorkLocation";
-      const response = await fetch(url, {
+      const response = await apiRequest("WorkLocation/getAllWorkLocation", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get Work Location');
-      }
-      const result = await response.json();
-      setWorkLocation(result)
+      setWorkLocation(response)
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -136,22 +115,13 @@ api=true
   }
   const deleteWorkLocation = async(id)=>{
     try {
-      let url = config.Api + "WorkLocation/deleteWorkLocation";
-      const response = await fetch(url, {
+      const response = await apiRequest("WorkLocation/deleteWorkLocation", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({_id:id}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete WorkLocation');
-      }
-
-      const result = await response.json();
       getWorkLocation();
-      return result;
+      return response;
     } catch (error) {
       console.error('Error:', error);
       throw error;

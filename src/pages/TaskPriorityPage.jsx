@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const TaskPriorityForm = ({ open, setOpen, taskPriority,getTaskPriority }) => {
   const [formData, setFormData] = useState(
@@ -32,20 +33,13 @@ const TaskPriorityForm = ({ open, setOpen, taskPriority,getTaskPriority }) => {
   };
     const createTaskPriority = async (data) => {
       try {
-        let url = config.Api + "TaskPriority/createTaskPriority";
-        const response = await fetch(url, {
+        const response = await apiRequest("TaskPriority/createTaskPriority", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify(data),
         });
-        if (!response.ok) {
-          throw new Error('Failed to create Task Status');
-        }
-        const result = await response.json();
+        
         getTaskPriority()
-        return result;
+        return response;
       } catch (error) {
         console.error('Error:', error);
         throw error;
@@ -53,20 +47,13 @@ const TaskPriorityForm = ({ open, setOpen, taskPriority,getTaskPriority }) => {
     };
    const updateTaskPriority = async(data)=>{
  try {
-      let url = config.Api + "TaskPriority/updateTaskPriority";
-      const response = await fetch(url, {
+      const response = await apiRequest("TaskPriority/updateTaskPrioritys", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
-      if (!response.ok) {
-        throw new Error('Failed to update TaskPriority');
-      }
+      
    getTaskPriority()
-      const result = await response.json();
-      return result;
+      return response;
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -115,20 +102,12 @@ api=true
 }),[TaskPriority]
   const getTaskPriority = async () => {
     try {
-      let url = config.Api + "TaskPriority/getAllTaskPriority";
-      const response = await fetch(url, {
+      const response = await apiRequest("TaskPriority/getAllTaskPriority", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get Task Status');
-      }
-      const result = await response.json();
-      setTaskPriority(result)
+      setTaskPriority(response)
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -136,22 +115,13 @@ api=true
   }
   const deleteTaskPriority = async(id)=>{
     try {
-      let url = config.Api + "TaskPriority/deleteTaskPriority";
-      const response = await fetch(url, {
+      const response = await apiRequest("TaskPriority/deleteTaskPriority", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({_id:id}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete TaskPriority');
-      }
-
-      const result = await response.json();
       getTaskPriority();
-      return result;
+      return response;
     } catch (error) {
       console.error('Error:', error);
       throw error;

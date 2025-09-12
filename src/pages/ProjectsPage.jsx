@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { config } from '@/components/CustomComponents/config';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const ProjectForm = ({ open, setOpen, project, onSave, employees ,getAllProjects}) => {
   const [formData, setFormData] = useState(
@@ -46,21 +47,12 @@ setFormData({
  const getProjectStatusList = async () => {
       try {
          SetData([]); // clear Data once
-        let url = config.Api + "ProjectStatus/getAllProjectStatus/";
-        const response = await fetch(url, {
+        const response = await apiRequest("ProjectStatus/getAllProjectStatus/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({}),
         });
   
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
-        SetData(result)
+        SetData(response)
         // setState(result)
         // setFilteredData(result)
       } catch (error) {
@@ -84,19 +76,14 @@ const handleSelectChange = (id, name, key, value) => {
 
 const createProject = async (data) => {
     try {
-      let url = config.Api + "Project/createProject/";
-      const response = await fetch(url, {
+      const response = await apiRequest("Project/createProject/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
- const result = await response.json();
-      if (!response.ok) {
+      if (!response) {
          toast({
             title: 'Project Added',
-            description: `${result.message}`,
+            description: `${response.message}`,
           });
           return
       }
@@ -114,18 +101,11 @@ const createProject = async (data) => {
   }
     const updateProject = async (data) => {
     try {
-      let url = config.Api + "Project/updateProject/";
-      const response = await fetch(url, {
+      const response = await apiRequest("Project/updateProject/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
     setOpen(false);
       SetData([])
       getAllProjects()
@@ -268,21 +248,12 @@ const ProjectsPage = () => {
   },[])
     const getAllProjects = async () => {
       try {
-        let url = config.Api + "Project/getAllProjects/";
-        const response = await fetch(url, {
+        const response = await apiRequest("Project/getAllProjects/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({}),
         });
   
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
-        setProjects(result)
+        setProjects(response)
       } catch (error) {
         console.error('Error:', error);
         throw error;
@@ -290,21 +261,12 @@ const ProjectsPage = () => {
     }
   const getEmployeeList = async () => {
       try {
-        let url = config.Api + "Employee/getAllEmployees/";
-        const response = await fetch(url, {
+        const response = await apiRequest("Employee/getAllEmployees/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({}),
         });
   
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
-        setEmployees(result)
+        setEmployees(response)
         // setState(result)
         // setFilteredData(result)
       } catch (error) {

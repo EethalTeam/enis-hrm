@@ -33,6 +33,7 @@ import TaskPriorityPage from '@/pages/TaskPriorityPage';
 import LeaveTypePage from '@/pages/LeaveTypePage';
 import LeaveStatusPage from '@/pages/LeaveStatusPage';
 import HolidayPage from '@/pages/HolidayPage';
+import MenusPage from '@/pages/MenusPage';
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -58,14 +59,14 @@ export default function AppRouter() {
               <Layout>
                 <Routes>
                   <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="employees" element={<EmployeesPage />} />
+                  <Route path="employees/allEmployees" element={<EmployeesPage />} />
                   <Route path="departments" element={<DepartmentsPage />} />
                   <Route path="designations" element={<DesignationsPage />} />
-                  <Route path="attendance" element={<AttendancePage />} />
-                  <Route path="leaves" element={<LeavesPage />} />
+                  <Route path="dailyLog" element={<AttendancePage />} />
+                  <Route path="leaveRequest" element={<LeavesPage />} />
                   <Route path="leaves/balances" element={<LeaveBalancesPage />} />
                   <Route path="leaves/permissions" element={<PermissionsPage />} />
-                  <Route path="payroll" element={<PayrollPage />} />
+                  <Route path="salary" element={<PayrollPage />} />
                   <Route path="payroll/settings" element={<PayrollSettingsPage />} />
                   <Route path="shifts" element={<ShiftsPage />} />
                   <Route path="workLocation" element={<WorkLocationPage />} />
@@ -73,11 +74,11 @@ export default function AppRouter() {
                   <Route path="projects" element={<ProjectsPage />} />
                   <Route path="tasks" element={<TasksPage />} />
                   <Route path="timesheets" element={<TimesheetsPage />} />
-                  <Route path="finance" element={<FinancePage />} />
-                  <Route path="leads" element={<LeadsPage />} />
+                  <Route path="transactions" element={<FinancePage />} />
+                  <Route path="allLeads" element={<LeadsPage />} />
                   <Route path="tickets" element={<TicketsPage />} />
                   <Route path="chat" element={<ChatPage />} />
-                  <Route path="settings" element={<SettingsPage />} />
+                  <Route path="settings/general" element={<SettingsPage />} />
                   <Route path="settings/roles" element={<RolesPage />} />
                   <Route path="settings/leadStatus" element={<LeadStatusPage />} />
                   <Route path="settings/projectStatus" element={<ProjectStatusPage />} />
@@ -86,6 +87,7 @@ export default function AppRouter() {
                   <Route path="settings/leaveType" element={<LeaveTypePage />} />
                   <Route path="settings/leaveStatus" element={<LeaveStatusPage />} />
                   <Route path="settings/holiday" element={<HolidayPage />} />
+                  <Route path="settings/menu" element={<MenusPage />} />
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Routes>
               </Layout>

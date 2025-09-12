@@ -19,7 +19,6 @@ const HolidayForm = ({ open, setOpen, holiday,getHoliday }) => {
   const [formData, setFormData] = useState(
     { holidayName: '',date:'',type:'Full-day',createdBy:user._id,_id:''}
   );
-  console.log(formData,"formData")
     useEffect(()=>{
     if(holiday){
     setFormData({
@@ -45,14 +44,10 @@ const HolidayForm = ({ open, setOpen, holiday,getHoliday }) => {
   };
     const createHoliday = async (data) => {
       try {
-        let url = config.Api + "Holiday/createHoliday";
          const response = await apiRequest("Holiday/createHoliday/", {
           method: 'POST',
           body: JSON.stringify(data),
         });
-        if (!response.ok) {
-          throw new Error('Failed to create Holiday');
-        }
         // const result = await response.json();
         getHoliday()
         return response;
@@ -63,7 +58,6 @@ const HolidayForm = ({ open, setOpen, holiday,getHoliday }) => {
     };
    const updateHoliday = async(data)=>{
  try {
-      let url = config.Api + "Holiday/updateHoliday";
       const response = await apiRequest("Holiday/updateHoliday/", {
           method: 'POST',
           body: JSON.stringify(data),
@@ -109,7 +103,6 @@ const HolidayPage = () => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedHoliday, setSelectedHoliday] = useState(null);
   const [Holiday,setHoliday]= useState([])
-console.log(Holiday,"Holiday")
   const handleAddNew = () => {
     setSelectedHoliday(null);
     setIsFormOpen(true);
@@ -123,12 +116,10 @@ api=true
 }),[Holiday]
   const getHoliday = async () => {
     try {
-      let url = config.Api + "Holiday/getAllHoliday";
 const response = await apiRequest("Holiday/getAllHolidays/", {
           method: 'POST',
           body: JSON.stringify({}),
         });
-      console.log(response,"response")
     //   const result = await response.json();
       setHoliday(response)
     } catch (error) {
@@ -138,18 +129,13 @@ const response = await apiRequest("Holiday/getAllHolidays/", {
   }
   const deleteHoliday = async(id)=>{
     try {
-      let url = config.Api + "Holiday/deleteHoliday";
       const response = await apiRequest("Holiday/deleteHoliday/", {
           method: 'POST',
           body: JSON.stringify({_id:id}),
         });
-      if (!response.ok) {
-        throw new Error('Failed to delete Holiday');
-      }
 
-      const result = await response.json();
       getHoliday();
-      return result;
+      return response;
     } catch (error) {
       console.error('Error:', error);
       throw error;

@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { config } from '@/components/CustomComponents/config';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const PermissionForm = ({ open, setOpen, permission, onSave, getAllPermissions }) => {
   const { employees, roles } = useData();
@@ -82,21 +83,12 @@ const handleSelectChange = (id, name, key, value) => {
   const getEmployeeList = async () => {
       try {
          SetData([]); // clear Data once
-        let url = config.Api + "Employee/getAllEmployees/";
-        const response = await fetch(url, {
+        const response = await apiRequest("Employee/getAllEmployees/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({}),
         });
   
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
-        SetData(result)
+        SetData(response)
         // setState(result)
         // setFilteredData(result)
       } catch (error) {
@@ -106,18 +98,10 @@ const handleSelectChange = (id, name, key, value) => {
     }
       const createPermission = async (data) => {
         try {
-          let url = config.Api + "Permission/createPermission/";
-          const response = await fetch(url, {
+          const response = await apiRequest("Permission/createPermission/", {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
             body: JSON.stringify(data),
           });
-    
-          if (!response.ok) {
-            throw new Error('Failed to get State');
-          }
     
           SetData([])
           getAllPermissions()
@@ -129,18 +113,10 @@ const handleSelectChange = (id, name, key, value) => {
       }
         const updatePermission = async (data) => {
         try {
-          let url = config.Api + "Permission/updatePermission/";
-          const response = await fetch(url, {
+          const response = await apiRequest("Permission/updatePermission/", {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
             body: JSON.stringify(data),
           });
-    
-          if (!response.ok) {
-            throw new Error('Failed to get State');
-          }
     
           SetData([])
           getAllPermissions()
@@ -274,21 +250,12 @@ getAllPermissions()
     },[])
       const getAllPermissions = async () => {
         try {
-          let url = config.Api + "Permission/getAllPermissions/";
-          const response = await fetch(url, {
+          const response = await apiRequest("Permission/getAllPermissions/", {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
             body: JSON.stringify({}),
           });
     
-          if (!response.ok) {
-            throw new Error('Failed to get State');
-          }
-    
-          const result = await response.json();
-          setPermissions(result)
+          setPermissions(response)
           // setState(result)
           // setFilteredData(result)
         } catch (error) {
@@ -318,18 +285,11 @@ getAllPermissions()
   };
 const updatePermission = async (data) => {
         try {
-          let url = config.Api + "Permission/updatePermissionStatus/";
-          const response = await fetch(url, {
+          const response = await apiRequest("Permission/updatePermissionStatus/", {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
             body: JSON.stringify(data),
           });
-    
-          if (!response.ok) {
-            throw new Error('Failed to get State');
-          }
+          
           getAllPermissions()
           // setFilteredData(result)
         } catch (error) {

@@ -14,6 +14,8 @@ import { toast } from '@/components/ui/use-toast';
 import EmployeeForm from '@/components/employees/EmployeeForm';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"; 
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
+import { useAuth } from '@/contexts/AuthContext';
 
 const EmployeesPage = () => {
   const { employees, deleteEmployee } = useData();
@@ -27,7 +29,13 @@ const EmployeesPage = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10); // default
   const [Employee,setEmployee] = useState([])
 
+    const { getPermissionsByPath } = useAuth();
+      const [Permissions,setPermissions]=useState({isAdd:false,isView:false,isEdit:false,isDelete:false})
+
   useEffect(()=>{
+    getPermissionsByPath(window.location.pathname).then(res=>{
+      setPermissions(res)
+    })
 getAllEmployees()
 },[])
   const filteredEmployees = Employee.filter(employee => {
@@ -65,21 +73,11 @@ getAllEmployees()
   };
   const getAllEmployees = async () => {
     try {
-      let url = config.Api + "Employee/getAllEmployees/";
-      const response = await fetch(url, {
+      const res = await apiRequest("Employee/getAllEmployees/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
-
-      const result = await response.json();
-      setEmployee(result)
+      setEmployee(res)
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -151,13 +149,13 @@ getAllEmployees()
             <h1 className="text-3xl font-bold text-white mb-2">Employee Management</h1>
             <p className="text-gray-400">Manage your organization's workforce</p>
           </div>
-          <Button 
+        {Permissions.isAdd && <Button 
             onClick={handleAddEmployee}
             className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Employee
-          </Button>
+          </Button>}
         </motion.div>
 
         <motion.div
@@ -256,9 +254,9 @@ getAllEmployees()
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="glass-effect border-white/10">
-                              <DropdownMenuItem onClick={() => handleViewEmployee(employee)} className="hover:bg-white/10"><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleEditEmployee(employee)} className="hover:bg-white/10"><Edit className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDeleteClick(employee)} className="hover:bg-white/10 text-red-400"><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
+                              {Permissions.isView && <DropdownMenuItem onClick={() => handleViewEmployee(employee)} className="hover:bg-white/10"><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>}
+                              {Permissions.isEdit && <DropdownMenuItem onClick={() => handleEditEmployee(employee)} className="hover:bg-white/10"><Edit className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>}
+                              {Permissions.isDelete && <DropdownMenuItem onClick={() => handleDeleteClick(employee)} className="hover:bg-white/10 text-red-400"><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>

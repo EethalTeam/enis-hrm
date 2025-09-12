@@ -5,6 +5,7 @@ import { Users, PieChart, Calendar } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useData } from '@/contexts/DataContext';
 import { config } from '@/components/CustomComponents/config';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const LeaveBalancesPage = () => {
   const { employees, leaves } = useData();
@@ -20,21 +21,12 @@ getAllLeaveBalances()
   ];
       const getAllLeaveBalances = async () => {
         try {
-          let url = config.Api + "LeaveBalance/getAllLeaveBalances/";
-          const response = await fetch(url, {
+          const response = await apiRequest("LeaveBalance/getAllLeaveBalances/", {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
             body: JSON.stringify({}),
           });
     
-          if (!response.ok) {
-            throw new Error('Failed to get State');
-          }
-    
-          const result = await response.json();
-          setLeaveBalance(result)
+          setLeaveBalance(response)
           // setState(result)
           // setFilteredData(result)
         } catch (error) {

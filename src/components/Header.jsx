@@ -11,13 +11,14 @@ import socket from '@/socket/Socket';
 import { config } from '@/components/CustomComponents/config';
 import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
-const AttendanceActions = () => {
+const AttendanceActions = ({startIdleTimeout}) => {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   // const [attendanceStatus, setAttendanceStatus] = useState({ status: 'out', break: false });
     const { attendanceStatus, setAttendanceStatus } = useData();
   const [elapsed, setElapsed] = useState(localStorage.getItem('attendanceElapsed') || "00:00:00");
   const intervalRef = useRef(null);
+
 // let isRefreshing = false;
 
 // document.addEventListener('keydown', (event) => {
@@ -25,7 +26,6 @@ const AttendanceActions = () => {
 //       (event.ctrlKey && event.key === 'r') || 
 //       (event.metaKey && event.key === 'r')) {
 //     isRefreshing = true;
-//     console.log('🔄 Refresh keyboard shortcut detected');
 //   }
 // });
 
@@ -39,7 +39,14 @@ window.addEventListener('load', () => {
     localStorage.setItem('hrms_attendance_status',{ status: 'out', break: false })
   }
 });
-
+useEffect(()=>{
+  if (attendanceStatus.status === "in") {
+    const cleanup = startIdleTimeout(handleDayOut);
+    return () => {
+      cleanup(); 
+    };
+  }
+},[attendanceStatus])
 // let wasVisible = true;
 // document.addEventListener('visibilitychange', () => {
 //   if (document.visibilityState === 'visible') {
@@ -98,7 +105,6 @@ window.addEventListener('load', () => {
 
   const DayIn = async () => {
   try {
-    let url = config.Api + "Attendance/dayIn/";
      const res = await apiRequest("Attendance/dayIn/", {
       method: "POST",
       body: JSON.stringify({ employeeId: user._id })
@@ -119,7 +125,6 @@ function timeToDecimalHours(timeStr) {
 
   const DayOut = async () => {
   try {
-    let url = config.Api + "Attendance/dayOut/";
      const res = await apiRequest("Attendance/dayOut/", {
       method: "POST",
       body: JSON.stringify({ employeeId: user._id ,workedHours:timeToDecimalHours(elapsed)})
@@ -145,7 +150,6 @@ function timeToDecimalHours(timeStr) {
     setElapsed("00:00:00");
     localStorage.removeItem("attendanceElapsed");
   };
-
   const handleBreak = () => {
     setAttendanceStatus(prev => ({ ...prev, break: !prev.break }));
     toast({
@@ -235,11 +239,37 @@ const Header = ({ onMenuClick }) => {
 //     socket.off("receiveNotification");
 //   };
 // }, [user._id]);
+function startIdleTimeout(triggerFn, timeout = 10 * 60 * 1000) {
+  let idleTimer;
 
+  const resetTimer = () => {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      triggerFn(); // call your function
+    }, timeout);
+  };
+
+  // Events that reset the idle timer
+  const events = ["mousemove", "keydown", "scroll", "click", "touchstart"];
+
+  events.forEach((event) =>
+    window.addEventListener(event, resetTimer, { passive: true })
+  );
+
+  // Initialize the timer
+  resetTimer();
+
+  // Cleanup function (if needed)
+  return () => {
+    clearTimeout(idleTimer);
+    events.forEach((event) =>
+      window.removeEventListener(event, resetTimer)
+    );
+  };
+}
 // ---------------- Fetch function ----------------
 const fetchNotifications = async () => {
   try {
-    let url = config.Api + "Notifications/getNotifications/";
      const res = await apiRequest("Notifications/getNotifications", {
       method: "POST",
       body: JSON.stringify({ employeeId: user._id })
@@ -258,20 +288,17 @@ useEffect(() => {
 
 const markAsRead = async (notificationId) => {
   try {
-    let url = config.Api + "Notifications/markAsSeen";
-    const res = await fetch(url, {
+    const res = await apiRequest("Notifications/markAsSeen/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ notificationId }),
     });
-    const data = await res.json();
-
-    if (res.ok) {
+    
+    if (res) {
       // Re-fetch updated notifications
       fetchNotifications();
       toast({ title: "Marked as read", description: "Notification marked as seen." });
     } else {
-      toast({ title: "Error", description: data.message, variant: "destructive" });
+      toast({ title: "Error", description: res.message, variant: "destructive" });
     }
   } catch (err) {
     console.error("Error marking notification:", err);
@@ -281,20 +308,17 @@ const markAsRead = async (notificationId) => {
 
 const handleNotificationAction = async (notification, action) => {
   try {
-    let url = config.Api + "Notifications/updateNotificationStatus";
-    const res = await fetch(url, {
+    const res = await apiRequest("Notifications/updateNotificationStatus", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ notificationId: notification._id, action }),
     });
-    const data = await res.json();
 
-    if (res.ok) {
+    if (res) {
       // Re-fetch updated notifications
       fetchNotifications();
       toast({ title: `Request ${action}d`, description: `The request has been ${action}d.` });
     } else {
-      toast({ title: "Error", description: data.message, variant: "destructive" });
+      toast({ title: "Error", description: res.message, variant: "destructive" });
     }
   } catch (err) {
     console.error("Error updating notification:", err);
@@ -327,7 +351,7 @@ const handleNotificationAction = async (notification, action) => {
 
         <div className="flex items-center gap-4">
           {/* Attendance Actions with Timer */}
-          <AttendanceActions />
+          <AttendanceActions startIdleTimeout={startIdleTimeout}/>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

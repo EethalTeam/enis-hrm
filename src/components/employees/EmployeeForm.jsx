@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { config } from '@/components/CustomComponents/config';
-import { X, User, Mail, Briefcase, DollarSign, Building, Calendar, Clock, Home, Shield, BookLock } from 'lucide-react';
+import { X, User, Mail, Briefcase, IndianRupee, Building, Calendar, Clock, Home, Shield, BookLock } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const initialState = {
   _id: '',
@@ -21,6 +22,7 @@ const initialState = {
   department: '',
   departmentId: '',
   joinDate: '',
+  birthDate:'',
   salary: '',
   status: '',
   statusId: '',
@@ -46,6 +48,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee,getAllEmployees }) => {
     department: '',
     departmentId: '',
     joinDate: '',
+  birthDate:'',
     salary: '',
     status: '',
     statusId: '',
@@ -79,6 +82,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee,getAllEmployees }) => {
     department: employee.departmentName,
     departmentId: employee.departmentId,
     joinDate: employee.joinDate.split('T')[0],
+  birthDate:employee.birthDate?.split('T')[0],
     salary: employee.salary,
     status: employee.statusName,
     statusId: employee.statusId,
@@ -108,6 +112,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee,getAllEmployees }) => {
         department: '',
         departmentId:'',
         joinDate: '',
+  birthDate:'',
         salary: '',
         status: '',
         statusId:'',
@@ -141,21 +146,16 @@ const handleSelectChange = (id, name, key, value) => {
   const getDepartmentList = async () => {
     try {
        SetData([]); // clear Data once
-      let url = config.Api + "Employee/getAllDepartments/";
-      const response = await fetch(url, {
+       const res = await apiRequest("Employee/getAllDepartments/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
 
-      if (!response.ok) {
+      if (!res) {
         throw new Error('Failed to get State');
       }
 
-      const result = await response.json();
-      SetData(result)
+      SetData(res)
       // setState(result)
       // setFilteredData(result)
     } catch (error) {
@@ -165,16 +165,12 @@ const handleSelectChange = (id, name, key, value) => {
   }
   const createEmployee = async (data) => {
     try {
-      let url = config.Api + "Employee/createEmployee/";
-      const response = await fetch(url, {
+      const response = await apiRequest("Employee/createEmployee/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) {
+      if (!response) {
         throw new Error('Failed to get State');
       }
 
@@ -189,16 +185,12 @@ const handleSelectChange = (id, name, key, value) => {
   }
     const updateEmployee = async (data) => {
     try {
-      let url = config.Api + "Employee/updateEmployee/";
-      const response = await fetch(url, {
+      const response = await apiRequest("Employee/updateEmployee/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) {
+      if (!response) {
         throw new Error('Failed to get State');
       }
 
@@ -214,21 +206,12 @@ const handleSelectChange = (id, name, key, value) => {
   const getDesignationList = async () => {
     try {
        SetData([]); // clear Data once
-      let url = config.Api + "Employee/getAllDesignations/";
-      const response = await fetch(url, {
+      const response = await apiRequest("Employee/getAllDesignations/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
-
-      const result = await response.json();
-      SetData(result)
+      SetData(response)
       // setState(result)
       // setFilteredData(result)
     } catch (error) {
@@ -239,21 +222,11 @@ const handleSelectChange = (id, name, key, value) => {
   const getShiftList = async () => {
     try {
        SetData([]); // clear Data once
-      let url = config.Api + "Employee/getAllShifts/";
-      const response = await fetch(url, {
+      const response = await apiRequest("Employee/getAllShifts/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
-
-      const result = await response.json();
-      SetData(result)
+      SetData(response)
       // setState(result)
       // setFilteredData(result)
     } catch (error) {
@@ -264,21 +237,11 @@ const handleSelectChange = (id, name, key, value) => {
   const getWorkLocationList = async () => {
     try {
        SetData([]); // clear Data once
-      let url = config.Api + "Employee/getAllWorkLocations/";
-      const response = await fetch(url, {
+      const response = await apiRequest("Employee/getAllWorkLocations/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
-
-      const result = await response.json();
-      SetData(result)
+      SetData(response)
       // setState(result)
       // setFilteredData(result)
     } catch (error) {
@@ -289,21 +252,11 @@ const handleSelectChange = (id, name, key, value) => {
   const getRoleList = async () => {
     try {
        SetData([]); // clear Data once
-      let url = config.Api + "Employee/getAllRoles/";
-      const response = await fetch(url, {
+      const response = await apiRequest("Employee/getAllRoles/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
-
-      const result = await response.json();
-      SetData(result)
+      SetData(response)
       // setState(result)
       // setFilteredData(result)
     } catch (error) {
@@ -314,21 +267,11 @@ const handleSelectChange = (id, name, key, value) => {
   const getStatusList = async () => {
     try {
        SetData([]); // clear Data once
-      let url = config.Api + "Employee/getAllStatus/";
-      const response = await fetch(url, {
+      const response = await apiRequest("Employee/getAllStatus/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
-
-      const result = await response.json();
-      SetData(result)
+      SetData(response)
       // setState(result)
       // setFilteredData(result)
     } catch (error) {
@@ -389,19 +332,25 @@ const handleSelectChange = (id, name, key, value) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Employee Code</label>
-                <div className="relative"><User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="code" value={formData.code} onChange={handleChange} placeholder="e.g. EMP001" required className="pl-10 glass-effect border-white/10" /></div>
+                <div className="relative"><User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="code" value={formData.code} onChange={handleChange} placeholder="e.g. EMP001" required className="pl-10 border-white/10" /></div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Full Name</label>
-                <div className="relative"><User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="name" value={formData.name} onChange={handleChange} placeholder="e.g. John Doe" required className="pl-10 glass-effect border-white/10" /></div>
+                <div className="relative"><User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="name" value={formData.name} onChange={handleChange} placeholder="e.g. John Doe" required className="pl-10 border-white/10" /></div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Email Address</label>
-                <div className="relative"><Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="e.g. john.doe@company.com" required className="pl-10 glass-effect border-white/10" /></div>
+                <div className="relative"><Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="e.g. john.doe@company.com" required className="pl-10 border-white/10" /></div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Password</label>
-                <div className="relative"><BookLock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="password" type="password" value={formData.password} onChange={handleChange} placeholder="please enter password" required className="pl-10 glass-effect border-white/10" /></div>
+                <div className="relative"><BookLock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="password" type="password" value={formData.password} onChange={handleChange} placeholder="please enter password" required className="pl-10 border-white/10" /></div>
+              </div>
+               <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Date of Birth</label>
+                <div className="relative">
+                  {/* <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /> */}
+                  <Input name="birthDate" type="date" value={formData.birthDate} onChange={handleChange} required className="glass-effect border-white/10 bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Designation</label>
@@ -511,11 +460,11 @@ const handleSelectChange = (id, name, key, value) => {
                 <label className="text-sm font-medium text-gray-300">Joining Date</label>
                 <div className="relative">
                   {/* <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /> */}
-                  <Input name="joinDate" type="date" value={formData.joinDate} onChange={handleChange} required className="pl-10 glass-effect border-white/10 bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
+                  <Input name="joinDate" type="date" value={formData.joinDate} onChange={handleChange} required className="glass-effect border-white/10 bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Annual Salary (₹)</label>
-                <div className="relative"><DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="salary" type="number" value={formData.salary} onChange={handleChange} placeholder="e.g. 75000" required className="pl-10 glass-effect border-white/10" /></div>
+                <div className="relative"><IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="salary" type="number" value={formData.salary} onChange={handleChange} placeholder="e.g. 75000" required className="pl-10 glass-effect border-white/10" /></div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Work Location</label>

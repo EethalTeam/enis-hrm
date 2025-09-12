@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Building2, X } from 'lucide-react';
 import ENISLogo from '@/data/ENIS-Logo.png';
@@ -6,17 +6,33 @@ import SidebarItem from './SidebarItem';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 import { ALL_MENU_ITEMS } from '@/config/roles';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const Sidebar = ({ onClose }) => {
   const { user } = useAuth();
   const { menuPermissions } = useData();
-
+  const [MENU,SETMENU]=useState([])
+  useEffect(()=>{
+    getAllMenus()
+  },[])
+const getAllMenus = async () => {
+  try {
+    const response = await apiRequest("Menu/getFormattedMenu", {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+    SETMENU(response.data)
+  } catch (error) {
+    console.error("Failed to fetch menus", error);
+    return {};
+  }
+};
   const hasAccess = (path) => {
     const userRole = user.role;
     if (userRole === 'Super Admin') return true;
 
-    // const rolePermissions = menuPermissions[userRole];
-    const rolePermissions = ['*'];
+    const rolePermissions = menuPermissions[userRole];
+    // const rolePermissions = ['*'];
 
     if (!rolePermissions) return false;
     if (rolePermissions.includes('*')) return true;
@@ -24,10 +40,11 @@ const Sidebar = ({ onClose }) => {
     return rolePermissions.some(p => path.startsWith(p));
   };
 
-  const filteredMenuItems = ALL_MENU_ITEMS.map(item => {
+  const filteredMenuItems = MENU.map(item => {
+    // const filteredMenuItems = ALL_MENU_ITEMS.map(item => {
     if (user.role === 'Super Admin') return item;
     
-    if (item.subItems) {
+    if (item.subItems.length > 0) {
       const accessibleSubItems = item.subItems.filter(sub => hasAccess(sub.path));
       if (accessibleSubItems.length > 0) {
         return { ...item, subItems: accessibleSubItems };

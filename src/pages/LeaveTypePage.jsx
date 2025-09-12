@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const LeaveTypeForm = ({ open, setOpen, leaveType,getLeaveType }) => {
   const [formData, setFormData] = useState(
@@ -32,20 +33,13 @@ const LeaveTypeForm = ({ open, setOpen, leaveType,getLeaveType }) => {
   };
     const createLeaveType = async (data) => {
       try {
-        let url = config.Api + "LeaveType/createLeaveType";
-        const response = await fetch(url, {
+        const response = await apiRequest("LeaveType/createLeaveType", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify(data),
         });
-        if (!response.ok) {
-          throw new Error('Failed to create Leave Type');
-        }
-        const result = await response.json();
+
         getLeaveType()
-        return result;
+        return response;
       } catch (error) {
         console.error('Error:', error);
         throw error;
@@ -53,20 +47,12 @@ const LeaveTypeForm = ({ open, setOpen, leaveType,getLeaveType }) => {
     };
    const updateLeaveType = async(data)=>{
  try {
-      let url = config.Api + "LeaveType/updateLeaveType";
-      const response = await fetch(url, {
+      const response = await apiRequest("LeaveType/updateLeaveType", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
-      if (!response.ok) {
-        throw new Error('Failed to update LeaveType');
-      }
    getLeaveType()
-      const result = await response.json();
-      return result;
+      return response;
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -115,20 +101,12 @@ api=true
 }),[LeaveType]
   const getLeaveType = async () => {
     try {
-      let url = config.Api + "LeaveType/getAllLeaveType";
-      const response = await fetch(url, {
+      const response = await apiRequest("LeaveType/getAllLeaveType", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get Leave Type');
-      }
-      const result = await response.json();
-      setLeaveType(result)
+      setLeaveType(response)
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -136,22 +114,13 @@ api=true
   }
   const deleteLeaveType = async(id)=>{
     try {
-      let url = config.Api + "LeaveType/deleteLeaveType";
-      const response = await fetch(url, {
+      const response = await apiRequest("LeaveType/deleteLeaveType", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({_id:id}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete LeaveType');
-      }
-
-      const result = await response.json();
       getLeaveType();
-      return result;
+      return response;
     } catch (error) {
       console.error('Error:', error);
       throw error;

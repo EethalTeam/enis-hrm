@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const ShiftForm = ({ open, setOpen, shift, onSave, getShift  }) => {
   const [formData, setFormData] = useState(
@@ -53,20 +54,12 @@ const ShiftForm = ({ open, setOpen, shift, onSave, getShift  }) => {
   };
     const createShift = async (data) => {
       try {
-        let url = config.Api + "Shift/createShift";
-        const response = await fetch(url, {
+        const response = await apiRequest("Shift/createShift", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify(data),
         });
-        if (!response.ok) {
-          throw new Error('Failed to create Shift');
-        }
-        const result = await response.json();
         getShift()
-        return result;
+        return response;
       } catch (error) {
         console.error('Error:', error);
         throw error;
@@ -133,20 +126,11 @@ getShift()
 }),[Shift]
   const getShift = async () => {
     try {
-      let url = config.Api + "Shift/getAllShifts";
-      const response = await fetch(url, {
+      const response = await apiRequest("Shift/getAllShifts", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get Shift');
-      }
-      const result = await response.json();
-      setShift(result)
+      setShift(response)
     } catch (error) {
       console.error('Error:', error);
       throw error;

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initialData } from '@/data/mockData';
 import useCrud from '@/hooks/useCrud';
 import { useAuth } from './AuthContext';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const DataContext = createContext();
 
@@ -151,15 +152,41 @@ export const DataProvider = ({ children }) => {
   } = useCrud('hrms_notifications', initialData.notifications);
 
   const {
-    state: roles,
+    // state: roles,
     add: addRole,
     update: updateRole,
     remove: deleteRole,
   } = useCrud('hrms_roles', initialData.roles);
 
-  const [menuPermissions, setMenuPermissions] = useState(() => getInitialData('hrms_permissions', initialData.menuPermissions));
+  // const [menuPermissions, setMenuPermissions] = useState(() => getInitialData('hrms_permissions', initialData.menuPermissions));
   const [attendanceStatus, setAttendanceStatus] = useState(() => getInitialData('hrms_attendance_status', { status: 'out', break: false }) || { status: 'out', break: false });
-
+  const [roles,setRoles]=useState([])
+  const [menuPermissions,setMenuPermissions]=useState({})
+  useEffect(()=>{
+    getRole()
+  },[])
+useEffect(()=>{
+let rolepath=roles.reduce((acc,curr)=>{
+  if(!acc[curr.RoleName]){
+return {...acc,[curr.RoleName]:curr.permissions.map(val=>val.menuDetails.path)}
+  }else{
+return acc
+  }
+},{})
+setMenuPermissions(rolepath)
+},[roles])
+const getRole = async () => {
+  try {
+    const response = await apiRequest("RoleBased/getAllRoles", {
+        method: 'POST',
+        body: JSON.stringify({}),
+      });
+    setRoles(response.data || []);
+  } catch (error) {
+    console.error("Failed to fetch roles", error);
+    setRoles([]);
+  }
+};
   useEffect(() => {
     saveData('hrms_attendance_status', attendanceStatus);
   }, [attendanceStatus]);

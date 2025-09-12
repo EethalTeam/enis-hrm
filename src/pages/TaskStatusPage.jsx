@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const TaskStatusForm = ({ open, setOpen, taskStatus,getTaskStatus }) => {
   const [formData, setFormData] = useState(
@@ -32,20 +33,13 @@ const TaskStatusForm = ({ open, setOpen, taskStatus,getTaskStatus }) => {
   };
     const createTaskStatus = async (data) => {
       try {
-        let url = config.Api + "TaskStatus/createTaskStatus";
-        const response = await fetch(url, {
+        const response = await apiRequest("TaskStatus/createTaskStatus", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify(data),
         });
-        if (!response.ok) {
-          throw new Error('Failed to create Task Status');
-        }
-        const result = await response.json();
+        
         getTaskStatus()
-        return result;
+        return response;
       } catch (error) {
         console.error('Error:', error);
         throw error;
@@ -53,20 +47,13 @@ const TaskStatusForm = ({ open, setOpen, taskStatus,getTaskStatus }) => {
     };
    const updateTaskStatus = async(data)=>{
  try {
-      let url = config.Api + "TaskStatus/updateTaskStatus";
-      const response = await fetch(url, {
+      const response = await apiRequest("TaskStatus/updateTaskStatus", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
-      if (!response.ok) {
-        throw new Error('Failed to update TaskStatus');
-      }
+      
    getTaskStatus()
-      const result = await response.json();
-      return result;
+      return response;
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -115,20 +102,12 @@ api=true
 }),[TaskStatus]
   const getTaskStatus = async () => {
     try {
-      let url = config.Api + "TaskStatus/getAllTaskStatus";
-      const response = await fetch(url, {
+      const response = await apiRequest("TaskStatus/getAllTaskStatus", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get Task Status');
-      }
-      const result = await response.json();
-      setTaskStatus(result)
+      setTaskStatus(response)
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -136,22 +115,13 @@ api=true
   }
   const deleteTaskStatus = async(id)=>{
     try {
-      let url = config.Api + "TaskStatus/deleteTaskStatus";
-      const response = await fetch(url, {
+      const response = await apiRequest("TaskStatus/deleteTaskStatus", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({_id:id}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete TaskStatus');
-      }
-
-      const result = await response.json();
       getTaskStatus();
-      return result;
+      return response;
     } catch (error) {
       console.error('Error:', error);
       throw error;

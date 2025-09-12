@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const StatusForm = ({ open, setOpen, status,getStatus }) => {
   const [formData, setFormData] = useState(
@@ -32,20 +33,12 @@ const StatusForm = ({ open, setOpen, status,getStatus }) => {
   };
     const createStatus = async (data) => {
       try {
-        let url = config.Api + "Status/createStatus";
-        const response = await fetch(url, {
+        const response = await apiRequest("Status/createStatus", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify(data),
         });
-        if (!response.ok) {
-          throw new Error('Failed to create Status');
-        }
-        const result = await response.json();
         getStatus()
-        return result;
+        return response;
       } catch (error) {
         console.error('Error:', error);
         throw error;
@@ -53,20 +46,12 @@ const StatusForm = ({ open, setOpen, status,getStatus }) => {
     };
    const updateStatus = async(data)=>{
  try {
-      let url = config.Api + "Status/updateStatus";
-      const response = await fetch(url, {
+      const response = await apiRequest("Status/updateStatus", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
-      if (!response.ok) {
-        throw new Error('Failed to update Status');
-      }
    getStatus()
-      const result = await response.json();
-      return result;
+      return response;
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -115,20 +100,12 @@ api=true
 }),[Status]
   const getStatus = async () => {
     try {
-      let url = config.Api + "Status/getAllStatus";
-      const response = await fetch(url, {
+      const response = await apiRequest("Status/getAllStatus", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get Status');
-      }
-      const result = await response.json();
-      setStatus(result)
+      setStatus(response)
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -136,22 +113,13 @@ api=true
   }
   const deleteStatus = async(id)=>{
     try {
-      let url = config.Api + "Status/deleteStatus";
-      const response = await fetch(url, {
+      const response = await apiRequest("Status/deleteStatus", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({_id:id}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete Status');
-      }
-
-      const result = await response.json();
       getStatus();
-      return result;
+      return response;
     } catch (error) {
       console.error('Error:', error);
       throw error;

@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const DesignationForm = ({ open, setOpen, designation, getDesignation }) => {
   const { departments } = useData();
@@ -53,20 +54,12 @@ if(designation){
   };
     const createDesignation = async (data) => {
       try {
-        let url = config.Api + "Designation/createDesignation";
-        const response = await fetch(url, {
+        const res = await apiRequest("Designation/createDesignation", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify(data),
         });
-        if (!response.ok) {
-          throw new Error('Failed to create Designation');
-        }
-        const result = await response.json();
         getDesignation()
-        return result;
+        return res;
       } catch (error) {
         console.error('Error:', error);
         throw error;
@@ -74,20 +67,12 @@ if(designation){
     };
    const updateDesignation = async(data)=>{
  try {
-      let url = config.Api + "Designation/updateDesignation";
-      const response = await fetch(url, {
+      const res = await apiRequest("Designation/updateDesignation", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
-      if (!response.ok) {
-        throw new Error('Failed to update Designation');
-      }
    getDesignation()
-      const result = await response.json();
-      return result;
+      return res;
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -95,21 +80,11 @@ if(designation){
    }
      const getDepartmentList = async () => {
     try {
-      let url = config.Api + "Employee/getAllDepartments/";
-      const response = await fetch(url, {
+      const res = await apiRequest("Employee/getAllDepartments/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
-
-      const result = await response.json();
-      SetData(result)
+      SetData(res)
       // setState(result)
       // setFilteredData(result)
     } catch (error) {
@@ -192,20 +167,11 @@ api=true
 }),[Designation]
   const getDesignation = async () => {
     try {
-      let url = config.Api + "Designation/getAllDesignation";
-      const response = await fetch(url, {
+      const res = await apiRequest("Designation/getAllDesignation", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({}),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get Designation');
-      }
-      const result = await response.json();
-      setDesignation(result)
+      setDesignation(res)
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -213,22 +179,13 @@ api=true
   }
   const deleteDesignation = async(id)=>{
     try {
-      let url = config.Api + "Designation/deleteDesignation";
-      const response = await fetch(url, {
+      const res = await apiRequest("Designation/deleteDesignation", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({_id:id}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete Designation');
-      }
-
-      const result = await response.json();
       getDesignation();
-      return result;
+      return res;
     } catch (error) {
       console.error('Error:', error);
       throw error;

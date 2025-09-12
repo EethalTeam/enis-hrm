@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect,useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet';
-import { UserPlus, Search, Filter, MoreHorizontal, Phone, Mail, Edit, Trash2, Briefcase, DollarSign, Globe, Users, FileText } from 'lucide-react';
+import { UserPlus, Search, Filter, MoreHorizontal, Phone, Mail, Edit, Trash2, Briefcase, IndianRupee, Globe, Users, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { config } from '@/components/CustomComponents/config';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
 const LeadForm = ({ open, setOpen, lead, onSave ,getAllLeads}) => {
      const { user } = useAuth();
@@ -63,21 +64,12 @@ const handleSelectChange = (id, name, key, value) => {
   const getEmployeeList = async () => {
       try {
          SetData([]); // clear Data once
-        let url = config.Api + "Employee/getAllEmployees/";
-        const response = await fetch(url, {
+         const response = await apiRequest("Employee/getAllEmployees/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({}),
         });
   
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
-        SetData(result)
+        SetData(response)
         // setState(result)
         // setFilteredData(result)
       } catch (error) {
@@ -89,21 +81,12 @@ const handleSelectChange = (id, name, key, value) => {
  const getLeadStatusList = async () => {
       try {
          SetData([]); // clear Data once
-        let url = config.Api + "LeadStatus/getAllLeadStatus/";
-        const response = await fetch(url, {
+         const response = await apiRequest("LeadStatus/getAllLeadStatus/", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({}),
         });
   
-        if (!response.ok) {
-          throw new Error('Failed to get State');
-        }
-  
-        const result = await response.json();
-        SetData(result)
+        SetData(response)
         // setState(result)
         // setFilteredData(result)
       } catch (error) {
@@ -113,18 +96,10 @@ const handleSelectChange = (id, name, key, value) => {
     }
   const createLead = async (data) => {
     try {
-      let url = config.Api + "Lead/createLead/";
-      const response = await fetch(url, {
+       const response = await apiRequest("Lead/createLead/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
 
       SetData([])
       getAllLeads()
@@ -136,18 +111,10 @@ const handleSelectChange = (id, name, key, value) => {
   }
     const updateLead = async (data) => {
     try {
-      let url = config.Api + "Lead/updateLead/";
-      const response = await fetch(url, {
+       const response = await apiRequest("Lead/updateLead/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
 
       SetData([])
       getAllLeads()
@@ -301,17 +268,15 @@ const handleFileChange = async (e) => {
     excelData.append('file', file);
 
     try {
-        let url = config.Api + "importLeadsExcel/";
-      const response = await fetch(url, {
+         const response = await apiRequest("importLeadsExcel/", {
         method: 'POST',
         body: excelData,
       });
 
-      const data = await response.json();
-      if (res.ok) {
+      if (response) {
         alert('Leads imported successfully');
       } else {
-        alert('Failed to import leads: ' + data.message);
+        alert('Failed to import leads: ' + response.message);
       }
     } catch (error) {
       console.error(error);
@@ -335,21 +300,12 @@ const handleFileChange = async (e) => {
   },[])
   const getAllLeads = async () => {
     try {
-      let url = config.Api + "Lead/getAllLeads/";
-      const response = await fetch(url, {
+       const response = await apiRequest("Lead/getAllLeads/", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({_id:user._id,role:user.role}),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get State');
-      }
-
-      const result = await response.json();
-      setLeads(result.leads)
+      setLeads(response.leads)
     } catch (error) {
       console.error('Error:', error);
       throw error;
@@ -462,7 +418,7 @@ const handleFileChange = async (e) => {
           <Card className="metric-card"><CardContent className="p-6"><p className="text-gray-400">Total Leads</p><h3 className="text-3xl font-bold">{leads.length}</h3></CardContent></Card>
           <Card className="metric-card"><CardContent className="p-6"><p className="text-gray-400">Hot Leads</p><h3 className="text-3xl font-bold">{leads.filter(l => l.status === 'Hot').length}</h3></CardContent></Card>
           <Card className="metric-card"><CardContent className="p-6"><p className="text-gray-400">Qualified</p><h3 className="text-3xl font-bold">{leads.filter(l => l.status === 'Qualified').length}</h3></CardContent></Card>
-          <Card className="metric-card"><CardContent className="p-6"><p className="text-gray-400">Pipeline Value</p><h3 className="text-3xl font-bold">${leads.reduce((s, l) => s + l.estimatedValue, 0).toLocaleString()}</h3></CardContent></Card>
+          <Card className="metric-card"><CardContent className="p-6"><p className="text-gray-400">Pipeline Value</p><h3 className="text-3xl font-bold">₹{leads.reduce((s, l) => s + l.estimatedValue, 0).toLocaleString()}</h3></CardContent></Card>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
