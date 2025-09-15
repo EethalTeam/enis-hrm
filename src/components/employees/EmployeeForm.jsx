@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { config } from '@/components/CustomComponents/config';
-import { X, User, Mail, Briefcase, IndianRupee, Building, Calendar, Clock, Home, Shield, BookLock } from 'lucide-react';
+import { X, User,Phone, Mail, Briefcase, IndianRupee, Building, Calendar, Clock, Home, Shield, BookLock } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
@@ -23,6 +23,7 @@ const initialState = {
   departmentId: '',
   joinDate: '',
   birthDate:'',
+  phoneNumber:'',
   salary: '',
   status: '',
   statusId: '',
@@ -49,6 +50,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee,getAllEmployees }) => {
     departmentId: '',
     joinDate: '',
   birthDate:'',
+  phoneNumber:'',
     salary: '',
     status: '',
     statusId: '',
@@ -83,6 +85,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee,getAllEmployees }) => {
     departmentId: employee.departmentId,
     joinDate: employee.joinDate.split('T')[0],
   birthDate:employee.birthDate?.split('T')[0],
+  phoneNumber:employee.phoneNumber,
     salary: employee.salary,
     status: employee.statusName,
     statusId: employee.statusId,
@@ -113,6 +116,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee,getAllEmployees }) => {
         departmentId:'',
         joinDate: '',
   birthDate:'',
+  phoneNumber:'',
         salary: '',
         status: '',
         statusId:'',
@@ -351,6 +355,10 @@ const handleSelectChange = (id, name, key, value) => {
                 <div className="relative">
                   {/* <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /> */}
                   <Input name="birthDate" type="date" value={formData.birthDate} onChange={handleChange} required className="glass-effect border-white/10 bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Phone Number</label>
+                <div className="relative"><Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="phoneNumber" type="number" maxlength={10} value={formData.phoneNumber} onChange={handleChange} placeholder="e.g. 9876543210" required className="pl-10 border-white/10" /></div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Designation</label>

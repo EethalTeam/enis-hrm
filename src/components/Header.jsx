@@ -195,50 +195,18 @@ const Header = ({ onMenuClick }) => {
   const [notifications, setNotifications] = useState([]);
 
     const userNotifications = notifications.filter(n => n.toEmployeeId === user._id && n.status === 'unseen');
-  //    useEffect(() => {
-  //   if (!user?._id) return;
+useEffect(() => {
+  if (!user?._id) return;
 
-  //   // Join employee room
-  //   socket.emit("joinRoom", { employeeId: user._id });
+  const heartbeatInterval = setInterval(() => {
+    if (socket.connected) {
+      socket.emit("heartbeat", { employeeId: user._id });
+    }
+  }, 15000);
 
-  //   // Send heartbeat every 15 seconds
-  //   const heartbeatInterval = setInterval(() => {
-  //     socket.emit("heartbeat", { employeeId: user._id });
-  //   }, 15000); // 15s
+  return () => clearInterval(heartbeatInterval);
+}, [user?._id]);
 
-  //   // Handle tab close
-  //   const handleTabClose = () => {
-  //     socket.emit("tabClosed", { employeeId: user._id });
-  //   };
-  //   window.addEventListener("beforeunload", handleTabClose);
-
-  //   // Optional: handle forced logout from server
-  //   socket.on("forceLogout", ({ message }) => {
-  //     alert(message); // or call logout function from AuthContext
-  //     // logout(); <-- if you want to auto logout in frontend too
-  //   });
-
-  //   return () => {
-  //     clearInterval(heartbeatInterval);
-  //     window.removeEventListener("beforeunload", handleTabClose);
-  //     socket.off("forceLogout");
-  //   };
-  // }, [user?._id]);
-// useEffect(() => {
-//   // Join the employee room
-//   socket.emit("joinRoom", { employeeId: user._id });
-
-//   // Listen to server event for new notifications
-//   socket.on("receiveNotification", () => {
-//     // Whenever a new notification is triggered, fetch all notifications again
-//     fetchNotifications();
-//   });
-
-//   // Cleanup on unmount
-//   return () => {
-//     socket.off("receiveNotification");
-//   };
-// }, [user._id]);
 function startIdleTimeout(triggerFn, timeout = 10 * 60 * 1000) {
   let idleTimer;
 
