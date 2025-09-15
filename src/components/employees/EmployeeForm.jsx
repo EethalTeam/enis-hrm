@@ -358,7 +358,7 @@ const handleSelectChange = (id, name, key, value) => {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Phone Number</label>
-                <div className="relative"><Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="phoneNumber" type="number" maxlength={10} value={formData.phoneNumber} onChange={handleChange} placeholder="e.g. 9876543210" required className="pl-10 border-white/10" /></div>
+                <div className="relative"><Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="phoneNumber" type="tel" maxLength={10} value={formData.phoneNumber} onChange={handleChange} placeholder="e.g. 9876543210" required className="pl-10 border-white/10" /></div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Designation</label>
