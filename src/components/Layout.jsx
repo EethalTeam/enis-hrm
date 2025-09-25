@@ -4,6 +4,7 @@ import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import IdleScreen from '@/components/IdleScreen';
 import { useData } from '@/contexts/DataContext';
+// import ChatUI from '@/components/ChatUI';
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -19,7 +20,7 @@ const Layout = ({ children }) => {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -300, opacity: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="fixed inset-y-0 left-0 z-50 w-64 lg:relative lg:z-auto"
+            className="fixed inset-y-0 left-0 z-60 w-64 lg:relative lg:z-60"
           >
             <Sidebar onClose={() => setSidebarOpen(false)} />
           </motion.div>
@@ -32,7 +33,7 @@ const Layout = ({ children }) => {
           sidebarOpen={sidebarOpen}
         />
         
-        <main className="flex-1 overflow-auto p-6 relative">
+        <main className={`flex-1 p-6 relative ${isIdle ? 'overflow-hidden' : 'overflow-auto'}`}>
           <AnimatePresence>
             {isIdle && <IdleScreen />}
           </AnimatePresence>
@@ -43,13 +44,14 @@ const Layout = ({ children }) => {
             className="max-w-7xl mx-auto"
           >
             {children}
+            {/* <ChatUI /> */}
           </motion.div>
         </main>
       </div>
 
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-60 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}

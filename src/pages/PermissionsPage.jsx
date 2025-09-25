@@ -250,9 +250,13 @@ getAllPermissions()
     },[])
       const getAllPermissions = async () => {
         try {
+          let filter={}
+        if(user.role !=='Admin' && user.role !== 'Super Admin'){
+          filter.employeeId = user._id
+        }
           const response = await apiRequest("Permission/getAllPermissions/", {
             method: 'POST',
-            body: JSON.stringify({}),
+            body: JSON.stringify(filter),
           });
     
           setPermissions(response)
@@ -364,8 +368,8 @@ const updatePermission = async (data) => {
                                   <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400" onClick={() => handleStatusChange(permission, 'Rejected')}><XCircle className="w-4 h-4" /></Button>
                                 </>
                               )}
-                              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEdit(permission)}><Edit className="w-4 h-4" /></Button>
-                              <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400" onClick={() => handleDelete(permission)}><Trash2 className="w-4 h-4" /></Button>
+                             {user._id === permission.employeeId._id && <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEdit(permission)}><Edit className="w-4 h-4" /></Button>}
+                             {user._id === permission.employeeId._id && <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400" onClick={() => handleDelete(permission)}><Trash2 className="w-4 h-4" /></Button>}
                             </div>
                           </td>
                         </tr>

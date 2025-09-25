@@ -75,6 +75,10 @@ body {
   @apply bg-red-500/20 text-red-400 border border-red-500/30;
 }
 
+.status-break {
+  @apply bg-yellow-500/20 text-yellow-400 border border-yellow-500/30;
+}
+
 .status-pending {
   @apply bg-yellow-500/20 text-yellow-400 border border-yellow-500/30;
 }

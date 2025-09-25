@@ -23,14 +23,14 @@ const storedUser = JSON.parse(localStorage.getItem('hrms_user'));
   };
   try {
     const response = await fetch(config.Api +"/api/"+ endpoint, finalOptions);
-      if (!response.ok) {
-        throw new Error('Failed to get datas');
-      }
     if (response.status === 401) {
       // backend says user not logged in
       handleLogout();
       return;
     }
+          if (!response.ok) {
+        throw new Error('Failed to get datas');
+      }
 
     const result = await response.json();
     return result;

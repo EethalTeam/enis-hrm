@@ -139,7 +139,7 @@ const createProject = async (data) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="glass-effect border-white/10 text-white">
+      <DialogContent className="glass-effect border-white/10 text-white" style={{ overflowY: 'auto', height: '90vh', scrollbarWidth: 'none' }}>
         <DialogHeader>
           <DialogTitle>{project ? 'Edit Project' : 'Create New Project'}</DialogTitle>
           <DialogDescription className="text-gray-400">

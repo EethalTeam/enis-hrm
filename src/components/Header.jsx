@@ -29,16 +29,16 @@ const AttendanceActions = ({startIdleTimeout}) => {
 //   }
 // });
 
-window.addEventListener('load', () => {
-  const entries = performance.getEntriesByType('navigation');
-  const navigationType = entries.length > 0 ? entries[0].type : performance.navigation.type;
-  if(navigationType !== 'reload'){
-    socket.emit('tabClosing', { employeeId: user._id });
-    localStorage.removeItem('hrms_user');
-    localStorage.removeItem('attendanceElapsed')
-    localStorage.setItem('hrms_attendance_status',{ status: 'out', break: false })
-  }
-});
+// window.addEventListener('load', () => {
+//   const entries = performance.getEntriesByType('navigation');
+//   const navigationType = entries.length > 0 ? entries[0].type : performance.navigation.type;
+//   if(navigationType !== 'reload'){
+//     socket.emit('tabClosing', { employeeId: user._id });
+//     localStorage.removeItem('hrms_user');
+//     localStorage.removeItem('attendanceElapsed')
+//     localStorage.setItem('hrms_attendance_status',{ status: 'out', break: false })
+//   }
+// });
 useEffect(()=>{
   if (attendanceStatus.status === "in") {
     const cleanup = startIdleTimeout(handleDayOut);
@@ -135,6 +135,30 @@ function timeToDecimalHours(timeStr) {
   }
 };
 
+  const breakStart = async () => {
+  try {
+     const res = await apiRequest("Attendance/breakStart/", {
+      method: "POST",
+      body: JSON.stringify({ employeeId: user._id })
+    });
+    const data = res;
+  } catch (err) {
+    console.error("Failed to fetch notifications:", err);
+  }
+};
+
+  const breakEnd = async () => {
+  try {
+     const res = await apiRequest("Attendance/breakEnd/", {
+      method: "POST",
+      body: JSON.stringify({ employeeId: user._id })
+    });
+    const data = res;
+  } catch (err) {
+    console.error("Failed to fetch notifications:", err);
+  }
+};
+
   const handleDayIn = () => {
     DayIn()
     setAttendanceStatus({ status: 'in', break: false });
@@ -144,6 +168,9 @@ function timeToDecimalHours(timeStr) {
   };
 
   const handleDayOut = () => {
+    if(attendanceStatus.break){
+       breakEnd()
+    }     
     DayOut()
     setAttendanceStatus({ status: 'out', break: false });
     toast({ title: "Day Out", description: "You've successfully clocked out. Have a great day!" });
@@ -151,6 +178,7 @@ function timeToDecimalHours(timeStr) {
     localStorage.removeItem("attendanceElapsed");
   };
   const handleBreak = () => {
+    attendanceStatus.break ? breakEnd() : breakStart() 
     setAttendanceStatus(prev => ({ ...prev, break: !prev.break }));
     toast({
       title: attendanceStatus.break ? "Back to Work" : "Break Time",
@@ -195,17 +223,17 @@ const Header = ({ onMenuClick }) => {
   const [notifications, setNotifications] = useState([]);
 
     const userNotifications = notifications.filter(n => n.toEmployeeId === user._id && n.status === 'unseen');
-useEffect(() => {
-  if (!user?._id) return;
+// useEffect(() => {
+//   if (!user?._id) return;
 
-  const heartbeatInterval = setInterval(() => {
-    if (socket.connected) {
-      socket.emit("heartbeat", { employeeId: user._id });
-    }
-  }, 15000);
+//   const heartbeatInterval = setInterval(() => {
+//     if (socket.connected) {
+//       socket.emit("heartbeat", { employeeId: user._id });
+//     }
+//   }, 15000);
 
-  return () => clearInterval(heartbeatInterval);
-}, [user?._id]);
+//   return () => clearInterval(heartbeatInterval);
+// }, [user?._id]);
 
 function startIdleTimeout(triggerFn, timeout = 10 * 60 * 1000) {
   let idleTimer;

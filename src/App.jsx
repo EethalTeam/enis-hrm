@@ -34,16 +34,16 @@ function App() {
   //     window.removeEventListener("beforeunload", handleBeforeUnload);
   //   };
   // }, []);
-  window.addEventListener('load', () => {
-    const entries = performance.getEntriesByType('navigation');
-    const navigationType = entries.length > 0 ? entries[0].type : performance.navigation.type;
-    if(navigationType !== 'reload'){
-      socket.emit('tabClosing', { employeeId: user._id });
-      localStorage.removeItem('hrms_user');
-      localStorage.removeItem('attendanceElapsed')
-      localStorage.setItem('hrms_attendance_status',{ status: 'out', break: false })
-    }
-  });
+  // window.addEventListener('load', () => {
+  //   const entries = performance.getEntriesByType('navigation');
+  //   const navigationType = entries.length > 0 ? entries[0].type : performance.navigation.type;
+  //   if(navigationType !== 'reload'){
+  //     socket.emit('tabClosing', { employeeId: user._id });
+  //     localStorage.removeItem('hrms_user');
+  //     localStorage.removeItem('attendanceElapsed')
+  //     localStorage.setItem('hrms_attendance_status',{ status: 'out', break: false })
+  //   }
+  // });
   return (
     <>
       <Helmet>

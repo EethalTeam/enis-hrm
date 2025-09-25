@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { config } from '@/components/CustomComponents/config';
 import { apiRequest } from '@/components/CustomComponents/apiRequest'
+import { useAuth } from '@/contexts/AuthContext';
 
 const LeaveForm = ({ open, setOpen, leave, onSave, getAllLeaves }) => {
   const { employees } = useData();
@@ -264,6 +265,7 @@ const LeavesPage = () => {
   const [Leaves,setLeaves] = useState([])
   const [Employees,setEmployees] = useState([])
   const [Status,setStatus]=useState([])
+    const { user } = useAuth();
 
   const filteredRequests = Leaves.filter(request => {
     const employee = Employees.find(e => e._id === request.employeeId._id);
@@ -281,9 +283,13 @@ const LeavesPage = () => {
 
     const getAllLeaves = async () => {
       try {
+        let filter={}
+        if(user.role !=='Admin' && user.role !== 'Super Admin'){
+          filter.employeeId = user._id
+        }
         const response = await apiRequest("Leave/getAllLeaves/", {
           method: 'POST',
-          body: JSON.stringify({}),
+          body: JSON.stringify(filter),
         });
   
         setLeaves(response)
@@ -427,8 +433,8 @@ const LeavesPage = () => {
                                   <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400" onClick={() => handleStatusChange(request, 'Rejected')}><XCircle className="w-4 h-4" /></Button>
                                 </>
                               )}
-                              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditLeave(request)}><Edit className="w-4 h-4" /></Button>
-                              <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400" onClick={() => handleDeleteLeave(request)}><Trash2 className="w-4 h-4" /></Button>
+                              {user._id === request.employeeId._id &&  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditLeave(request)}><Edit className="w-4 h-4" /></Button>}
+                              {user._id === request.employeeId._id &&  <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400" onClick={() => handleDeleteLeave(request)}><Trash2 className="w-4 h-4" /></Button>}
                             </div>
                           </td>
                         </tr>

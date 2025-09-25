@@ -14,40 +14,40 @@ const IdleScreen = () => {
     : "You have clocked out for the day. See you tomorrow!";
 
   return (
+<motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  exit={{ opacity: 0 }}
+  transition={{ duration: 0.5 }}
+  className="absolute top-0 left-0 w-full h-full bg-slate-900/80 backdrop-blur-md z-50 flex flex-col items-center pt-24 pointer-events-none"
+>
+  <div className="text-center text-white pointer-events-auto">
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
-      className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-10 flex items-center justify-center"
+      initial={{ scale: 0.5, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.2 }}
+      className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6"
     >
-      <div className="text-center text-white">
-        <motion.div
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.2 }}
-          className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6"
-        >
-          <Icon className="w-12 h-12 text-white" />
-        </motion.div>
-        <motion.h1 
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="text-4xl font-bold mb-2"
-        >
-          {title}
-        </motion.h1>
-        <motion.p 
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="text-lg text-gray-400"
-        >
-          {message}
-        </motion.p>
-      </div>
+      <Icon className="w-12 h-12 text-white" />
     </motion.div>
+    <motion.h1 
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 0.4 }}
+      className="text-4xl font-bold mb-2"
+    >
+      {title}
+    </motion.h1>
+    <motion.p 
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 0.5 }}
+      className="text-lg text-gray-400"
+    >
+      {message}
+    </motion.p>
+  </div>
+</motion.div>
   );
 };
 

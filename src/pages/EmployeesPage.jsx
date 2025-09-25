@@ -16,8 +16,10 @@ import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"; 
 import { apiRequest } from '@/components/CustomComponents/apiRequest'
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const EmployeesPage = () => {
+    const navigate = useNavigate();
   const { employees, deleteEmployee } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
@@ -34,7 +36,11 @@ const EmployeesPage = () => {
 
   useEffect(()=>{
     getPermissionsByPath(window.location.pathname).then(res=>{
-      setPermissions(res)
+      if(res){
+setPermissions(res)
+      }else{
+         navigate('/dashboard')
+      }
     })
 getAllEmployees()
 },[])
@@ -242,7 +248,7 @@ getAllEmployees()
                           </div>
                         </td>
                         <td>
-                          <span className={`status-badge ${employee.statusName === 'Active' ? 'status-active' : 'status-inactive'}`}>
+                          <span className={`status-badge ${employee.statusName === 'Online' ? 'status-active' : employee.statusName === 'Offline' ? 'status-inactive' : 'status-break' }`}>
                             {employee.statusName}
                           </span>
                         </td>

@@ -4,6 +4,7 @@ import { toast } from '@/components/ui/use-toast';
 import { config } from '@/components/CustomComponents/config';
 import socket  from '@/socket/Socket';
 import { apiRequest } from '@/components/CustomComponents/apiRequest'
+import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext();
 
@@ -17,6 +18,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const storedUser = localStorage.getItem('hrms_user');
@@ -185,7 +187,7 @@ const getPermissionsByPath = async(path) => {
     if (data.success) {
       return data.permissions;
     } else {
-      console.warn("No permissions found:", data.message);
+      navigate('/dashboard')
       return null;
     }
   } catch (err) {
