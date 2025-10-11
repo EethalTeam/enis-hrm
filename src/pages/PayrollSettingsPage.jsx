@@ -96,7 +96,7 @@ const PayrollComponentCard = ({ title, icon: Icon, data, onAddNew, onEdit, onDel
             <div>
               <p className="font-medium text-white">{item.name}</p>
               <p className="text-sm text-gray-400">
-                {item.type === 'percentage' ? `${item.value}% of salary` : `$${item.value} (fixed)`}
+                {item.type === 'percentage' ? `${item.value}% of salary` : `₹${item.value} (fixed)`}
               </p>
             </div>
             <div className="flex gap-2">

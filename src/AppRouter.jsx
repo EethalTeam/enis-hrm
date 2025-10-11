@@ -9,6 +9,7 @@ import EmployeesPage from '@/pages/EmployeesPage';
 import DepartmentsPage from '@/pages/DepartmentsPage';
 import DesignationsPage from '@/pages/DesignationsPage';
 import AttendancePage from '@/pages/AttendancePage';
+import AttendanceReportsPage from '@/pages/AttendanceReportsPage';
 import LeavesPage from '@/pages/LeavesPage';
 import LeaveBalancesPage from '@/pages/LeaveBalancesPage';
 import PermissionsPage from '@/pages/PermissionsPage';
@@ -63,6 +64,7 @@ export default function AppRouter() {
                   <Route path="departments" element={<DepartmentsPage />} />
                   <Route path="designations" element={<DesignationsPage />} />
                   <Route path="dailyLog" element={<AttendancePage />} />
+                  <Route path="/attendance/reports" element={<AttendanceReportsPage />} />
                   <Route path="leaveRequest" element={<LeavesPage />} />
                   <Route path="leaves/balances" element={<LeaveBalancesPage />} />
                   <Route path="leaves/permissions" element={<PermissionsPage />} />

@@ -69,7 +69,7 @@ const PayrollPage = () => {
     return [
       {
         title: 'Total Net Payroll',
-        value: `$${(totalPayroll / 1000).toFixed(1)}K`,
+        value: `₹${(totalPayroll / 1000).toFixed(1)}K`,
         change: '+3.2%',
         color: 'from-green-500 to-emerald-500',
         icon: IndianRupee
@@ -90,7 +90,7 @@ const PayrollPage = () => {
       },
       {
         title: 'Avg. Net Salary',
-        value: `$${(avgSalary / 1000).toFixed(1)}K`,
+        value: `₹${(avgSalary / 1000).toFixed(1)}K`,
         change: '+2.1%',
         color: 'from-purple-500 to-pink-500',
         icon: TrendingUp
@@ -151,7 +151,7 @@ const PayrollPage = () => {
     earnings.forEach(earn => {
       const amount = earn.type === 'percentage' ? baseSalary * (earn.value / 100) : earn.value;
       doc.text(earn.name, 20, y);
-      doc.text(`$${amount.toFixed(2)}`, 100, y);
+      doc.text(`₹${amount.toFixed(2)}`, 100, y);
       y+= 7;
     });
 
@@ -167,7 +167,7 @@ const PayrollPage = () => {
     deductions.forEach(deduct => {
       const amount = deduct.type === 'percentage' ? record.grossSalary * (deduct.value / 100) : deduct.value;
       doc.text(deduct.name, 20, y);
-      doc.text(`$${amount.toFixed(2)}`, 100, y);
+      doc.text(`₹${amount.toFixed(2)}`, 100, y);
       y+= 7;
     });
 
@@ -179,15 +179,15 @@ const PayrollPage = () => {
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
     doc.text('Gross Salary:', 20, y);
-    doc.text(`$${record.grossSalary.toFixed(2)}`, 100, y);
+    doc.text(`₹${record.grossSalary.toFixed(2)}`, 100, y);
     y += 7;
     doc.text('Total Deductions:', 20, y);
-    doc.text(`$${record.deductions.toFixed(2)}`, 100, y);
+    doc.text(`₹${record.deductions.toFixed(2)}`, 100, y);
     y += 10;
     
     doc.setFontSize(16);
     doc.text('Net Salary:', 20, y);
-    doc.text(`$${record.netSalary.toFixed(2)}`, 100, y);
+    doc.text(`₹${record.netSalary.toFixed(2)}`, 100, y);
     
     doc.save(`Payslip-${record.employee.replace(' ', '_')}-${selectedMonth}.pdf`);
 
@@ -359,9 +359,9 @@ const PayrollPage = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="text-green-400">${record.grossSalary.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td className="text-red-400">${record.deductions.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td className="text-white font-semibold">${record.netSalary.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td className="text-green-400">₹{record.grossSalary.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td className="text-red-400">₹{record.deductions.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td className="text-white font-semibold">₹{record.netSalary.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         <td>
                           <span className={`status-badge ${
                             record.status === 'Paid' ? 'status-active' : 'status-pending'

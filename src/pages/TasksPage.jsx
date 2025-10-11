@@ -2,7 +2,7 @@
 import React, { useState, useMemo ,useEffect} from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet';
-import { ListTodo, Plus, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { ListTodo, Plus, MoreHorizontal, Edit,History, Trash2, X } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +25,7 @@ const TaskForm = ({ open, setOpen, task, onSave,getAllTasks }) => {
   const [feedback,setFeedback] = useState('')
   const [ProgressMessage,setProgressMessage] = useState('')
   const [formData, setFormData] = useState(
-    task || {_id:'', taskName: '', description: '', taskPriority: '',taskPriorityId:'', taskStatus: '',taskStatusId:'', assignee: '',assignedTo:'',project:'', projectId: '', dueDate: '' ,createdBy:user._id}
+    task || {_id:'', taskName: '', description: '', taskPriority: '',taskPriorityId:'', taskStatus: '',taskStatusId:'', assignee: '',assignedTo:'',project:'', projectId: '', dueDate: '' ,reqLeadCount:'',compLeadCount:'',createdBy:user._id}
   );
     const [Data,SetData] = useState([])
   useEffect(()=>{
@@ -43,7 +43,9 @@ const TaskForm = ({ open, setOpen, task, onSave,getAllTasks }) => {
      taskPriorityId: task.taskPriorityId._id,
      assignee: task.assignedTo[0].name,
      assignedTo: task.assignedTo[0]._id,
-     dueDate: task.dueDate.split('T')[0]
+     dueDate: task.dueDate.split('T')[0],
+     reqLeadCount: task.reqLeadCount,
+     compLeadCount: task.compLeadCount
     })
   }
   },[task])
@@ -158,7 +160,7 @@ const handleSelectChange = (id, name, key, value) => {
       throw error;
     }
   }
-      const updateTaskStatus = async (taskId,status) => {
+      const updateTaskStatus = async (taskId,status,compLeadCount) => {
     try {
       if(status === 'Pause' && !ProgressMessage){
          toast({
@@ -175,7 +177,7 @@ const handleSelectChange = (id, name, key, value) => {
       }
        const response = await apiRequest("Task/updateTaskStatus/", {
         method: 'POST',
-        body: JSON.stringify({taskId,status,progressDetails:ProgressMessage,feedback:feedback}),
+        body: JSON.stringify({taskId,status,progressDetails:ProgressMessage,feedback:feedback,compLeadCount:compLeadCount}),
       });
       SetData([])
       toast({
@@ -217,7 +219,7 @@ const handleSubmit = (e) => {
     <ConfirmationDialog
       isOpen={isConfirmPause}
       onClose={() => setIsConfirmPause(false)}
-      onConfirm={()=>updateTaskStatus(formData._id,formData.taskStatus === 'In Progress' ? 'Pause' : 'Start')}
+      onConfirm={()=>updateTaskStatus(formData._id,formData.taskStatus === 'In Progress' ? 'Pause' : 'Start',formData.compLeadCount)}
       title="Pause Task?"
       description="Please provide a reason or Progress message for pausing the task."
     >
@@ -241,7 +243,7 @@ const handleSubmit = (e) => {
     <ConfirmationDialog
       isOpen={isConfirmComplete}
       onClose={() => setIsConfirmComplete(false)}
-      onConfirm={()=>updateTaskStatus(formData._id,'Complete')}
+      onConfirm={()=>updateTaskStatus(formData._id,'Complete',formData.compLeadCount)}
       title="Complete Task?"
       description="Please provide a feedback before completing the task."
     >
@@ -262,15 +264,34 @@ const handleSubmit = (e) => {
 </AnimatePresence>
    
     {(!isConfirmPause && !isConfirmComplete) && <Dialog open={open} onOpenChange={setOpen}>=
-      <DialogContent className="glass-effect border-white/10 text-white">
+      <DialogContent className="glass-effect border-white/10 text-white" style={{ overflowY: 'auto', height: '90vh', scrollbarWidth: 'none' }}>
         <DialogHeader>
           <DialogTitle>{task ? ((user.role === 'Super Admin' || user.role === 'Admin') ? 'Edit Task' : 'Task details') : 'Create New Task'}</DialogTitle>
           <DialogDescription className="text-gray-400">{task ? 'Update task details.' : 'Add a new task to a project.'}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <div>
+              <Label htmlFor="taskName" className="text-gray-300">Task Title</Label>
           <Input name="taskName" value={formData.taskName} onChange={handleChange} placeholder="Task Title" required className="bg-white/5 border-white/10" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}/>
+          </div>
+          <div>
+              <Label htmlFor="description" className="text-gray-300">Task Description</Label>
           <Textarea disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} name="description" value={formData.description} onChange={handleChange} placeholder="Task Description" className="bg-white/5 border-white/10" />
+          </div>
           <div className="grid grid-cols-2 gap-4">
+             <div>
+              <Label htmlFor="reqLeadCount" className="text-gray-300">Lead Count</Label>
+          <Input name="reqLeadCount" value={formData.reqLeadCount} type='number' onChange={handleChange} placeholder="Lead Count" required className="bg-white/5 border-white/10" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}/>
+          </div>
+         {formData._id && 
+         <div>
+              <Label htmlFor="compLeadCount" className="text-gray-300">Completed Count</Label>
+         <Input name="compLeadCount" value={formData.compLeadCount} type='number' onChange={handleChange} placeholder="Completed" className="bg-white/5 border-white/10" />
+         </div>}
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+                     <div>
+              <Label htmlFor="taskPriority" className="text-gray-300">Priority</Label>
             <Select
                                          name="taskPriority"
                                          value={formData.taskPriorityId} // store only _id
@@ -302,6 +323,9 @@ const handleSubmit = (e) => {
                                            ))}
                                          </SelectContent>
                                        </Select>
+                                       </div>
+                                        <div>
+              <Label htmlFor="taskStatus" className="text-gray-300">Status</Label>
             <Select
                                          name="taskStatus"
                                          value={formData.taskStatusId} // store only _id
@@ -333,6 +357,9 @@ const handleSubmit = (e) => {
                                            ))}
                                          </SelectContent>
                                        </Select>
+                                       </div>
+                                       <div>
+              <Label htmlFor="taskStatus" className="text-gray-300">Project</Label>
              <Select
                                          name="project"
                                          value={formData.projectId} // store only _id
@@ -364,6 +391,9 @@ const handleSubmit = (e) => {
                                            ))}
                                          </SelectContent>
                                        </Select>
+                                       </div>
+                                       <div>
+              <Label htmlFor="assignee" className="text-gray-300">Assign To</Label>
                          <Select
                                           name="assignee"
                                           value={formData.assignedTo} // store only _id
@@ -395,6 +425,7 @@ const handleSubmit = (e) => {
                                             ))}
                                           </SelectContent>
                                         </Select>
+                                        </div>
           </div>
           <div>
              <Label htmlFor="dueDate" className="text-gray-300">Due Date</Label>
@@ -408,7 +439,7 @@ const handleSubmit = (e) => {
         <div style={{display:'flex',justifyContent:'flex-end'}}>
          {(formData.taskStatus !== 'Completed' && formData.assignedTo === user._id) && <Button onClick={()=>{
           // updateTaskStatus(formData._id,formData.taskStatus === 'In Progress' ? 'Pause' : 'Start')
-         formData.taskStatus === 'In Progress' ?  setIsConfirmPause(true) : updateTaskStatus(formData._id,formData.taskStatus === 'In Progress' ? 'Pause' : 'Start')
+         formData.taskStatus === 'In Progress' ?  setIsConfirmPause(true) : updateTaskStatus(formData._id,formData.taskStatus === 'In Progress' ? 'Pause' : 'Start',formData.compLeadCount)
           }} className={`bg-gradient-to-r ${formData.taskStatus === 'In Progress' ? 'from-yellow-500 to-yellow-600' :'from-green-500 to-green-600' } mr-4`}>{formData.taskStatus === 'In Progress' ? 'Pause Task' : 'Start Task'}</Button>}
             {formData.assignedTo === user._id && <Button  onClick={()=>{setIsConfirmComplete(true)}} className="bg-gradient-to-r from-blue-500 to-purple-600" disabled={formData.taskStatus === 'Completed'}>{formData.taskStatus === 'Completed' ? 'Task Completed' : 'Complete Task'}</Button>}
             </div>
@@ -418,7 +449,7 @@ const handleSubmit = (e) => {
   );
 };
 
-const TaskCard = ({ task, onEdit, onDelete, employees }) => {
+const TaskCard = ({ task, onEdit, onDelete, employees,onShowHistory }) => {
   const {user}=useAuth()
   const getPriorityColor = (priority) => ({
     "High": "bg-red-500", "Medium": "bg-yellow-500", "Low": "bg-green-500"
@@ -438,6 +469,7 @@ const TaskCard = ({ task, onEdit, onDelete, employees }) => {
         </div>
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onEdit(task)}><Edit className="w-3 h-3"/></Button>
         {(user.role === 'Super Admin' || user.role === 'Admin') &&<Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDelete(task)}><Trash2 className="w-3 h-3 text-red-400"/></Button>}
+        {(user.role === 'Super Admin' || user.role === 'Admin') &&<Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onShowHistory(task.progressDetails)}><History className="w-3 h-3 text-yellow-400"/></Button>}
       </div>
     </motion.div>
   );
@@ -451,12 +483,22 @@ const TasksPage = () => {
   const [task,setTasks] = useState([])
   const [Employes,setEmployees]=useState([])
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [ProgressDetails,setProgressDetails]=useState([])
 
   const taskColumns = useMemo(() => ({
     Todo: task.filter(t => t.taskStatusId.name === 'To Do'),
     'In Progress': task.filter(t => t.taskStatusId.name === 'In Progress'),
     Completed: task.filter(t => t.taskStatusId.name === 'Completed'),
-    OverDue: task.filter(t => new Date(t.dueDate) < new Date())
+    OverDue: task.filter(t => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // reset time to midnight
+
+  const dueDate = new Date(t.dueDate);
+  dueDate.setHours(0, 0, 0, 0); // reset time to midnight
+
+  return dueDate < today && t.taskStatusId.name !== 'Completed';
+})
   }), [task]);
 
   const handleAddNew = () => {
@@ -518,6 +560,10 @@ const TasksPage = () => {
     setSelectedTask(task);
     setIsConfirmOpen(true);
   };
+    const handleHistory = (details) => {
+    setProgressDetails(details);
+    setIsHistoryOpen(true);
+  };
   const confirmDelete = () => {
     deleteTask(selectedTask._id);
     toast({ title: "Task Deleted" });
@@ -539,6 +585,40 @@ const TasksPage = () => {
       <Helmet><title>Tasks - ENIS-HRMS</title></Helmet>
       <AnimatePresence>{isFormOpen && <TaskForm open={isFormOpen} setOpen={setIsFormOpen} task={selectedTask} onSave={handleSave} getAllTasks={getAllTasks} />}</AnimatePresence>
       <AnimatePresence>{isConfirmOpen && <ConfirmationDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete} title="Delete Task?" description="This action cannot be undone." />}</AnimatePresence>
+      <AnimatePresence>
+      {isHistoryOpen && (
+        <motion.div
+          className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            className="bg-white rounded-2xl shadow-2xl p-6 w-[500px] max-w-full relative"
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -50, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+          style={{backgroundColor:'#c4f4c4'}}
+          >
+            {/* Close button (top-right) */}
+            <button
+              onClick={()=>setIsHistoryOpen(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition"
+            >
+              <X size={22} />
+            </button>
+            {/* Title */}
+            <h2 className="text-xl font-semibold mb-4" style={{color:'black'}}>Progress Details</h2>        
+              <ul className="list-disc list-inside space-y-2 text-gray-700">
+                {ProgressDetails.map((item, idx) => (
+                  <li key={idx}>{item}</li>
+                ))}
+              </ul>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
       <div className="space-y-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex justify-between items-center">
             <div>
@@ -561,7 +641,7 @@ const TasksPage = () => {
       >
                         <CardHeader><CardTitle className="text-white">{status} ({tasksInColumn.length})</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
-                            {tasksInColumn.map(task => <TaskCard key={task.id} task={task} onEdit={handleEdit} onDelete={handleDelete} employees={Employes}/>)}
+                            {tasksInColumn.map(task => <TaskCard key={task.id} task={task} onEdit={handleEdit} onDelete={handleDelete} onShowHistory={handleHistory} employees={Employes}/>)}
                         </CardContent>
                     </Card>
                 </motion.div>

@@ -192,25 +192,28 @@ const AttendancePage = () => {
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => { getAllEmployees(); }, []);
-  useEffect(() => { if (employees.length > 0) getAttendanceForDate(); }, [selectedDate, employees]);
+  useEffect(() => {
+    getAllEmployees();
+  }, []);
+
+  useEffect(() => {
+    if (employees.length > 0) {
+      getAttendanceForDate();
+    }
+  }, [selectedDate, employees]);
 
   const getAllEmployees = async () => {
-    try { 
-      setIsLoading(true); 
-      const response = await apiRequest("Employee/getAllEmployees/", { 
-        method: 'POST', 
-        body: JSON.stringify({ _id: user._id, role: user.role }) 
-      }); 
-      if (response && Array.isArray(response)) {
-        setEmployees(response);
-      } else {
-        setEmployees([]);
-      }
-    } catch (e) { 
-      setEmployees([]); 
-    } finally { 
-      setIsLoading(false); 
+    try {
+      setIsLoading(true);
+      const response = await apiRequest("Employee/getAllEmployees/", {
+        method: 'POST',
+        body: JSON.stringify({ _id: user._id, role: user.role })
+      });
+      setEmployees(Array.isArray(response) ? response : []);
+    } catch (e) {
+      setEmployees([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -221,120 +224,85 @@ const AttendancePage = () => {
         method: 'POST',
         body: JSON.stringify({ date: selectedDate, _id: user._id, role: user.role }),
       });
-      
-      if (response && response.success && response.attendance) {
-        
-        // Process all attendance records to ensure calculated fields exist
-        const processedAttendance = response.attendance.map(record => {
-          
-          // Force recalculation of totals from sessions
-          const totalWorkedHours = calculateTotalHours(record.sessions);
-          const totalBreakHours = calculateTotalBreakHours(record.sessions);
-          
-          
-          return {
-            ...record,
-            totalWorkedHours,
-            totalBreakHours,
-          };
-        });
-        
-        
-        // Group by employee ID
+
+      if (response?.success && response.attendance) {
         const attendanceByEmployee = {};
-        processedAttendance.forEach(record => {
-          const id = record.employeeId._id || record.employeeId;
+        response.attendance.forEach(record => {
+          const processedRecord = processAttendanceRecord(record); // Process each record
+          const id = processedRecord.employeeId._id || processedRecord.employeeId;
           if (!attendanceByEmployee[id]) {
             attendanceByEmployee[id] = [];
           }
-          attendanceByEmployee[id].push(record);
+          attendanceByEmployee[id].push(processedRecord);
         });
-        
         setAttendanceData(attendanceByEmployee);
       } else {
         setAttendanceData({});
       }
-    } catch (e) { 
+    } catch (e) {
       console.error("Error fetching attendance:", e);
-      setAttendanceData({}); 
-    } finally { 
-      setIsLoading(false); 
+      setAttendanceData({});
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const getEmployeeAttendanceHistory = async (employeeId) => {
-    try { 
-      const response = await apiRequest("Attendance/getEmployeeAttendanceHistory/", { 
-        method: 'POST', 
-        body: JSON.stringify({ employeeId, _id: user._id, role: user.role }), 
-      }); 
-      
-      if (response?.success && response.attendance) {
-        // Process all historical records to ensure calculated fields exist
-        return response.attendance.map(processAttendanceRecord);
-      }
-      
-      return [];
-    } catch (e) { 
+    try {
+      const response = await apiRequest("Attendance/getEmployeeAttendanceHistory/", {
+        method: 'POST',
+        body: JSON.stringify({ employeeId, _id: user._id, role: user.role }),
+      });
+      return response?.success && response.attendance ? response.attendance.map(processAttendanceRecord) : [];
+    } catch (e) {
       console.error("Error fetching employee history:", e);
-      return []; 
+      return [];
     }
   };
 
   const handleViewAttendance = async (employee) => {
     setSelectedEmployee(employee);
     const history = await getEmployeeAttendanceHistory(employee._id);
-    
-    // Update attendance data with full history for the selected employee
-    setAttendanceData(prev => ({ 
-      ...prev, 
-      [employee._id]: history 
+    setAttendanceData(prev => ({
+      ...prev,
+      [employee._id]: history
     }));
-    
     setIsDetailDialogOpen(true);
   };
 
   const filteredEmployees = useMemo(() => {
+    if (!employees) return [];
     return employees.filter(emp =>
       emp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       emp.department?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      emp.employeeId?.toLowerCase().includes(searchQuery.toLowerCase())
+      emp.code?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [employees, searchQuery]);
 
+  // =================== THIS FUNCTION IS FIXED ===================
   const getEmployeeAttendanceForDate = (employeeId) => {
     const records = attendanceData[employeeId] || [];
-    const selectedDateIST = new Date(selectedDate).toLocaleDateString('en-IN', { timeZone: istTimeZone });
     
+    // FIX 1: Consistently create the date object in the browser's local timezone
+    // The date picker string '2025-10-11' is split to avoid being parsed as UTC.
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day);
+    const selectedDateString = localDate.toLocaleDateString('en-IN', { timeZone: istTimeZone });
+
     const foundRecord = records.find(record => {
-      const recordDateIST = new Date(record.date).toLocaleDateString('en-IN', { timeZone: istTimeZone });
-      return recordDateIST === selectedDateIST;
+      const recordDateString = new Date(record.date).toLocaleDateString('en-IN', { timeZone: istTimeZone });
+      return recordDateString === selectedDateString;
     });
-    
-    if (foundRecord) {
-      
-      // Double-check calculations
-      const totalWorkedHours = foundRecord.totalWorkedHours ?? calculateTotalHours(foundRecord.sessions);
-      const totalBreakHours = foundRecord.totalBreakHours ?? calculateTotalBreakHours(foundRecord.sessions);
-      
-      const result = {
-        ...foundRecord,
-        totalWorkedHours,
-        totalBreakHours,
-      };
-      
-      return result;
-    }
-    
-    return null;
+
+    // FIX 2: Ensure the returned record is always processed to have correct totals
+    return foundRecord ? processAttendanceRecord(foundRecord) : null;
   };
+  // ==============================================================
 
   const getStatusColor = (attendance) => {
     if (!attendance?.sessions?.length) return 'text-gray-400';
     if (attendance.sessions.some(s => !s.checkOut)) return 'text-green-400';
-    if ((attendance.totalWorkedHours || 0) >= 8) return 'text-green-400';
-    if ((attendance.totalWorkedHours || 0) > 0) return 'text-orange-400';
-    return 'text-red-400';
+    return 'text-gray-400'; // Default to gray if checked out
   };
 
   const getStatusText = (attendance) => {
@@ -349,44 +317,44 @@ const AttendancePage = () => {
       <Helmet><title>Attendance Daily Log - ENIS-HRMS</title></Helmet>
       <AnimatePresence>
         {isDetailDialogOpen && (
-          <AttendanceDetailDialog 
-            open={isDetailDialogOpen} 
-            setOpen={setIsDetailDialogOpen} 
-            employee={selectedEmployee} 
-            attendanceRecords={attendanceData[selectedEmployee?._id] || []} 
+          <AttendanceDetailDialog
+            open={isDetailDialogOpen}
+            setOpen={setIsDetailDialogOpen}
+            employee={selectedEmployee}
+            attendanceRecords={attendanceData[selectedEmployee?._id] || []}
           />
         )}
       </AnimatePresence>
 
       <div className="space-y-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex justify-between items-center">
-          <div> 
-            <h1 className="text-3xl font-bold text-white">Attendance Daily Log</h1> 
-            <p className="text-gray-400">Monitor employee attendance and work sessions.</p> 
+          <div>
+            <h1 className="text-3xl font-bold text-white">Attendance Daily Log</h1>
+            <p className="text-gray-400">Monitor employee attendance and work sessions.</p>
           </div>
-          <div className="flex items-center gap-4"> 
-            <Input 
-              placeholder="Search employees..." 
-              value={searchQuery} 
-              onChange={(e) => setSearchQuery(e.target.value)} 
-              className="bg-white/5 border-white/10 w-64" 
-            /> 
-            <Input 
-              type="date" 
-              value={selectedDate} 
-              onChange={(e) => setSelectedDate(e.target.value)} 
-              className="bg-white/5 border-white/10 text-white [&::-webkit-calendar-picker-indicator]:invert" 
-            /> 
+          <div className="flex items-center gap-4">
+            <Input
+              placeholder="Search employees..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-white/5 border-white/10 w-64"
+            />
+            <Input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-white/5 border-white/10 text-white [&::-webkit-calendar-picker-indicator]:invert"
+            />
           </div>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <Card className="glass-effect border-white/10">
-            <CardHeader> 
+            <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
-                <Users className="w-5 h-5" /> 
-                Employee Attendance - {new Date(selectedDate).toLocaleDateString()}
-              </CardTitle> 
+                <Users className="w-5 h-5" />
+                Employee Attendance - {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -408,20 +376,19 @@ const AttendancePage = () => {
                     <tbody>
                       {filteredEmployees.map((employee, index) => {
                         const attendance = getEmployeeAttendanceForDate(employee._id);
-                        
                         return (
-                          <tr key={employee._id} className={`border-b border-white/10 ${index % 2 === 0 ? 'bg-white/5' : 'bg-white/10'}`}>
+                          <tr key={employee._id} className="border-b border-white/10 hover:bg-white/5 transition-colors">
                             <td className="py-4 px-4 text-white">
                               <div>
                                 <div className="font-medium">{employee.name}</div>
-                                <div className="text-sm text-gray-400">{employee.department}</div>
+                                <div className="text-sm text-gray-400">{employee.departmentName}</div>
                               </div>
                             </td>
                             <td className={`py-4 px-4 font-medium ${getStatusColor(attendance)}`}>
                               {getStatusText(attendance)}
                             </td>
                             <td className="py-4 px-4 text-green-400 font-medium">
-                              {attendance ? formatDuration(attendance.totalWorkedHours || 0) : '0h 0m'}
+                              {formatDuration(attendance?.totalWorkedHours)}
                               {attendance && (
                                 <div className="text-xs text-gray-400">
                                   {attendance.sessions?.length || 0} session(s)
@@ -429,17 +396,17 @@ const AttendancePage = () => {
                               )}
                             </td>
                             <td className="py-4 px-4 text-yellow-400 font-medium">
-                              {attendance ? formatDuration(attendance.totalBreakHours || 0) : '0h 0m'}
+                              {formatDuration(attendance?.totalBreakHours)}
                             </td>
                             <td className="py-4 px-4 text-center">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => handleViewAttendance(employee)} 
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewAttendance(employee)}
                                 className="text-blue-400 hover:bg-blue-400/10"
-                              > 
-                                <Eye className="w-4 h-4 mr-2" /> 
-                                View Log 
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Log
                               </Button>
                             </td>
                           </tr>
