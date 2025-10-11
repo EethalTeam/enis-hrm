@@ -17,9 +17,10 @@ import { apiRequest } from '@/components/CustomComponents/apiRequest'
 import { useAuth } from '@/contexts/AuthContext';
 
 const LeaveForm = ({ open, setOpen, leave, onSave, getAllLeaves }) => {
+  const {user}=useAuth()
   const { employees } = useData();
   const [formData, setFormData] = useState(
-    leave || {_id:'',employee:'', employeeId: '',leaveTypeId:'', leaveType: '', startDate: '', endDate: '', reason: '', RequestStatusId: '',RequestStatus:'',requestedToId:'',requestedTo:'' }
+    leave || {_id:'',employee:user.name,employeeId: user._id,leaveTypeId:'', leaveType: '', startDate: '', endDate: '', reason: '', RequestStatusId: '',RequestStatus:'',requestedToId:'',requestedTo:'' }
   );
     const [Data,SetData] = useState([])
   useEffect(()=>{
@@ -142,7 +143,7 @@ const handleSelectChange = (id, name, key, value) => {
         }
     setOpen(false);
   };
-
+  const canSelectEmployee = user.role === 'Admin' || user.role === 'Super Admin';
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="glass-effect border-white/10 text-white">
@@ -153,6 +154,7 @@ const handleSelectChange = (id, name, key, value) => {
                       <Select
                                        name="employee"
                                        value={formData.employeeId} // store only _id
+                                       disabled={!canSelectEmployee}
                                        onOpenChange={async (open) => {
                                          if (open && (!Data || Data.length === 0)) {
                                            await getEmployeeList();
