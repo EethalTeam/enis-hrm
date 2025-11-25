@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet';
-import { UserPlus, Search, MoreHorizontal, Phone, Mail, Edit, Trash2, History } from 'lucide-react'; // Added History icon
+import { UserPlus, Search, MoreHorizontal, Phone, Mail, Edit, Trash2, History ,FileText} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,17 +11,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { config } from '@/components/CustomComponents/config'; // Assuming config is used by handleFileChange
 import { useAuth } from '@/contexts/AuthContext';
 import { apiRequest } from '@/components/CustomComponents/apiRequest';
 
 // =================== HELPER FUNCTION ===================
-// Extracts only the note content, removing the status and timestamp
 const parseNoteContent = (noteString) => {
     if (!noteString || typeof noteString !== 'string') return '';
     return noteString.split(' - [Status:')[0].trim();
 };
 
-// ===== NEW COMPONENT: Notes History Dialog =====
+// =======================================================
+// ===== COMPONENT: Notes History Dialog
+// =======================================================
 const NotesHistoryDialog = ({ open, setOpen, notes }) => {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -35,7 +37,6 @@ const NotesHistoryDialog = ({ open, setOpen, notes }) => {
                 <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-4">
                     {notes && notes.length > 0 ? (
                         [...notes].reverse().map((note, index) => {
-                            // Split the note into its parts for better formatting
                             const parts = note.split(' - ');
                             const content = parts[0] || '';
                             const status = parts[1] || '';
@@ -60,112 +61,178 @@ const NotesHistoryDialog = ({ open, setOpen, notes }) => {
     );
 };
 
-const LeadForm = ({ open, setOpen, lead, getAllLeads }) => {
+// =======================================================
+// ===== COMPONENT: Lead Form (Rebuilt for HR Schema)
+// =======================================================
+const LeadForm = ({ open, setOpen, lead, getAllLeads, leadStatuses, employees }) => {
     const { user } = useAuth();
     const [formData, setFormData] = useState({});
-    const [Data, SetData] = useState([]);
+
+    // Helper to format dates for input[type="date"]
+    const formatDateForInput = (dateStr) => {
+        if (!dateStr) return '';
+        try {
+            return new Date(dateStr).toISOString().split('T')[0];
+        } catch (e) {
+            return '';
+        }
+    };
 
     useEffect(() => {
         if (lead) {
+            // EDITING an existing lead
             const lastNote = lead.notes && lead.notes.length > 0 ? lead.notes[lead.notes.length - 1] : '';
             const lastNoteContent = parseNoteContent(lastNote);
             setFormData({
                 _id: lead._id,
-                companyName: lead.companyName,
-                contactPerson: lead.contactPerson,
-                contactEmail: lead.contactEmail,
-                contactPhone: lead.contactPhone,
-                status: lead.statusId.statusName,
-                statusId: lead.statusId._id,
-                estimatedValue: lead.estimatedValue,
-                source: lead.source,
-                employee: lead.assignedTo.name,
-                assignedTo: lead.assignedTo._id,
-                lastContact: new Date().toISOString().slice(0, 10),
-                nextFollowUp: lead.nextFollowUp ? lead.nextFollowUp.split('T')[0] : '',
-                notes: '',
-                currentNotes:lastNoteContent,
+                leadName: lead.leadName || '',
+                leadCode: lead.leadCode || '',
+                leadPhoneNumber: lead.leadPhoneNumber || '',
+                leadDate: formatDateForInput(lead.leadDate),
+                experience: lead.experience || '',
+                currentCTC: lead.currentCTC || '',
+                expectedCTC: lead.expectedCTC || '',
+                appliedTo: lead.appliedTo || '',
+                currentRole: lead.currentRole || '',
+                leadFeedback: lead.leadFeedback || '',
+                interViewDate: formatDateForInput(lead.interViewDate),
+                leadLocation: lead.leadLocation || '',
+                leadComments: lead.leadComments || '',
+                statusId: lead.statusId?._id || '',
+                assignedTo: lead.assignedTo?._id || '',
+                nextFollowUp: formatDateForInput(lead.nextFollowUp),
+                notes: '', // Always empty for adding a *new* note
+                currentNotes: lastNoteContent, // Display the last note
             });
         } else {
-            setFormData({ companyName: '', contactPerson: '', contactEmail: '', contactPhone: '', statusId: '', estimatedValue: '', source: '', assignedTo: '', lastContact: new Date().toISOString().slice(0, 10), nextFollowUp: '', notes: '' });
+            // CREATING a new lead
+            setFormData({
+                leadName: '',
+                leadCode: '',
+                leadPhoneNumber: '',
+                leadDate: new Date().toISOString().split('T')[0],
+                experience: '',
+                currentCTC: '',
+                expectedCTC: '',
+                appliedTo: '',
+                currentRole: '',
+                leadFeedback: '',
+                interViewDate: '',
+                leadLocation: '',
+                leadComments: '',
+                statusId: '',
+                assignedTo: user._id, // Default to current user
+                nextFollowUp: '',
+                notes: '',
+            });
         }
-    }, [lead]);
+    }, [lead, user]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
-    const handleSelectChange = (id, name, key, value) => {
-        if (key && name) { setFormData(prev => ({ ...prev, [id]: key, [name]: value })); SetData([]); }
+
+    const handleSelectChange = (name, value) => {
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
-    const getEmployeeList = async () => {
-        try { SetData([]); const response = await apiRequest("Employee/getAllEmployees/", { method: 'POST', body: JSON.stringify({}), }); SetData(response) } catch (error) { console.error('Error:', error); }
-    }
-    const getLeadStatusList = async () => {
-        try { SetData([]); const response = await apiRequest("LeadStatus/getAllLeadStatus/", { method: 'POST', body: JSON.stringify({}), }); SetData(response) } catch (error) { console.error('Error:', error); }
-    }
-    const createLead = async (data) => {
-        try { await apiRequest("Lead/createLead/", { method: 'POST', body: JSON.stringify(data), }); SetData([]); getAllLeads() } catch (error) { console.error('Error:', error); }
-    }
-    const updateLead = async (data) => {
-        try { await apiRequest("Lead/updateLead/", { method: 'POST', body: JSON.stringify(data), }); SetData([]); getAllLeads() } catch (error) { console.error('Error:', error); }
-    }
-    const handleSubmit = (e) => {
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const payload = { ...formData, estimatedValue: parseFloat(formData.estimatedValue) };
-        if (formData._id) {
-            updateLead(payload);
-            toast({ title: 'Lead Updated', description: "Lead has been updated successfully." });
-        } else {
-            createLead(payload);
-            toast({ title: 'Lead Added', description: `${formData.companyName} has been added.` });
+        const payload = { ...formData };
+        
+        try {
+            if (payload._id) {
+                // UPDATE LEAD
+                await apiRequest("Lead/updateLead/", { method: 'POST', body: JSON.stringify(payload) });
+                toast({ title: 'Lead Updated', description: "Lead has been updated successfully." });
+            } else {
+                // CREATE LEAD
+                await apiRequest("Lead/createLead/", { method: 'POST', body: JSON.stringify(payload) });
+                toast({ title: 'Lead Added', description: `${payload.leadName} has been added.` });
+            }
+            getAllLeads(); // Refresh the list
+            setOpen(false); // Close the dialog
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            toast({ variant: "destructive", title: 'Error', description: error.message || "Failed to save lead." });
         }
-        setOpen(false);
     };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="glass-effect border-white/10 text-white max-w-2xl" style={{ overflowY: 'auto', height: '90vh', scrollbarWidth: 'none' }}>
+            <DialogContent className="glass-effect border-white/10 text-white max-w-4xl" style={{ overflowY: 'auto', height: '90vh', scrollbarWidth: 'none' }}>
                 <DialogHeader>
                     <DialogTitle>{lead ? 'Edit Lead' : 'Add New Lead'}</DialogTitle>
-                    <DialogDescription className="text-gray-400">{lead ? 'Update the details for this lead.' : 'Enter the details for the new sales lead.'}</DialogDescription>
+                    <DialogDescription className="text-gray-400">{lead ? 'Update the candidate details.' : 'Enter the details for the new candidate.'}</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 py-4">
-                  <div><Label>Company Name</Label><Input name="companyName" value={formData.companyName || ''} onChange={handleChange} required className="bg-white/5" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} /></div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div><Label>Contact Person</Label><Input name="contactPerson" value={formData.contactPerson || ''} onChange={handleChange} required className="bg-white/5" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} /></div>
-                        <div><Label>Email</Label><Input name="contactEmail" type="email" value={formData.contactEmail || ''} onChange={handleChange} required className="bg-white/5" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} /></div>
-                        <div><Label>Phone</Label><Input name="contactPhone" value={formData.contactPhone || ''} onChange={handleChange} required className="bg-white/5" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} /></div>
-                        <div>
-                            <Label>Status</Label>
-                            <Select value={formData.statusId || ''} onOpenChange={async(open) => { if (open) await getLeadStatusList(); }} onValueChange={(id) => { if (!id) return; const dept = Data.find(d => d._id === id); if (dept) { handleSelectChange('statusId', 'status', dept._id, dept.statusName); } }}>
-                                <SelectTrigger className="glass-effect border-white/10"><SelectValue placeholder="Select Status">{formData.status}</SelectValue></SelectTrigger>
-                                <SelectContent className="glass-effect border-white/10 text-white">
-                                    {/* FIX: Removed the invalid <_components.Suspense> wrapper */}
-                                    {(Data || []).map((dept) => (
-                                        <SelectItem key={dept._id} value={dept._id} className="hover:bg-white/10">{dept.statusName}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div><Label>Lead Value (₹)</Label><Input name="estimatedValue" type="number" value={formData.estimatedValue || ''} onChange={handleChange} required className="bg-white/5" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} /></div>
-                        <div><Label>Source</Label><Input name="source" value={formData.source || ''} onChange={handleChange} required className="bg-white/5" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} /></div>
-                        <div>
-                            <Label>Assigned To</Label>
-                            <Select name="employee" value={formData.assignedTo || ''} onOpenChange={async(open) => { if (open) await getEmployeeList(); }} disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} onValueChange={(id) => { if (!id) return; const dept = Data.find(d => d._id === id); if (dept) { handleSelectChange('assignedTo', 'employee', dept._id, dept.name); } }}>
-                                <SelectTrigger className="glass-effect border-white/10"><SelectValue placeholder="Select Employee">{formData.employee}</SelectValue></SelectTrigger>
-                                <SelectContent className="glass-effect border-white/10 text-white">
-                                    {/* FIX: Removed the invalid <_components.Suspense> wrapper */}
-                                    {(Data || []).map((dept) => (
-                                        <SelectItem key={dept._id} value={dept._id} className="hover:bg-white/10">{dept.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div><Label>Next Follow-up</Label><Input name="nextFollowUp" type="date" value={formData.nextFollowUp || ''} onChange={handleChange} className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert" /></div>
+                    
+                    {/* --- Candidate Details --- */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div><Label>Lead Name *</Label><Input name="leadName" value={formData.leadName || ''} onChange={handleChange} required className="bg-white/5" /></div>
+                        <div><Label>Lead Phone *</Label><Input name="leadPhoneNumber" value={formData.leadPhoneNumber || ''} onChange={handleChange} required className="bg-white/5" /></div>
+                        <div><Label>Lead Date *</Label><Input name="leadDate" type="date" value={formData.leadDate || ''} onChange={handleChange} required className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert" /></div>
                     </div>
-                    <div><Label>Current Notes</Label><Input name="notes" value={formData.currentNotes || ''} onChange={handleChange} placeholder="Add a new note..." className="bg-white/5" disabled/></div>
-                        <div><Label>Add New Note</Label><Input name="notes" value={formData.notes || ''} onChange={handleChange} placeholder="Add a new note..." className="bg-white/5" /></div>
+
+                    {/* --- Role & Experience Details --- */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div><Label>Applied For</Label><Input name="appliedTo" value={formData.appliedTo || ''} onChange={handleChange} className="bg-white/5" /></div>
+                        <div><Label>Current Role</Label><Input name="currentRole" value={formData.currentRole || ''} onChange={handleChange} className="bg-white/5" /></div>
+                        <div><Label>Experience</Label><Input name="experience" value={formData.experience || ''} onChange={handleChange} className="bg-white/5" /></div>
+                    </div>
+
+                    {/* --- CTC Details --- */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div><Label>Current CTC</Label><Input name="currentCTC" value={formData.currentCTC || ''} onChange={handleChange} className="bg-white/5" /></div>
+                        <div><Label>Expected CTC</Label><Input name="expectedCTC" value={formData.expectedCTC || ''} onChange={handleChange} className="bg-white/5" /></div>
+                        <div><Label>Location</Label><Input name="leadLocation" value={formData.leadLocation || ''} onChange={handleChange} className="bg-white/5" /></div>
+                    </div>
+
+                    {/* --- Status & Follow-up --- */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <Label>Status *</Label>
+                            <Select value={formData.statusId || ''} onValueChange={(value) => handleSelectChange('statusId', value)} required>
+                                <SelectTrigger className="glass-effect border-white/10"><SelectValue placeholder="Select Status" /></SelectTrigger>
+                                <SelectContent className="glass-effect border-white/10 text-white">
+                                    {leadStatuses.map((status) => (
+                                        <SelectItem key={status._id} value={status._id} className="hover:bg-white/10">{status.statusName}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label>Recruiter (Assigned To)</Label>
+                            <Select value={formData.assignedTo || ''} onValueChange={(value) => handleSelectChange('assignedTo', value)}>
+                                <SelectTrigger className="glass-effect border-white/10"><SelectValue placeholder="Select Employee" /></SelectTrigger>
+                                <SelectContent className="glass-effect border-white/10 text-white">
+                                    {employees.map((emp) => (
+                                        <SelectItem key={emp._id} value={emp._id} className="hover:bg-white/10">{emp.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div><Label>Lead Code</Label><Input name="leadCode" value={formData.leadCode || ''} onChange={handleChange} className="bg-white/5" /></div>
+                    </div>
+
+                    {/* --- Interview & Feedback --- */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div><Label>Interview Date</Label><Input name="interViewDate" type="date" value={formData.interViewDate || ''} onChange={handleChange} className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert" /></div>
+                         <div><Label>Next Follow-up</Label><Input name="nextFollowUp" type="date" value={formData.nextFollowUp || ''} onChange={handleChange} className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert" /></div>
+                    </div>
+
+                    <div><Label>Feedback</Label><Input name="leadFeedback" value={formData.leadFeedback || ''} onChange={handleChange} placeholder="e.g., Interested, Not Answering" className="bg-white/5" /></div>
+                    <div><Label>Comments</Label><Input name="leadComments" value={formData.leadComments || ''} onChange={handleChange} placeholder="Add comments..." className="bg-white/5" /></div>
+
+                    <hr className="border-white/10 my-4" />
+
+                    {/* --- Notes --- */}
+                    {lead && (
+                        <div><Label>Current Notes</Label><Input value={formData.currentNotes || ''} className="bg-black/20" disabled/></div>
+                    )}
+                    <div><Label>{lead ? 'Add New Note' : 'Add Note'}</Label><Input name="notes" value={formData.notes || ''} onChange={handleChange} placeholder="Add a new note..." className="bg-white/5" /></div>
+                    
                     <DialogFooter>
                         <DialogClose asChild><Button type="button" variant="outline" className="border-white/10">Cancel</Button></DialogClose>
                         <Button type="submit" className="bg-gradient-to-r from-blue-500 to-purple-600">Save Lead</Button>
@@ -176,112 +243,216 @@ const LeadForm = ({ open, setOpen, lead, getAllLeads }) => {
     );
 };
 
+// =======================================================
+// ===== MAIN PAGE: LeadsPage
+// =======================================================
 const LeadsPage = () => {
     const { user } = useAuth();
     const [leads, setLeads] = useState([]);
+    const [leadStatuses, setLeadStatuses] = useState([]);
+    const [employees, setEmployees] = useState([]);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [selectedLead, setSelectedLead] = useState(null);
-    
-    // ===== NEW STATE for history dialog =====
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [selectedLeadNotes, setSelectedLeadNotes] = useState([]);
-    
-    // ... (other state variables are unchanged)
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const fileInputRef = useRef(null);
     const [loading, setLoading] = useState(false);
 
+    // UPDATED: Search logic for new schema
     const filteredLeads = useMemo(() => leads.filter(lead => {
-        const matchesSearch = lead.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            lead.contactPerson.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === 'all' || lead.statusId.statusName.toLowerCase() === statusFilter.toLowerCase();
+        const term = searchTerm.toLowerCase();
+        const matchesSearch = 
+            (lead.leadName && lead.leadName.toLowerCase().includes(term)) ||
+            (lead.leadCode && lead.leadCode.toLowerCase().includes(term)) ||
+            (lead.leadPhoneNumber && lead.leadPhoneNumber.toLowerCase().includes(term));
+            
+        const matchesStatus = statusFilter === 'all' || lead.statusId._id === statusFilter;
         return matchesSearch && matchesStatus;
     }), [leads, searchTerm, statusFilter]);
 
-    useEffect(() => { getAllLeads() }, []);
+    // Fetch all necessary data on load
+    useEffect(() => {
+        getAllLeads();
+        getLeadStatuses();
+        getEmployees();
+    }, []);
 
     const getAllLeads = async () => {
         try {
             const response = await apiRequest("Lead/getAllLeads/", { method: 'POST', body: JSON.stringify({ _id: user._id, role: user.role }), });
             setLeads(response.leads || []);
-        } catch (error) { console.error('Error:', error); }
+        } catch (error) { console.error('Error fetching leads:', error); }
     }
 
-    // ===== NEW FUNCTION to handle history view =====
+    const getLeadStatuses = async () => {
+         try { 
+            const response = await apiRequest("LeadStatus/getAllLeadStatus/", { method: 'POST', body: JSON.stringify({}), }); 
+            setLeadStatuses(response || []);
+        } catch (error) { console.error('Error fetching statuses:', error); }
+    }
+    
+    const getEmployees = async () => {
+         try { 
+            const response = await apiRequest("Employee/getAllEmployees/", { method: 'POST', body: JSON.stringify({}), }); 
+            setEmployees(response || []);
+        } catch (error) { console.error('Error fetching employees:', error); }
+    }
+
     const handleViewHistory = (lead) => {
         setSelectedLeadNotes(lead.notes);
         setIsHistoryOpen(true);
     };
     
-    // ... (rest of the functions are unchanged)
     const handleAddLead = () => { setSelectedLead(null); setIsFormOpen(true); };
     const handleEditLead = (lead) => { setSelectedLead(lead); setIsFormOpen(true); };
     const handleDeleteLead = (lead) => { setSelectedLead(lead); setIsConfirmOpen(true); };
-    const confirmDelete = () => {
-        apiRequest("Lead/deleteLead/", { method: 'POST', body: JSON.stringify({ _id: selectedLead._id }) });
-        toast({ title: "Lead Deleted", description: `"${selectedLead.companyName}" has been deleted.` });
-        setIsConfirmOpen(false);
-        setSelectedLead(null);
-        getAllLeads();
+    
+    const confirmDelete = async () => {
+        try {
+            await apiRequest("Lead/deleteLead/", { method: 'POST', body: JSON.stringify({ _id: selectedLead._id }) });
+            toast({ title: "Lead Deleted", description: `"${selectedLead.leadName}" has been deleted.` });
+            setIsConfirmOpen(false);
+            setSelectedLead(null);
+            getAllLeads();
+        } catch (error) {
+            console.error('Error deleting lead:', error);
+            toast({ variant: "destructive", title: 'Error', description: "Failed to delete lead." });
+        }
     };
+    
     const handleContactLead = () => { toast({ title: "Simulating Action", description: "This feature is not yet enabled" }); };
+    
+    // UPDATED: handleFileChange to use apiRequest and handle errors
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+    
+        setLoading(true);
+    
+        const excelData = new FormData();
+        excelData.append('file', file);
+    
+        try {
+            // Use your apiRequest wrapper
+            // NOTE: Make sure your apiRequest can handle FormData and doesn't
+            // automatically set Content-Type to application/json
+            const response = await apiRequest("api/importLeadsExcel/", { 
+                method: 'POST', 
+                body: excelData 
+            });
+    
+            if (response && (response.leads || response.message === "File received. Leads are being imported in the background.")) {
+                toast({
+                    title: 'Import Started',
+                    description: response.message || `${response.leads.length} leads were imported.`
+                });
+                getAllLeads(); // Refresh the leads list
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: 'Import Failed',
+                    description: response.message || 'An unknown error occurred.'
+                });
+            }
+        } catch (error) {
+            console.error('Import Error:', error);
+            toast({
+                variant: "destructive",
+                title: 'Import Error',
+                description: error.message || 'A network error occurred. Please check the console.'
+            });
+        } finally {
+            setLoading(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = null; // reset file input
+            }
+        }
+    };
+
     const handleImportClick = () => { fileInputRef.current.click(); };
-    const handleFileChange = async(e)=>{ /* ... */};
 
     return (
         <>
             <Helmet><title>Lead Management - ENIS-HRMS</title></Helmet>
             
             <AnimatePresence>
-                {isFormOpen && <LeadForm open={isFormOpen} setOpen={setIsFormOpen} lead={selectedLead} getAllLeads={getAllLeads} />}
+                {isFormOpen && <LeadForm 
+                    open={isFormOpen} 
+                    setOpen={setIsFormOpen} 
+                    lead={selectedLead} 
+                    getAllLeads={getAllLeads}
+                    leadStatuses={leadStatuses}
+                    employees={employees} 
+                />}
             </AnimatePresence>
             
-            {/* ===== NEW DIALOG for history view ===== */}
             <AnimatePresence>
                 {isHistoryOpen && <NotesHistoryDialog open={isHistoryOpen} setOpen={setIsHistoryOpen} notes={selectedLeadNotes} />}
             </AnimatePresence>
 
             <AnimatePresence>
-                {isConfirmOpen && <ConfirmationDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete} title={`Delete Lead: ${selectedLead?.companyName}`} description="This action cannot be undone." />}
+                {isConfirmOpen && <ConfirmationDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete} title={`Delete Lead: ${selectedLead?.leadName}`} description="This action cannot be undone." />}
             </AnimatePresence>
 
             <div className="space-y-8">
-                 {/* ... (Header and filter sections are unchanged) ... */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex justify-between items-center">
-                    <div><h1 className="text-3xl font-bold text-white">Lead Management</h1><p className="text-gray-400">Track and manage sales leads.</p></div>
-                    <Button onClick={handleAddLead} className="bg-gradient-to-r from-blue-500 to-purple-600"><UserPlus className="w-4 h-4 mr-2" />Add Lead</Button>
+                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex justify-between items-center">
+                    <div><h1 className="text-3xl font-bold text-white">Lead Management (HR)</h1><p className="text-gray-400">Track and manage candidates.</p></div>
+                    <div className="flex gap-4">
+                        <Button onClick={handleImportClick} className="bg-gradient-to-r from-green-500 to-green-600">
+                            <FileText className="w-4 h-4 mr-2" />
+                            {loading ? 'Importing...' : 'Import Leads'}
+                        </Button>
+                        <input
+                            type="file"
+                            accept=".xlsx, .xls"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            style={{ display: 'none' }}
+                        />
+                        <Button onClick={handleAddLead} className="bg-gradient-to-r from-blue-500 to-purple-600"><UserPlus className="w-4 h-4 mr-2" />Add Lead</Button>
+                    </div>
                 </motion.div>
+                
+                {/* --- UPDATED FILTER --- */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                     <Card className="glass-effect border-white/10">
                         <CardContent className="p-6">
                             <div className="flex gap-4">
-                                <div className="flex-1 relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" /><Input placeholder="Search leads..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 glass-effect" /></div>
-                                <Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="w-[180px] glass-effect"><SelectValue /></SelectTrigger><SelectContent className="glass-effect"><SelectItem value="all">All Status</SelectItem><SelectItem value="Hot">Hot</SelectItem><SelectItem value="Warm">Warm</SelectItem><SelectItem value="Cold">Cold</SelectItem><SelectItem value="Qualified">Qualified</SelectItem><SelectItem value="Lost">Lost</SelectItem></SelectContent></Select>
+                                <div className="flex-1 relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" /><Input placeholder="Search by name, code, or phone..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 glass-effect" /></div>
+                                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                    <SelectTrigger className="w-[180px] glass-effect"><SelectValue placeholder="All Status" /></SelectTrigger>
+                                    <SelectContent className="glass-effect border-white/10 text-white">
+                                        <SelectItem value="all">All Status</SelectItem>
+                                        {leadStatuses.map((status) => (
+                                            <SelectItem key={status._id} value={status._id}>{status.statusName}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </CardContent>
                     </Card>
                 </motion.div>
 
-                {/* --- Main Report Table (MODIFIED) --- */}
+                {/* --- UPDATED TABLE --- */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
                     <Card className="glass-effect border-white/10">
-                        <CardHeader><CardTitle className="text-white">Leads</CardTitle></CardHeader>
+                        <CardHeader><CardTitle className="text-white">Candidates</CardTitle></CardHeader>
                         <CardContent>
                             <div className="overflow-x-auto">
                                 <table className="data-table">
-                                    <thead><tr><th>Lead</th><th>Contact</th><th>Status</th><th>Assigned To</th><th>Actions</th></tr></thead>
+                                    <thead><tr><th>Candidate</th><th>Contact</th><th>Feedback</th><th>Recruiter</th><th>Actions</th></tr></thead>
                                     <tbody>
                                         {filteredLeads.map(lead => (
                                             <tr key={lead._id}>
-                                                <td><div className="font-medium text-white">{lead.companyName}</div><div className="text-xs text-gray-400">{lead.source}</div></td>
-                                                <td><div className="text-white">{lead.contactPerson}</div><div className="text-xs text-gray-400">{lead.contactEmail}</div></td>
-                                                <td><span className={`status-badge`}>{lead.statusId.statusName}</span></td>
+                                                <td><div className="font-medium text-white">{lead.leadName}</div><div className="text-xs text-gray-400">{lead.leadCode}</div></td>
+                                                <td><div className="text-white">{lead.leadPhoneNumber}</div><div className="text-xs text-gray-400">{lead.leadLocation}</div></td>
+                                                <td><span className={`status-badge`}>{lead.leadFeedback || 'N/A'}</span></td>
                                                 <td>{lead?.assignedTo?.name || 'Unassigned'}</td>
                                                 <td>
                                                     <div className="flex gap-1">
-                                                        {/* ===== NEW HISTORY BUTTON ===== */}
                                                         <Button size="icon" variant="ghost" className="h-8 w-8 text-cyan-400" onClick={() => handleViewHistory(lead)}><History className="w-4 h-4" /></Button>
                                                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleContactLead}><Mail className="w-4 h-4" /></Button>
                                                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleContactLead}><Phone className="w-4 h-4" /></Button>

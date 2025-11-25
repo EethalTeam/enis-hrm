@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet';
-import { Clock, User, Eye, Users } from 'lucide-react';
+import { Clock, User, Eye, Users, PartyPopper } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -47,33 +47,117 @@ const processAttendanceRecord = (record) => {
 };
 
 // ===================================================================================
-// ATTENDANCE DETAIL DIALOG COMPONENT
+// ATTENDANCE DETAIL DIALOG COMPONENT (UPDATED)
 // ===================================================================================
-const AttendanceDetailDialog = ({ open, setOpen, employee, attendanceRecords }) => {
-    const [hoveredDay, setHoveredDay] = useState(null);
+const AttendanceDetailDialog = ({ open, setOpen, employee, attendanceRecords, user }) => {
+    const [selectedDay, setSelectedDay] = useState(null); // Renamed from hoveredDay
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  
+    
+    const [holidays, setHolidays] = useState([]);
+    const [leaves, setLeaves] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        if (open && employee && user) {
+            const fetchHolidayAndLeaveData = async () => {
+                setIsLoading(true);
+                try {
+                    const holidayResponse = await apiRequest("Holiday/getAllHolidays/", {
+                        method: 'POST',
+                        body: JSON.stringify({ _id: user._id, role: user.role }),
+                    });
+                    // Handle if API returns an array directly or an object with a property
+                    setHolidays(holidayResponse?.holidays || (Array.isArray(holidayResponse) ? holidayResponse : []));
+
+                    const leaveResponse = await apiRequest("Leave/getAllLeaves/", {
+                        method: 'POST',
+                        body: JSON.stringify({ employeeId: employee._id, _id: user._id, role: user.role }),
+                    });
+                    if (leaveResponse?.success) {
+                        const approvedLeaves = (leaveResponse.leaves || []).filter(l => l.RequestStatusId?.StatusName === 'Approved');
+                        setLeaves(approvedLeaves);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch holiday or leave data:", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            fetchHolidayAndLeaveData();
+        }
+    }, [open, employee, user]);
+
+    // Use a Map to store holiday details, with date string as the key
+    const holidaysMap = useMemo(() => {
+        const map = new Map();
+        holidays.forEach(h => {
+            const dateString = new Date(h.date).toLocaleDateString('en-IN', { timeZone: istTimeZone });
+            map.set(dateString, h); // Store the whole holiday object
+        });
+        return map;
+    }, [holidays]);
+
+    const isLeaveDay = useMemo(() => {
+        const leaveRanges = leaves.map(l => ({
+            start: new Date(new Date(l.startDate).setHours(0, 0, 0, 0)),
+            end: new Date(new Date(l.endDate).setHours(23, 59, 59, 999)),
+        }));
+        return (dateToCheck) => {
+            for (const range of leaveRanges) {
+                if (dateToCheck >= range.start && dateToCheck <= range.end) return true;
+            }
+            return false;
+        };
+    }, [leaves]);
+
     const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
-  
+
     const getAttendanceForDate = (day) => {
-      const dayDateIST = new Date(selectedYear, selectedMonth, day).toLocaleDateString('en-IN', { timeZone: istTimeZone });
-      return attendanceRecords.find((record) => {
-        const recordDateIST = new Date(record.date).toLocaleDateString('en-IN', { timeZone: istTimeZone });
-        return recordDateIST === dayDateIST;
-      });
+        const dayDateIST = new Date(selectedYear, selectedMonth, day).toLocaleDateString('en-IN', { timeZone: istTimeZone });
+        return attendanceRecords.find((record) => {
+            const recordDateIST = new Date(record.date).toLocaleDateString('en-IN', { timeZone: istTimeZone });
+            return recordDateIST === dayDateIST;
+        });
     };
-  
+
     const getStatusColor = (attendance) => {
-      if (!attendance || !attendance.sessions.length) return 'bg-gray-600';
-      const hasActiveSession = attendance.sessions.some((s) => !s.checkOut);
-      const totalHours = attendance.totalWorkedHours || 0;
-      if (hasActiveSession) return 'bg-yellow-500';
-      if (totalHours >= 8) return 'bg-green-500';
-      if (totalHours > 0) return 'bg-orange-500';
-      return 'bg-red-500';
+        if (!attendance || !attendance.sessions.length) return 'bg-gray-600';
+        const hasActiveSession = attendance.sessions.some((s) => !s.checkOut);
+        const totalHours = attendance.totalWorkedHours || 0;
+        if (hasActiveSession) return 'bg-yellow-500';
+        if (totalHours >= 8) return 'bg-green-500';
+        if (totalHours > 0) return 'bg-orange-500';
+        return 'bg-red-500';
     };
-  
+
+    const getDayBackgroundColor = (day) => {
+        const dayDate = new Date(selectedYear, selectedMonth, day);
+        dayDate.setHours(12, 0, 0, 0);
+        const dayDateString = dayDate.toLocaleDateString('en-IN', { timeZone: istTimeZone });
+        const attendance = getAttendanceForDate(day);
+
+        if (isLeaveDay(dayDate)) return 'bg-sky-500';
+        if (holidaysMap.has(dayDateString)) return 'bg-purple-500';
+        if (attendance) return getStatusColor(attendance);
+        return 'bg-slate-700';
+    };
+
+    // New handler for clicking on a day in the calendar
+    const handleDayClick = (day) => {
+        const dayDateString = new Date(selectedYear, selectedMonth, day).toLocaleDateString('en-IN', { timeZone: istTimeZone });
+        const attendance = getAttendanceForDate(day);
+        const holiday = holidaysMap.get(dayDateString);
+        
+        if (attendance) {
+            setSelectedDay({ type: 'attendance', day, data: attendance });
+        } else if (holiday) {
+            setSelectedDay({ type: 'holiday', day, data: holiday });
+        } else {
+            setSelectedDay(null); // Clear details if day has no data
+        }
+    };
+
     const SessionLog = ({ session, index }) => (
       <div className="bg-slate-700/50 rounded-lg p-3 space-y-2">
         <div className="flex justify-between items-center">
@@ -81,14 +165,8 @@ const AttendanceDetailDialog = ({ open, setOpen, employee, attendanceRecords }) 
           <span className="text-xs text-gray-400">{formatDuration(session.workedHours)}</span>
         </div>
         <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-gray-400">Check In:</span>
-            <div className="text-white font-medium">{formatTime(session.checkIn)}</div>
-          </div>
-          <div>
-            <span className="text-gray-400">Check Out:</span>
-            <div className="text-white font-medium">{formatTime(session.checkOut)}</div>
-          </div>
+          <div><span className="text-gray-400">Check In:</span><div className="text-white font-medium">{formatTime(session.checkIn)}</div></div>
+          <div><span className="text-gray-400">Check Out:</span><div className="text-white font-medium">{formatTime(session.checkOut)}</div></div>
         </div>
         {session.breaks && session.breaks.length > 0 && (
           <div className="space-y-1">
@@ -104,83 +182,97 @@ const AttendanceDetailDialog = ({ open, setOpen, employee, attendanceRecords }) 
         )}
       </div>
     );
-  
+
     const days = getDaysInMonth(selectedMonth, selectedYear);
     const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  
+
     return (
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="glass-effect border-white/10 text-white max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-white" />
-              </div>
-              Attendance Log - {employee?.name}
-            </DialogTitle>
-            <DialogDescription className="text-gray-400">{employee?.department} • Click on any day to see detailed session information</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col md:flex-row gap-6 h-[70vh] md:h-auto overflow-y-auto">
-            <div className="flex-1 space-y-4">
-              <div className="flex gap-4">
-                <Select value={selectedMonth} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
-                  <SelectTrigger className="glass-effect border-white/10 w-48"><SelectValue /></SelectTrigger>
-                  <SelectContent className="glass-effect border-white/10 text-white">
-                    {monthNames.map((month, i) => <SelectItem key={i} value={i} className="hover:bg-white/10">{month}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <Select value={selectedYear} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-                  <SelectTrigger className="glass-effect border-white/10 w-32"><SelectValue /></SelectTrigger>
-                  <SelectContent className="glass-effect border-white/10 text-white">
-                    {[2023,2024,2025].map((year)=> <SelectItem key={year} value={year} className="hover:bg-white/10">{year}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-7 gap-2">
-                {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(day => ( <div key={day} className="p-2 text-center text-sm font-medium text-gray-400">{day}</div> ))}
-                {Array.from({ length: days }, (_, i) => i + 1).map(day => {
-                  const attendance = getAttendanceForDate(day);
-                  const todayIST = new Date().toLocaleDateString('en-IN', { timeZone: istTimeZone });
-                  const isToday = new Date(selectedYear, selectedMonth, day).toLocaleDateString('en-IN', { timeZone: istTimeZone }) === todayIST;
-                  return (
-                    <motion.div key={day} className={`p-3 rounded-lg cursor-pointer relative ${isToday ? 'ring-2 ring-blue-500' : ''}`} whileHover={{ scale: 1.05 }} onClick={() => setHoveredDay(attendance ? { day, attendance } : null)} >
-                      <div className={`w-full h-8 rounded flex items-center justify-center text-sm font-medium ${attendance ? getStatusColor(attendance) : 'bg-slate-700'} ${isToday ? 'ring-1 ring-white/50' : ''}`}> {day} </div>
-                      {attendance && <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full"></div>}
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="w-96 space-y-4">
-              <AnimatePresence mode="wait">
-                {hoveredDay ? (
-                  <motion.div key={hoveredDay.day} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                    <Card className="glass-effect border-white/10">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-lg text-white">{monthNames[selectedMonth]} {hoveredDay.day}, {selectedYear}</CardTitle>
-                        <div className="flex justify-between text-sm"> <span className="text-gray-400">Total Hours:</span> <span className="text-green-400 font-medium">{formatDuration(hoveredDay.attendance.totalWorkedHours)}</span> </div>
-                        <div className="flex justify-between text-sm"> <span className="text-gray-400">Break Time:</span> <span className="text-yellow-400 font-medium">{formatDuration(hoveredDay.attendance.totalBreakHours)}</span> </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3 overflow-y-auto">
-                        {hoveredDay.attendance.sessions.map((s,i)=> <SessionLog key={i} session={s} index={i} />)}
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ) : (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center h-64 text-gray-400">
-                    <div className="text-center"> <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" /> <p>Click on a day to see session details</p> </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogContent className="glass-effect border-white/10 text-white max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                            <User className="w-5 h-5 text-white" />
+                        </div>
+                        Attendance Log - {employee?.name}
+                    </DialogTitle>
+                    <DialogDescription className="text-gray-400">{employee?.department} • Click on any day to see its details</DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col md:flex-row gap-6 h-[70vh] md:h-auto overflow-y-auto">
+                    <div className="flex-1 space-y-4">
+                        <div className="flex gap-4">
+                            <Select value={selectedMonth} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
+                                <SelectTrigger className="glass-effect border-white/10 w-48"><SelectValue /></SelectTrigger>
+                                <SelectContent className="glass-effect border-white/10 text-white">{monthNames.map((month, i) => <SelectItem key={i} value={i} className="hover:bg-white/10">{month}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <Select value={selectedYear} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+                                <SelectTrigger className="glass-effect border-white/10 w-32"><SelectValue /></SelectTrigger>
+                                <SelectContent className="glass-effect border-white/10 text-white">{[2023, 2024, 2025].map((year) => <SelectItem key={year} value={year} className="hover:bg-white/10">{year}</SelectItem>)}</SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid grid-cols-7 gap-2">
+                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (<div key={day} className="p-2 text-center text-sm font-medium text-gray-400">{day}</div>))}
+                            {Array.from({ length: days }, (_, i) => i + 1).map(day => {
+                                const attendance = getAttendanceForDate(day);
+                                const todayIST = new Date().toLocaleDateString('en-IN', { timeZone: istTimeZone });
+                                const isToday = new Date(selectedYear, selectedMonth, day).toLocaleDateString('en-IN', { timeZone: istTimeZone }) === todayIST;
+                                return (
+                                    <motion.div key={day} className={`p-3 rounded-lg cursor-pointer relative ${isToday ? 'ring-2 ring-blue-500' : ''}`} whileHover={{ scale: 1.05 }} onClick={() => handleDayClick(day)}>
+                                        <div className={`w-full h-8 rounded flex items-center justify-center text-sm font-medium ${getDayBackgroundColor(day)} ${isToday ? 'ring-1 ring-white/50' : ''}`}>
+                                            {day}
+                                        </div>
+                                        {attendance && <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full"></div>}
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    <div className="w-96 space-y-4">
+                        <AnimatePresence mode="wait">
+                            {selectedDay ? (
+                                <motion.div key={`${selectedDay.type}-${selectedDay.day}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                                    {/* ==== RENDER ATTENDANCE DETAILS ==== */}
+                                    {selectedDay.type === 'attendance' && (
+                                        <Card className="glass-effect border-white/10">
+                                            <CardHeader className="pb-3">
+                                                <CardTitle className="text-lg text-white">{monthNames[selectedMonth]} {selectedDay.day}, {selectedYear}</CardTitle>
+                                                <div className="flex justify-between text-sm"> <span className="text-gray-400">Total Hours:</span> <span className="text-green-400 font-medium">{formatDuration(selectedDay.data.totalWorkedHours)}</span> </div>
+                                                <div className="flex justify-between text-sm"> <span className="text-gray-400">Break Time:</span> <span className="text-yellow-400 font-medium">{formatDuration(selectedDay.data.totalBreakHours)}</span> </div>
+                                            </CardHeader>
+                                            <CardContent className="space-y-3 overflow-y-auto">
+                                                {selectedDay.data.sessions.map((s, i) => <SessionLog key={i} session={s} index={i} />)}
+                                            </CardContent>
+                                        </Card>
+                                    )}
+                                    {/* ==== RENDER HOLIDAY DETAILS ==== */}
+                                    {selectedDay.type === 'holiday' && (
+                                        <Card className="glass-effect border-white/10">
+                                            <CardHeader>
+                                                <CardTitle className="text-lg text-white">{monthNames[selectedMonth]} {selectedDay.day}, {selectedYear}</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="flex flex-col items-center justify-center p-6 space-y-4">
+                                                <PartyPopper className="w-16 h-16 text-purple-400" />
+                                                <p className="text-xl font-bold text-white text-center">{selectedDay.data.holidayName}</p>
+                                                <p className="text-sm text-gray-400">Public Holiday</p>
+                                            </CardContent>
+                                        </Card>
+                                    )}
+                                </motion.div>
+                            ) : (
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center h-64 text-gray-400">
+                                    <div className="text-center"> <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" /> <p>Click on a day to see details</p> </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 };
 
 // ===================================================================================
-// MAIN ATTENDANCE PAGE COMPONENT (MAIN FIXES HERE)
+// MAIN ATTENDANCE PAGE COMPONENT
 // ===================================================================================
 const AttendancePage = () => {
   const { user } = useAuth();
@@ -228,7 +320,7 @@ const AttendancePage = () => {
       if (response?.success && response.attendance) {
         const attendanceByEmployee = {};
         response.attendance.forEach(record => {
-          const processedRecord = processAttendanceRecord(record); // Process each record
+          const processedRecord = processAttendanceRecord(record);
           const id = processedRecord.employeeId._id || processedRecord.employeeId;
           if (!attendanceByEmployee[id]) {
             attendanceByEmployee[id] = [];
@@ -279,12 +371,8 @@ const AttendancePage = () => {
     );
   }, [employees, searchQuery]);
 
-  // =================== THIS FUNCTION IS FIXED ===================
   const getEmployeeAttendanceForDate = (employeeId) => {
     const records = attendanceData[employeeId] || [];
-    
-    // FIX 1: Consistently create the date object in the browser's local timezone
-    // The date picker string '2025-10-11' is split to avoid being parsed as UTC.
     const [year, month, day] = selectedDate.split('-').map(Number);
     const localDate = new Date(year, month - 1, day);
     const selectedDateString = localDate.toLocaleDateString('en-IN', { timeZone: istTimeZone });
@@ -294,15 +382,13 @@ const AttendancePage = () => {
       return recordDateString === selectedDateString;
     });
 
-    // FIX 2: Ensure the returned record is always processed to have correct totals
     return foundRecord ? processAttendanceRecord(foundRecord) : null;
   };
-  // ==============================================================
 
   const getStatusColor = (attendance) => {
     if (!attendance?.sessions?.length) return 'text-gray-400';
     if (attendance.sessions.some(s => !s.checkOut)) return 'text-green-400';
-    return 'text-gray-400'; // Default to gray if checked out
+    return 'text-gray-400';
   };
 
   const getStatusText = (attendance) => {
@@ -322,6 +408,7 @@ const AttendancePage = () => {
             setOpen={setIsDetailDialogOpen}
             employee={selectedEmployee}
             attendanceRecords={attendanceData[selectedEmployee?._id] || []}
+            user={user} 
           />
         )}
       </AnimatePresence>
@@ -374,7 +461,7 @@ const AttendancePage = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredEmployees.map((employee, index) => {
+                      {filteredEmployees.map((employee) => {
                         const attendance = getEmployeeAttendanceForDate(employee._id);
                         return (
                           <tr key={employee._id} className="border-b border-white/10 hover:bg-white/5 transition-colors">

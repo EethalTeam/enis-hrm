@@ -17,16 +17,17 @@ import { config } from '@/components/CustomComponents/config';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
-const TaskForm = ({ open, setOpen, task, onSave,getAllTasks }) => {
+const TaskForm = ({ open, setOpen, task, onSave,getAllTasks, employees }) => {
    const { user } = useAuth();
-  const { projects, employees } = useData();
+  console.log(employees,"employees")
     const [isConfirmPause, setIsConfirmPause] = useState(false);
   const [isConfirmComplete, setIsConfirmComplete] = useState(false);
   const [feedback,setFeedback] = useState('')
   const [ProgressMessage,setProgressMessage] = useState('')
   const [formData, setFormData] = useState(
-    task || {_id:'', taskName: '', description: '', taskPriority: '',taskPriorityId:'', taskStatus: '',taskStatusId:'', assignee: '',assignedTo:'',project:'', projectId: '', dueDate: '' ,reqLeadCount:'',compLeadCount:'',createdBy:user._id}
+    task || {_id:'', taskName: '', description: '', taskPriority: '',taskPriorityId:'', taskStatus: 'To Do',taskStatusId:'68b5a25b88e62ec178bb2923', assignee: '',assignedTo:'',assignees:[],project:'', projectId: '', dueDate: '' ,reqLeadCount:'',compLeadCount:'',createdBy:user._id}
   );
+  console.log(formData,"formData")
     const [Data,SetData] = useState([])
   useEffect(()=>{
   if(task){
@@ -45,7 +46,8 @@ const TaskForm = ({ open, setOpen, task, onSave,getAllTasks }) => {
      assignedTo: task.assignedTo[0]._id,
      dueDate: task.dueDate.split('T')[0],
      reqLeadCount: task.reqLeadCount,
-     compLeadCount: task.compLeadCount
+     compLeadCount: task.compLeadCount,
+     assignees: task.assignedTo.map(val=>val._id)
     })
   }
   },[task])
@@ -98,6 +100,10 @@ const handleSelectChange = (id, name, key, value) => {
         throw error;
       }
     }
+    const handleSelectAssignee = (name, value) => {
+      console.log(name, value,"name, value")
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
  const getProjectList = async () => {
       try {
          SetData([]); // clear Data once
@@ -283,11 +289,11 @@ const handleSubmit = (e) => {
               <Label htmlFor="reqLeadCount" className="text-gray-300">Lead Count</Label>
           <Input name="reqLeadCount" value={formData.reqLeadCount} type='number' onChange={handleChange} placeholder="Lead Count" required className="bg-white/5 border-white/10" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}/>
           </div>
-         {formData._id && 
+         {/* {formData._id && 
          <div>
               <Label htmlFor="compLeadCount" className="text-gray-300">Completed Count</Label>
          <Input name="compLeadCount" value={formData.compLeadCount} type='number' onChange={handleChange} placeholder="Completed" className="bg-white/5 border-white/10" />
-         </div>}
+         </div>} */}
           </div>
           <div className="grid grid-cols-2 gap-4">
                      <div>
@@ -334,7 +340,7 @@ const handleSubmit = (e) => {
                                              await getTaskStatusList();
                                            }
                                          }}
-                                         disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}
+                                         disabled={!task}
                                          onValueChange={(id) => {
                                            if (!id) return;
                                            const dept = Data.find(d => d._id === id);
@@ -392,8 +398,7 @@ const handleSubmit = (e) => {
                                          </SelectContent>
                                        </Select>
                                        </div>
-                                       <div>
-              <Label htmlFor="assignee" className="text-gray-300">Assign To</Label>
+              {/* <Label htmlFor="assignee" className="text-gray-300">Assign To</Label>
                          <Select
                                           name="assignee"
                                           value={formData.assignedTo} // store only _id
@@ -424,8 +429,23 @@ const handleSubmit = (e) => {
                                               </SelectItem>
                                             ))}
                                           </SelectContent>
-                                        </Select>
-                                        </div>
+                                        </Select> */}
+                                        {!task && <div>
+                                        <Label htmlFor="assignees" className="text-gray-300">Select Members</Label>
+                                      <p className="text-gray-400 text-xs mb-2">Ctrl/Cmd + click to select multiple.</p>
+                                      <select
+                                        id="assignees"
+                                        name="assignees"
+                                        multiple
+                                        value={formData.assignees}
+                                        onChange={(e) => handleSelectAssignee('assignees', Array.from(e.target.selectedOptions, option => option.value))}
+                                        className="w-full h-32 glass-effect border-white/10 rounded-md bg-transparent p-2"
+                                      >
+                                          {employees.map(emp => (
+                                              <option key={emp._id} value={emp._id} className="bg-slate-800 p-1">{emp.name}</option>
+                                          ))}
+                                      </select>
+                                        </div>}
           </div>
           <div>
              <Label htmlFor="dueDate" className="text-gray-300">Due Date</Label>
@@ -481,7 +501,7 @@ const TasksPage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [task,setTasks] = useState([])
-  const [Employes,setEmployees]=useState([])
+  const [Employees,setEmployees]=useState([])
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [ProgressDetails,setProgressDetails]=useState([])
@@ -583,7 +603,7 @@ const TasksPage = () => {
   return (
     <>
       <Helmet><title>Tasks - ENIS-HRMS</title></Helmet>
-      <AnimatePresence>{isFormOpen && <TaskForm open={isFormOpen} setOpen={setIsFormOpen} task={selectedTask} onSave={handleSave} getAllTasks={getAllTasks} />}</AnimatePresence>
+      <AnimatePresence>{isFormOpen && <TaskForm open={isFormOpen} setOpen={setIsFormOpen} task={selectedTask} onSave={handleSave} getAllTasks={getAllTasks} employees={Employees}/>}</AnimatePresence>
       <AnimatePresence>{isConfirmOpen && <ConfirmationDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete} title="Delete Task?" description="This action cannot be undone." />}</AnimatePresence>
       <AnimatePresence>
       {isHistoryOpen && (
@@ -641,7 +661,7 @@ const TasksPage = () => {
       >
                         <CardHeader><CardTitle className="text-white">{status} ({tasksInColumn.length})</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
-                            {tasksInColumn.map(task => <TaskCard key={task.id} task={task} onEdit={handleEdit} onDelete={handleDelete} onShowHistory={handleHistory} employees={Employes}/>)}
+                            {tasksInColumn.map(task => <TaskCard key={task.id} task={task} onEdit={handleEdit} onDelete={handleDelete} onShowHistory={handleHistory} employees={Employees}/>)}
                         </CardContent>
                     </Card>
                 </motion.div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet';
-import { LayoutDashboard, Users, Target, ClipboardCheck, PhoneForwarded, CalendarCheck2, UserCheck } from 'lucide-react';
+import { LayoutDashboard, Users, Target, ClipboardCheck, PhoneForwarded, CalendarCheck2, UserCheck, UserX } from 'lucide-react'; // Added UserX
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiRequest } from '@/components/CustomComponents/apiRequest';
@@ -22,10 +22,9 @@ const MetricCard = ({ title, value, icon: Icon, color }) => (
     </Card>
 );
 
-// =================== NEW COMPONENT ===================
-// A dedicated card to display today's late logins.
+// =================== CARD COMPONENT ===================
 const LateLoginsCard = ({ lateLogins }) => (
-    <Card className="glass-effect border-white/10 col-span-1 lg:col-span-2">
+    <Card className="glass-effect border-white/10">
         <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
                 <UserCheck className="w-5 h-5 text-orange-400" />
@@ -35,7 +34,7 @@ const LateLoginsCard = ({ lateLogins }) => (
         <CardContent>
             {lateLogins.length > 0 ? (
                 <ul className="space-y-4">
-                    {lateLogins.slice(0, 5).map(employee => (
+                    {lateLogins.map(employee => (
                         <li key={employee._id} className="flex justify-between items-center">
                             <div>
                                 <p className="font-medium text-white">{employee.name}</p>
@@ -54,7 +53,106 @@ const LateLoginsCard = ({ lateLogins }) => (
         </CardContent>
     </Card>
 );
-// =======================================================
+
+// =================== CARD COMPONENT ===================
+const AbsenteesCard = ({ absentees }) => (
+    <Card className="glass-effect border-white/10">
+        <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+                <UserX className="w-5 h-5 text-red-400" />
+                Not Logged Ins
+            </CardTitle>
+        </CardHeader>
+        <CardContent>
+            {absentees.length > 0 ? (
+                <ul className="space-y-4">
+                    {absentees.map(employee => (
+                        <li key={employee._id} className="flex justify-between items-center">
+                            <div>
+                                <p className="font-medium text-white">{employee.name}</p>
+                                <p className="text-sm text-gray-400">
+                                    {/* Login: {employee.loginTime} (Shift: {employee.shiftStartTime}) */}
+                                </p>
+                            </div>
+                            <span className="font-semibold text-orange-400">{employee.lateBy}</span>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p className="text-gray-400">No employees were late today. Great!</p>
+            )}
+            <Link to="/dailyLog" className="text-blue-400 hover:text-blue-300 mt-4 block text-sm">View full attendance log →</Link>
+        </CardContent>
+    </Card>
+);
+
+// =================== NEW CARD COMPONENT ===================
+const TodayPermissionsCard = ({ permissions }) => (
+    <Card className="glass-effect border-white/10">
+        <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+                <ClipboardCheck className="w-5 h-5 text-blue-400" />
+                On Permission Today
+            </CardTitle>
+        </CardHeader>
+        <CardContent>
+            {permissions.length > 0 ? (
+                <ul className="space-y-4">
+                    {permissions.map(perm => (
+                        <li key={perm._id} className="flex justify-between items-center">
+                            <div>
+                                <p className="font-medium text-white">{perm.employeeId?.name}</p>
+                                <p className="text-sm text-gray-400">
+                                    {perm.fromTime} - {perm.toTime}
+                                </p>
+                            </div>
+                            <span className="text-sm font-semibold text-blue-300">{perm.totalHours}h</span>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p className="text-gray-400">No employees are on permission today.</p>
+            )}
+            <Link to="/leaves/permissions" className="text-blue-400 hover:text-blue-300 mt-4 block text-sm">View all permissions →</Link>
+        </CardContent>
+    </Card>
+);
+
+// =================== NEW CARD COMPONENT ===================
+const TodayLeavesCard = ({ leaves }) => (
+    <Card className="glass-effect border-white/10">
+        <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+                <UserX className="w-5 h-5 text-red-400" />
+                On Leave Today
+            </CardTitle>
+        </CardHeader>
+        <CardContent>
+            {leaves.length > 0 ? (
+                <ul className="space-y-4">
+                    {leaves.map(leave => (
+                        <li key={leave._id} className="flex justify-between items-center">
+                            <div>
+                                <p className="font-medium text-white">{leave.employeeId?.name}</p>
+                                <p className="text-sm text-gray-400">
+                                    {leave.leaveTypeId?.name}
+                                </p>
+                            </div>
+                            <span className="text-xs text-gray-300">
+                                {new Date(leave.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                                 - 
+                                {new Date(leave.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p className="text-gray-400">No employees are on leave today.</p>
+            )}
+            <Link to="/leaveRequest" className="text-blue-400 hover:text-blue-300 mt-4 block text-sm">View all leaves →</Link>
+        </CardContent>
+    </Card>
+);
 
 // A helper function to get today's date in YYYY-MM-DD format
 const getTodayDateString = () => {
@@ -63,7 +161,7 @@ const getTodayDateString = () => {
 };
 
 // ############################################
-// ## 	  ADMIN & SUPER ADMIN VIEW (MODIFIED) ##
+// ##     ADMIN & SUPER ADMIN VIEW (MODIFIED) ##
 // ############################################
 const AdminDashboard = ({ stats }) => (
     <div className="space-y-8">
@@ -108,7 +206,7 @@ const AdminDashboard = ({ stats }) => (
                     ) : (
                         <p className="text-gray-400">No lead follow-ups scheduled for today.</p>
                     )}
-                    <Link to="/leads" className="text-blue-400 hover:text-blue-300 mt-4 block text-sm">View all leads →</Link>
+                    <Link to="/allLeads" className="text-blue-400 hover:text-blue-300 mt-4 block text-sm">View all leads →</Link>
                 </CardContent>
             </Card>
 
@@ -139,22 +237,35 @@ const AdminDashboard = ({ stats }) => (
         </motion.div>
 
         {/* =================== NEW SECTION =================== */}
-        {/* Late Logins Section */}
+        {/* Today's Leave & Permission Section */}
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             className="grid grid-cols-1 lg:grid-cols-2 gap-6"
         >
-            <LateLoginsCard lateLogins={stats.lateLogins} />
+            <TodayLeavesCard leaves={stats.todayLeaves} />
+            <TodayPermissionsCard permissions={stats.todayPermissions} />
         </motion.div>
         {/* =================================================== */}
+
+
+        {/* Late Logins Section (Delay updated) */}
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }} // <-- Updated delay
+            className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        >
+            <LateLoginsCard lateLogins={stats.lateLogins} />
+            <AbsenteesCard absentees={stats.absentees}/>
+        </motion.div>
     </div>
 );
 
 
 // ############################################
-// ## 		  EMPLOYEE VIEW 		 	   ##
+// ##         EMPLOYEE VIEW                ##
 // ############################################
 const EmployeeDashboard = ({ stats }) => (
     // ... no changes here
@@ -200,13 +311,16 @@ const EmployeeDashboard = ({ stats }) => (
 
 
 // ############################################
-// ## 	MAIN DASHBOARD COMPONENT (MODIFIED)   ##
+// ##   MAIN DASHBOARD COMPONENT (MODIFIED)   ##
 // ############################################
 const DashboardPage = () => {
     const { user } = useAuth();
     const [allLeads, setAllLeads] = useState([]);
     const [allTasks, setAllTasks] = useState([]);
-    const [lateLogins, setLateLogins] = useState([]); // <-- New state for late logins
+    const [lateLogins, setLateLogins] = useState([]);
+    const [absentees,setAbsentees] = useState([])
+    const [todayPermissions, setTodayPermissions] = useState([]); // <-- New state
+    const [todayLeaves, setTodayLeaves] = useState([]); // <-- New state
     const [loading, setLoading] = useState(true);
 
     const isAdmin = user.role === 'Super Admin' || user.role === 'Admin';
@@ -227,23 +341,25 @@ const DashboardPage = () => {
                     apiRequest("Task/getAllTasks/", commonPayload)
                 ];
                 
-                // Only add the late logins call for admins
+                // Only add admin-specific calls
                 if (isAdmin) {
                     apiCalls.push(apiRequest("DashBoard/getLateLogins", commonPayload));
+                    apiCalls.push(apiRequest("DashBoard/getTodayPermissions", commonPayload)); 
+                    apiCalls.push(apiRequest("DashBoard/getTodayLeaves", commonPayload)); 
+                    apiCalls.push(apiRequest("DashBoard/getAllAbsentees", commonPayload)); // <-- New call
                 }
 
                 const responses = await Promise.all(apiCalls);
 
-                const leadsResponse = responses[0];
-                const tasksResponse = responses[1];
-                
-                setAllLeads(leadsResponse.leads || []);
-                setAllTasks(tasksResponse || []);
+                setAllLeads(responses[0].leads || []);
+                setAllTasks(responses[1] || []);
 
-                // Set late logins state if the call was made
+                // Set admin-specific states
                 if (isAdmin) {
-                    const lateLoginsResponse = responses[2];
-                    setLateLogins(lateLoginsResponse.data || []);
+                    setLateLogins(responses[2].data || []);
+                    setTodayPermissions(responses[3].permissions || []); 
+                    setTodayLeaves(responses[4].leaves || []); 
+                    setAbsentees(responses[5].absentees || [])
                 }
 
             } catch (error) {
@@ -254,7 +370,7 @@ const DashboardPage = () => {
         };
 
         fetchData();
-    }, [user, isAdmin]); // Added isAdmin to dependency array
+    }, [user, isAdmin]);
 
     const todaysLeads = useMemo(() => {
         const today = getTodayDateString();
@@ -266,8 +382,17 @@ const DashboardPage = () => {
         return allTasks.filter(task => task.dueDate?.split('T')[0] === today);
     }, [allTasks]);
 
-    // Pass lateLogins to the stats object
-    const stats = { allLeads, allTasks, todaysLeads, todaysTasks, lateLogins };
+    // Pass all stats to the relevant dashboard
+    const stats = { 
+        allLeads, 
+        allTasks, 
+        todaysLeads, 
+        todaysTasks, 
+        lateLogins, 
+        todayPermissions, 
+        todayLeaves,
+        absentees
+    };
 
     return (
         <>

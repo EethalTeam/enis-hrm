@@ -158,13 +158,15 @@ const EmployeesPage = () => {
                         <h1 className="text-3xl font-bold text-white mb-2">Employee Management</h1>
                         <p className="text-gray-400">Manage your organization's workforce</p>
                     </div>
-                    {Permissions.isAdd && <Button 
+                    {/* {Permissions.isAdd &&  */}
+                    <Button 
                         onClick={handleAddEmployee}
                         className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                     >
                         <Plus className="w-4 h-4 mr-2" />
                         Add Employee
-                    </Button>}
+                    </Button>
+                     {/* } */}
                 </motion.div>
 
                 <motion.div

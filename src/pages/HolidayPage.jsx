@@ -187,11 +187,12 @@ const response = await apiRequest("Holiday/getAllHolidays/", {
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="data-table">
-                  <thead><tr><th>Holiday</th><th>Actions</th></tr></thead>
+                  <thead><tr><th>Holiday</th><th>Date</th><th>Actions</th></tr></thead>
                   <tbody>
                     {(Holiday || []).map(holid => (
                       <tr key={holid._id}>
                         <td>{holid.holidayName}</td>
+                        <td>{holid.date?.split('T')[0].split('-').reverse().join('-')}</td>
                         <td>
                           <div className="flex gap-2">
                             <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEdit(holid)}><Edit className="w-4 h-4" /></Button>

@@ -85,18 +85,27 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+const login = async (email, password) => {
   try {
+    const hasTouch = (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+    
+    const isSmallScreen = window.screen.width < 900;
+
+    const isMobileDevice = hasTouch && isSmallScreen;
+
     let url = config.Api + "/api/Employee/login/";
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-          });
-        const data = await response.json();
-    // Handle mobile restriction (403)
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-is-mobile-hardware': isMobileDevice.toString(),
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
     if (response.status == 403) {
       toast({
         title: "Login failed",
@@ -105,32 +114,34 @@ export const AuthProvider = ({ children }) => {
       return { success: false };
     }
 
-    // Handle other errors
     if (!response.ok) {
       toast({
         title: "Login failed",
         description: data.message || "Login failed",
       });
       throw new Error(data.message || "Login failed");
-    }else{
-       socket.connect();
-      socket.emit("joinRoom", { employeeId:data.employee._id });
- toast({
-          title: "Login Successful",
-          description: `Welcome back, ${data.employee.name}!`,
-        });
+    } else {
+      socket.connect();
+      socket.emit("joinRoom", { employeeId: data.employee._id });
+      toast({
+        title: "Login Successful",
+        description: `Welcome back, ${data.employee.name}!`,
+      });
     }
-
 
     // store token in localStorage for later API calls
     if (data.token) {
       localStorage.setItem("token", data.token);
     }
     setUser(data.employee);
-localStorage.setItem('hrms_user', JSON.stringify(data.employee));
-localStorage.setItem('userId', json.stringify(data.employee._id))
-localStorage.setItem('hrms_userEmail', JSON.stringify(data.employee.email));
-     return {...data.employee, success: true };
+    
+    // Fixed typo: 'json' to 'JSON' in the line below
+    localStorage.setItem('hrms_user', JSON.stringify(data.employee));
+    localStorage.setItem('userId', JSON.stringify(data.employee._id)); 
+    localStorage.setItem('hrms_userEmail', JSON.stringify(data.employee.email));
+    
+    return { ...data.employee, success: true };
+
   } catch (error) {
     console.error("Login Error:", error.message);
     throw error;

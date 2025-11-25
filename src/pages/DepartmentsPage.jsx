@@ -243,7 +243,7 @@ api=true
                     {(Department || []).map(dept => (
                       <tr key={dept.id}>
                         <td>{dept.departmentName}</td>
-                        <td>{dept.departmentHead.name}</td>
+                        <td>{dept.departmentHead ? dept.departmentHead.name : ''}</td>
                         <td>
                           <div className="flex gap-2">
                             <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEdit(dept)}><Edit className="w-4 h-4" /></Button>

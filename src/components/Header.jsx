@@ -221,7 +221,6 @@ const Header = ({ onMenuClick }) => {
   const { toast } = useToast();
 
   const [notifications, setNotifications] = useState([]);
-
     const userNotifications = notifications.filter(n => n.toEmployeeId === user._id && n.status === 'unseen');
 // useEffect(() => {
 //   if (!user?._id) return;
@@ -235,7 +234,7 @@ const Header = ({ onMenuClick }) => {
 //   return () => clearInterval(heartbeatInterval);
 // }, [user?._id]);
 
-function startIdleTimeout(triggerFn, timeout = 10 * 60 * 1000) {
+function startIdleTimeout(triggerFn, timeout = 240 * 60 * 1000) {
   let idleTimer;
 
   const resetTimer = () => {
@@ -367,7 +366,7 @@ const handleNotificationAction = async (notification, action) => {
                 userNotifications.map(notification => (
                   <div key={notification._id} className="px-2 py-1.5 text-sm">
                     <p className="mb-2">{notification.message}</p>
-                    {(notification.type === 'permission_request' || notification.type === 'leave-request' || notification.type === 'task-complete') && notification.fromEmployeeId !== user._id && notification.status !=='approved' && notification.status !=='rejected' && (
+                    {(notification.type === 'permission-request' || notification.type === 'leave-request' || notification.type === 'task-complete') && notification.fromEmployeeId !== user._id && notification.status !=='approved' && notification.status !=='rejected' && (
                       <div className="flex gap-2 mt-1">
                         <Button size="sm" className="bg-green-500/80 hover:bg-green-500 h-7" onClick={() => handleNotificationAction(notification, 'approve')}><Check className="w-4 h-4 mr-1"/>Approve</Button>
                         <Button size="sm" className="bg-red-500/80 hover:bg-red-500 h-7" onClick={() => handleNotificationAction(notification, 'reject')}><X className="w-4 h-4 mr-1"/>Reject</Button>

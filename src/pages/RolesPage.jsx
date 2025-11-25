@@ -128,6 +128,7 @@ const RoleForm = ({ open, setOpen, role, onSave }) => {
 const PermissionsDialog = ({ open, setOpen, role, onSave }) => {
   const [menus, setMenus] = useState([]);
   const [currentPermissions, setCurrentPermissions] = useState({});
+  console.log(currentPermissions,"currentPermissions")
   const [loading, setLoading] = useState(true);
   const isSuperAdmin = role?.RoleName === "Super Admin";
   // const isSuperAdmin = false;
@@ -175,8 +176,8 @@ const PermissionsDialog = ({ open, setOpen, role, onSave }) => {
 
   // 🔹 Toggle individual permission
   const handlePermissionChange = (menuId, permission, checked) => {
-    if (isSuperAdmin) return;
-
+    // if (isSuperAdmin) return;
+console.log(menuId, permission, checked,"menuId, permission, checked")
     setCurrentPermissions((prev) => {
       const updated = {
         ...prev,
@@ -243,6 +244,7 @@ const PermissionsDialog = ({ open, setOpen, role, onSave }) => {
           menuId,
           ...perms,
         }));
+        console.log(menusToUpdate,"menusToUpdate")
       await updateMenusAndAccess(role._id, menusToUpdate);
       onSave();
       setOpen(false);
@@ -309,7 +311,7 @@ const PermissionsDialog = ({ open, setOpen, role, onSave }) => {
         </DialogHeader>
 
         <div className="max-h-[70vh] overflow-y-auto space-y-4 p-1 pr-4">
-          {isSuperAdmin ? (
+          {/* {isSuperAdmin ? (
             <div className="text-center p-8 bg-blue-900/50 rounded-lg">
               <Shield className="w-12 h-12 mx-auto mb-4 text-blue-300" />
               <p className="text-blue-300 font-medium">
@@ -317,7 +319,7 @@ const PermissionsDialog = ({ open, setOpen, role, onSave }) => {
                 modified.
               </p>
             </div>
-          ) : (
+          ) : ( */}
             <>
               {menus.map((parentMenu) => (
                 <div
@@ -417,7 +419,7 @@ const PermissionsDialog = ({ open, setOpen, role, onSave }) => {
                 </div>
               ))}
             </>
-          )}
+          {/* )} */}
         </div>
 
         <DialogFooter>
@@ -430,7 +432,7 @@ const PermissionsDialog = ({ open, setOpen, role, onSave }) => {
               Cancel
             </Button>
           </DialogClose>
-          {!isSuperAdmin && (
+          {/* {!isSuperAdmin && ( */}
             <Button
               onClick={handleSave}
               className="bg-gradient-to-r from-green-500 to-teal-500"
@@ -438,7 +440,7 @@ const PermissionsDialog = ({ open, setOpen, role, onSave }) => {
               <Save className="w-4 h-4 mr-2" />
               Save Permissions
             </Button>
-          )}
+          {/* )} */}
         </DialogFooter>
       </DialogContent>
     </Dialog>
