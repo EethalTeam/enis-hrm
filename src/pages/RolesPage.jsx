@@ -128,7 +128,6 @@ const RoleForm = ({ open, setOpen, role, onSave }) => {
 const PermissionsDialog = ({ open, setOpen, role, onSave }) => {
   const [menus, setMenus] = useState([]);
   const [currentPermissions, setCurrentPermissions] = useState({});
-  console.log(currentPermissions,"currentPermissions")
   const [loading, setLoading] = useState(true);
   const isSuperAdmin = role?.RoleName === "Super Admin";
   // const isSuperAdmin = false;
@@ -177,7 +176,6 @@ const PermissionsDialog = ({ open, setOpen, role, onSave }) => {
   // 🔹 Toggle individual permission
   const handlePermissionChange = (menuId, permission, checked) => {
     // if (isSuperAdmin) return;
-console.log(menuId, permission, checked,"menuId, permission, checked")
     setCurrentPermissions((prev) => {
       const updated = {
         ...prev,
@@ -244,7 +242,6 @@ console.log(menuId, permission, checked,"menuId, permission, checked")
           menuId,
           ...perms,
         }));
-        console.log(menusToUpdate,"menusToUpdate")
       await updateMenusAndAccess(role._id, menusToUpdate);
       onSave();
       setOpen(false);
