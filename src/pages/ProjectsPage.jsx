@@ -6,6 +6,7 @@ import { FolderKanban, Plus, Search, Filter, MoreHorizontal, Edit, Trash2 } from
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
@@ -22,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { config } from '@/components/CustomComponents/config';
 import { apiRequest } from '@/components/CustomComponents/apiRequest'
 
-const ProjectForm = ({ open, setOpen, project, onSave, employees ,getAllProjects}) => {
+const ProjectForm = ({ open, setOpen, project, onSave, employees ,getAllProjects, Permissions}) => {
   const [formData, setFormData] = useState(
     project || {_id:'', projectName: '', status: '',statusId:'', budget: '', startDate: '', endDate: '', assignees: [] }
   );
@@ -242,10 +243,22 @@ const ProjectsPage = () => {
     const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
     return matchesSearch && matchesStatus;
   }), [Projects, searchTerm, statusFilter]);
-    useEffect(()=>{
+
+      const { getPermissionsByPath } = useAuth();
+      const [Permissions,setPermissions]=useState({isAdd:false,isView:false,isEdit:false,isDelete:false})
+  
+      useEffect(()=>{
+          getPermissionsByPath(window.location.pathname).then(res=>{
+              if(res){
+                  setPermissions(res)
+              }else{
+                  navigate('/dashboard')
+              }
+          })
     getEmployeeList()
     getAllProjects()
-  },[])
+      },[])
+      
     const getAllProjects = async () => {
       try {
         const response = await apiRequest("Project/getAllProjects/", {
@@ -322,7 +335,7 @@ const ProjectsPage = () => {
       </Helmet>
 
       <AnimatePresence>
-        {isFormOpen && <ProjectForm open={isFormOpen} setOpen={setIsFormOpen} project={selectedProject} onSave={handleSave} employees={Employees} getAllProjects={getAllProjects}/>}
+        {isFormOpen && <ProjectForm open={isFormOpen} setOpen={setIsFormOpen} project={selectedProject} onSave={handleSave} employees={Employees} getAllProjects={getAllProjects} Permissions={Permissions} />}
       </AnimatePresence>
       
       {isConfirmOpen && <ConfirmationDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete} title={`Delete Project: ${selectedProject.projectName}`} description="This will delete the project and all associated tasks. This action is irreversible."/>}
@@ -333,7 +346,9 @@ const ProjectsPage = () => {
             <h1 className="text-3xl font-bold text-white">Projects</h1>
             <p className="text-gray-400">Oversee all ongoing and completed company projects.</p>
           </div>
+          {Permissions.isAdd && 
           <Button onClick={handleAddNew} className="bg-gradient-to-r from-blue-500 to-purple-600"><Plus className="w-4 h-4 mr-2"/>New Project</Button>
+}
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}>
@@ -370,10 +385,10 @@ const ProjectsPage = () => {
                       <CardDescription className={`text-xs font-semibold px-2 py-1 rounded-full inline-block mt-2 ${getStatusColor(project.status)}`}>{project.status}</CardDescription>
                     </div>
                      <DropdownMenu>
-                      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/10"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
+                      {(Permissions.isDelete || Permissions.isEdit) &&  <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/10"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>}
                       <DropdownMenuContent align="end" className="glass-effect">
-                        <DropdownMenuItem onClick={() => handleEdit(project)} className="hover:bg-white/10"><Edit className="w-4 h-4 mr-2"/>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(project)} className="text-red-400 hover:!text-red-400 hover:!bg-red-500/20"><Trash2 className="w-4 h-4 mr-2"/>Delete</DropdownMenuItem>
+                        {Permissions.isEdit &&  <DropdownMenuItem onClick={() => handleEdit(project)} className="hover:bg-white/10"><Edit className="w-4 h-4 mr-2"/>Edit</DropdownMenuItem>}
+                        {Permissions.isDelete && <DropdownMenuItem onClick={() => handleDelete(project)} className="text-red-400 hover:!text-red-400 hover:!bg-red-500/20"><Trash2 className="w-4 h-4 mr-2"/>Delete</DropdownMenuItem>}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
