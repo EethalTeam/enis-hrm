@@ -17,15 +17,14 @@ import { config } from '@/components/CustomComponents/config';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiRequest } from '@/components/CustomComponents/apiRequest';
 
-const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
+const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees, Permissions}) => {
   const { user } = useAuth();
-  console.log(user,"user")
   const [isConfirmPause, setIsConfirmPause] = useState(false);
   const [isConfirmComplete, setIsConfirmComplete] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [ProgressMessage, setProgressMessage] = useState('');
   const [formData, setFormData] = useState(
-    task || { _id: '', taskName: '', description: '', taskPriority: '', taskPriorityId: '', taskStatus: 'To Do', taskStatusId: '68b5a25b88e62ec178bb2923', assignee: '', assignedTo: '', assignees: [], project: '', projectId: '', dueDate: '', reqLeadCount: '', compLeadCount: '', createdBy: user._id }
+    task || { _id: '', taskName: '', description: '', taskPriority: '', taskPriorityId: '', taskStatus: 'To Do', taskStatusId: '68b5a25b88e62ec178bb2923', assignee: '', assignedTo: '', assignees: (user.role !== 'Admin' && user.role !== 'Super Admin' && Permissions.isAdd) ? [user._id]:[], project: '', projectId: '', dueDate: '', reqLeadCount: '', compLeadCount: '', createdBy: user._id }
   );
   const [Data, SetData] = useState([]);
 
@@ -51,7 +50,6 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
       });
     }
   }, [task]);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -264,7 +262,7 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
           <form onSubmit={handleSubmit} className="space-y-4 py-4">
             <div>
               <Label htmlFor="taskName" className="text-gray-300">Task Title</Label>
-              <Input name="taskName" value={formData.taskName} onChange={handleChange} placeholder="Task Title" required className="bg-white/5 border-white/10" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} />
+              <Input name="taskName" value={formData.taskName} onChange={handleChange} placeholder="Task Title" required className="bg-white/5 border-white/10" disabled={task ? (user.role !== 'Admin' && user.role !== 'Super Admin' && Permissions.isAdd) : !Permissions.isAdd} />
             </div>
             <div>
               <Label htmlFor="description" className="text-gray-300">Task Description</Label>
@@ -281,7 +279,7 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
                       await getTaskPriorityList();
                     }
                   }}
-                  disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}
+                                         disabled={task ? (user.role !== 'Admin' && user.role !== 'Super Admin' && Permissions.isAdd) : !Permissions.isAdd}
                   onValueChange={(id) => {
                     if (!id) return;
                     const dept = Data.find(d => d._id === id);
@@ -314,7 +312,7 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
                       await getTaskStatusList();
                     }
                   }}
-                  disabled={!task}
+                                         disabled={true}
                   onValueChange={(id) => {
                     if (!id) return;
                     const dept = Data.find(d => d._id === id);
@@ -347,7 +345,7 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
                       await getProjectList();
                     }
                   }}
-                  disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')}
+                                         disabled={task ? (user.role !== 'Admin' && user.role !== 'Super Admin' && Permissions.isAdd) : !Permissions.isAdd}
                   onValueChange={(id) => {
                     if (!id) return;
                     const dept = Data.find(d => d._id === id);
@@ -370,13 +368,14 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
                   </SelectContent>
                 </Select>
               </div>
-              {!task && <div>
+              {(!task && user.role === 'Admin' && user.role === 'Super Admin') && <div>
                 <Label htmlFor="assignees" className="text-gray-300">Select Members</Label>
                 <p className="text-gray-400 text-xs mb-2">Ctrl/Cmd + click to select multiple.</p>
                 <select
                   id="assignees"
                   name="assignees"
                   multiple
+                  disabled={(user.role !== 'Admin' && user.role !== 'Super Admin' && Permissions.isAdd)}
                   value={formData.assignees}
                   onChange={(e) => handleSelectAssignee('assignees', Array.from(e.target.selectedOptions, option => option.value))}
                   className="w-full h-32 glass-effect border-white/10 rounded-md bg-transparent p-2"
@@ -389,11 +388,11 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
             </div>
             <div>
               <Label htmlFor="dueDate" className="text-gray-300">Due Date</Label>
-              <Input disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} id="dueDate" name="dueDate" type="date" value={formData.dueDate} required onChange={handleChange} className="bg-white/5 border-white/10 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" />
+              <Input disabled={task ? (user.role !== 'Admin' && user.role !== 'Super Admin' && Permissions.isAdd) : !Permissions.isAdd} id="dueDate" name="dueDate" type="date" value={formData.dueDate} required onChange={handleChange} className="bg-white/5 border-white/10 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" />
             </div>
             <DialogFooter>
-              {(user.role === 'Super Admin' || user.role === 'Admin') && <DialogClose asChild><Button type="button" variant="outline" className="border-white/10 hover:bg-white/10">Cancel</Button></DialogClose>}
-              {(user.role === 'Super Admin' || user.role === 'Admin') && <Button type="submit" className="bg-gradient-to-r from-blue-500 to-purple-600">Save Task</Button>}
+              {(user.role === 'Super Admin' || user.role === 'Admin' || (Permissions.isAdd && !task)) && <DialogClose asChild><Button type="button" variant="outline" className="border-white/10 hover:bg-white/10">Cancel</Button></DialogClose>}
+              {(user.role === 'Super Admin' || user.role === 'Admin' || (Permissions.isAdd && !task)) && <Button type="submit" className="bg-gradient-to-r from-blue-500 to-purple-600">Save Task</Button>}
             </DialogFooter>
           </form>
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -581,7 +580,7 @@ const TasksPage = () => {
   return (
     <>
       <Helmet><title>Tasks - ENIS-HRMS</title></Helmet>
-      <AnimatePresence>{isFormOpen && <TaskForm open={isFormOpen} setOpen={setIsFormOpen} task={selectedTask} onSave={handleSave} getAllTasks={getAllTasks} employees={Employees} />}</AnimatePresence>
+      <AnimatePresence>{isFormOpen && <TaskForm open={isFormOpen} setOpen={setIsFormOpen} task={selectedTask} onSave={handleSave} getAllTasks={getAllTasks} employees={Employees} Permissions={Permissions} />}</AnimatePresence>
       <AnimatePresence>{isConfirmOpen && <ConfirmationDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete} title="Delete Task?" description="This action cannot be undone." />}</AnimatePresence>
       
       {/* Existing History Modal */}
