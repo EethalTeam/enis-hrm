@@ -37,7 +37,7 @@ const getAllMenus = async () => {
     if (!rolePermissions) return false;
     if (rolePermissions.includes('*')) return true;
     
-    return rolePermissions.some(p => path.startsWith(p));
+    return rolePermissions.some(p => path === p);
   };
 
   const filteredMenuItems = MENU.map(item => {
