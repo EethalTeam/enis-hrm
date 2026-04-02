@@ -719,26 +719,36 @@ const TaskCard = ({
   Permissions,
 }) => {
   const { user } = useAuth();
+
   const getPriorityColor = (priority) =>
     ({
       High: "bg-red-500",
       Medium: "bg-yellow-500",
       Low: "bg-green-500",
     })[priority];
-  const assignee = employees.find((e) => e._id === task.assignedTo[0]._id);
+
+  const assignee = employees.find((e) => e._id === task.assignedTo?.[0]?._id);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="p-4 bg-slate-800/50 rounded-lg border border-white/10"
     >
-      <div className="flex justify-between items-start">
-        <h4 className="font-bold text-white mb-2">{task.taskName}</h4>
+      {/* title */}
+      <div className="flex justify-between items-start gap-2">
+        <h4 className="font-bold text-white mb-2 break-words">
+          {task.taskName}
+        </h4>
         <div
-          className={`w-3 h-3 rounded-full ${getPriorityColor(task.priority)}`}
+          className={`w-3 h-3 rounded-full flex-shrink-0 ${getPriorityColor(
+            task.taskPriorityId?.name,
+          )}`}
         ></div>
       </div>
+
       <p className="text-sm text-gray-400 mb-4">{task.description}</p>
+
       <div className="flex justify-between items-center text-xs">
         <div className="flex items-center gap-2">
           {assignee && (
@@ -752,47 +762,49 @@ const TaskCard = ({
             {assignee ? assignee.name : "Unassigned"}
           </span>
         </div>
-        <div className="flex ">
-          {Permissions.isEdit && (
+      </div>
+      <div className="flex gap-2 mb-3">
+        {Permissions.isEdit && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => onEdit(task)}
+          >
+            <Edit className="w-3 h-3" />
+          </Button>
+        )}
+
+        {(user.role === "Super Admin" || user.role === "Admin") && (
+          <>
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6"
-              onClick={() => onEdit(task)}
+              className="h-7 w-7"
+              onClick={() => onDelete(task)}
             >
-              <Edit className="w-3 h-3" />
+              <Trash2 className="w-3 h-3 text-red-400" />
             </Button>
-          )}
-          {(user.role === "Super Admin" || user.role === "Admin") && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-5"
-                onClick={() => onDelete(task)}
-              >
-                <Trash2 className="w-3 h-3 text-red-400" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-5"
-                onClick={() => onShowHistory(task.progressDetails)}
-              >
-                <History className="w-3 h-3 text-yellow-400" />
-              </Button>
-              {/* Added Work Log Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-5"
-                onClick={() => onShowWorkLogs(task.workLogs || [])}
-              >
-                <Clock className="w-3 h-3 text-blue-400" />
-              </Button>
-            </>
-          )}
-        </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => onShowHistory(task.progressDetails)}
+            >
+              <History className="w-3 h-3 text-yellow-400" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => onShowWorkLogs(task.workLogs || [])}
+            >
+              <Clock className="w-3 h-3 text-blue-400" />
+            </Button>
+          </>
+        )}
       </div>
     </motion.div>
   );
@@ -866,9 +878,11 @@ const TasksPage = () => {
       console.error(error);
     }
   };
-  if (user.role === "Admin" || user.role === "Super Admin") {
-    getProjectList();
-  }
+  useEffect(() => {
+    if (user.role === "Admin" || user.role === "Super Admin") {
+      getProjectList();
+    }
+  }, [user.role]);
   const getAllTasks = async () => {
     try {
       const response = await apiRequest("Task/getAllTasks/", {
@@ -1050,7 +1064,27 @@ const TasksPage = () => {
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
     );
   }, [filteredTasks]);
+  const filteredProjectList = useMemo(() => {
+    if (!selectedEmployee) return projectList;
 
+    return (projectList || []).filter((project) =>
+      (project.assignedEmployees || []).some(
+        (emp) => String(emp._id) === String(selectedEmployee),
+      ),
+    );
+  }, [projectList, selectedEmployee]);
+
+  const filteredEmployeeList = useMemo(() => {
+    if (!selectedProject) return Employees;
+
+    const selectedProjectData = (projectList || []).find(
+      (project) => String(project._id) === String(selectedProject),
+    );
+
+    if (!selectedProjectData) return [];
+
+    return selectedProjectData.assignedEmployees || [];
+  }, [projectList, Employees, selectedProject]);
   const taskColumns = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -1088,7 +1122,20 @@ const TasksPage = () => {
     Completed: "bg-green-600",
     OverDue: "bg-red-600",
   };
-
+  const handleResetFilters = () => {
+    setFilterType(
+      user.role === "Admin" || user.role === "Super Admin" ? "day" : "date",
+    );
+    setSelectedDate(new Date().toISOString().split("T")[0]);
+    setSelectedWeek(new Date().toISOString().split("T")[0]);
+    setSelectedMonth(
+      `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`,
+    );
+    setSelectedProject("");
+    setSelectedEmployee("");
+    setViewMode("card");
+    setActiveStatus("In Progress");
+  };
   return (
     <>
       <Helmet>
@@ -1320,21 +1367,82 @@ const TasksPage = () => {
                       </div>
                     )}
 
-                    {/* Employee filter */}
+                    <div>
+                      <Label className="text-gray-300">Project</Label>
+                      <Select
+                        value={selectedProject || "all"}
+                        onValueChange={(value) => {
+                          const projectId = value === "all" ? "" : value;
+                          setSelectedProject(projectId);
+
+                          if (projectId && selectedEmployee) {
+                            const selectedProjectData = (
+                              projectList || []
+                            ).find(
+                              (project) =>
+                                String(project._id) === String(projectId),
+                            );
+
+                            const employeeStillValid = (
+                              selectedProjectData?.assignedEmployees || []
+                            ).some(
+                              (emp) =>
+                                String(emp._id) === String(selectedEmployee),
+                            );
+
+                            if (!employeeStillValid) {
+                              setSelectedEmployee("");
+                            }
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-[220px] glass-effect border-white/10">
+                          <SelectValue placeholder="All Projects" />
+                        </SelectTrigger>
+
+                        <SelectContent className="glass-effect text-white h-[300px]">
+                          <SelectItem value="all">All Projects</SelectItem>
+                          {filteredProjectList.map((proj) => (
+                            <SelectItem key={proj._id} value={proj._id}>
+                              {proj.projectName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     <div>
                       <Label className="text-gray-300">Employee</Label>
                       <Select
                         value={selectedEmployee || "all"}
-                        onValueChange={(value) =>
-                          setSelectedEmployee(value === "all" ? "" : value)
-                        }
+                        onValueChange={(value) => {
+                          const employeeId = value === "all" ? "" : value;
+                          setSelectedEmployee(employeeId);
+
+                          if (employeeId && selectedProject) {
+                            const projectStillValid = (projectList || []).some(
+                              (project) =>
+                                String(project._id) ===
+                                  String(selectedProject) &&
+                                (project.assignedEmployees || []).some(
+                                  (emp) =>
+                                    String(emp._id) === String(employeeId),
+                                ),
+                            );
+
+                            if (!projectStillValid) {
+                              setSelectedProject("");
+                            }
+                          }
+                        }}
                       >
                         <SelectTrigger className="w-[180px] glass-effect border-white/10">
                           <SelectValue placeholder="All Employees" />
                         </SelectTrigger>
+
                         <SelectContent className="glass-effect text-white h-[300px]">
                           <SelectItem value="all">All Employees</SelectItem>
-                          {Employees.map((emp) => (
+                          {filteredEmployeeList.map((emp) => (
                             <SelectItem key={emp._id} value={emp._id}>
                               {emp.name || emp.email}
                             </SelectItem>
@@ -1343,39 +1451,42 @@ const TasksPage = () => {
                       </Select>
                     </div>
 
-                    {/* Project filter */}
                     <div>
-                      <Label className="text-gray-300">Project</Label>
-                      <Select
-                        value={selectedProject || "all"}
-                        onValueChange={(value) =>
-                          setSelectedProject(value === "all" ? "" : value)
-                        }
+                      <Label className="text-gray-300 opacity-0">Reset</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleResetFilters}
+                        className="border-white/10 hover:bg-white/10 text-white"
                       >
-                        <SelectTrigger className="w-[220px] glass-effect border-white/10">
-                          <SelectValue placeholder="All Projects" />
-                        </SelectTrigger>
-                        <SelectContent className="glass-effect text-white h-[300px]">
-                          <SelectItem value="all">All Projects</SelectItem>
-                          {projectList.map((proj) => (
-                            <SelectItem key={proj._id} value={proj._id}>
-                              {proj.projectName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        Reset
+                      </Button>
                     </div>
                   </>
                 ) : (
-                  <div>
-                    <Label className="text-gray-300">Select Date</Label>
-                    <Input
-                      type="date"
-                      value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      className="glass-effect border-white/10 text-white"
-                    />
-                  </div>
+                  <>
+                    <div>
+                      <Label className="text-gray-300">Select Date</Label>
+                      <Input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        className="glass-effect border-white/10 text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-gray-300 opacity-0">Reset</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleResetFilters}
+                        className="border-white/10 hover:bg-white/10 text-white"
+                      >
+                        Reset
+                      </Button>
+                    </div>
+                  </>
                 )}
               </div>
 

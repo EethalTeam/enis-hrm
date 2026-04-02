@@ -395,8 +395,13 @@ const ProjectsPage = () => {
         const matchesSearch = p.projectName
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase());
+
+        const projectStatusName = p.projectStatusId?.name || "";
         const matchesStatus =
-          statusFilter === "all" || p.status === statusFilter;
+          !statusFilter || statusFilter === "all"
+            ? true
+            : projectStatusName === statusFilter;
+
         return matchesSearch && matchesStatus;
       }),
     [Projects, searchTerm, statusFilter],
@@ -520,7 +525,22 @@ const ProjectsPage = () => {
       });
     }
   };
+  const [projectStatusList, setProjectStatusList] = useState([]);
+  const getAllProjectStatus = async () => {
+    try {
+      const response = await apiRequest("ProjectStatus/getAllProjectStatus/", {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
 
+      setProjectStatusList(response || []);
+    } catch (error) {
+      console.error("Error fetching project status:", error);
+    }
+  };
+  useEffect(() => {
+    getAllProjectStatus();
+  }, []);
   const getStatusColor = (status) =>
     ({
       "In Progress": "text-blue-400 border-blue-400/50 bg-blue-400/10",
@@ -604,16 +624,24 @@ const ProjectsPage = () => {
                     className="pl-10 glass-effect"
                   />
                 </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select
+                  value={statusFilter || "all"}
+                  onValueChange={(value) =>
+                    setStatusFilter(value === "all" ? "" : value)
+                  }
+                >
                   <SelectTrigger className="w-[180px] glass-effect">
-                    <SelectValue />
+                    <SelectValue placeholder="All Statuses" />
                   </SelectTrigger>
-                  <SelectContent className="glass-effect border-white/10">
+
+                  <SelectContent className="glass-effect border-white/10 text-white">
                     <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="Planning">Planning</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
-                    <SelectItem value="On Hold">On Hold</SelectItem>
+
+                    {projectStatusList.map((status) => (
+                      <SelectItem key={status._id} value={status.name}>
+                        {status.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -642,9 +670,9 @@ const ProjectsPage = () => {
                         {project.projectName}
                       </CardTitle>
                       <CardDescription
-                        className={`text-xs font-semibold px-2 py-1 rounded-full inline-block mt-2 ${getStatusColor(project.status)}`}
+                        className={`text-xs font-semibold px-2 py-1 rounded-full inline-block mt-2 ${getStatusColor(project.projectStatusId?.name)}`}
                       >
-                        {project.status}
+                        {project.projectStatusId?.name || "-"}
                       </CardDescription>
                     </div>
                     <DropdownMenu>
