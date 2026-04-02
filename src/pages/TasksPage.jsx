@@ -68,11 +68,7 @@ const TaskForm = ({
       assignee: "",
       assignedTo: "",
       assignees:
-        user.role !== "Admin" &&
-        user.role !== "Super Admin" &&
-        Permissions.isAdd
-          ? [user._id]
-          : [],
+        user.role !== "Admin" && user.role !== "Super Admin" ? [user._id] : [],
       project: "",
       projectId: "",
       dueDate: "",
@@ -265,21 +261,38 @@ const TaskForm = ({
   };
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    const finalFormData = {
+      ...formData,
+      assignees:
+        user.role !== "Admin" && user.role !== "Super Admin"
+          ? [user._id]
+          : formData.assignees,
+    };
+
+    if (!finalFormData.assignees || finalFormData.assignees.length === 0) {
+      toast({
+        title: "Validation failed",
+        description: "Please select at least one assignee.",
+      });
+      return;
+    }
+
     if (formData._id) {
-      updateTask(formData);
+      updateTask(finalFormData);
       toast({
         title: "Task Updated",
         description: "Task has been updated successfully.",
       });
       setOpen(false);
     } else {
-      createTask(formData);
+      createTask(finalFormData);
       toast({
         title: "Task Added",
         description: `${formData.taskName} has been added to the system.`,
       });
+      setOpen(false);
     }
-    setOpen(false);
   };
 
   return (
@@ -786,52 +799,45 @@ const TaskCard = ({
 };
 
 const TasksPage = () => {
-  const { user } = useAuth();
-  const { tasks, employees, addTask, updateTask } = useData();
+  const { user, getPermissionsByPath } = useAuth();
+  const { addTask, updateTask } = useData();
+  const [selectedEmployee, setSelectedEmployee] = useState("");
+  const [selectedProject, setSelectedProject] = useState("");
+  const [projectList, setProjectList] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [task, setTasks] = useState([]);
   const [Employees, setEmployees] = useState([]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-
-  // Existing History State
+  const [showAllCompleted, setShowAllCompleted] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [ProgressDetails, setProgressDetails] = useState([]);
 
-  // NEW: Work Log State
   const [isWorkLogOpen, setIsWorkLogOpen] = useState(false);
   const [workLogDetails, setWorkLogDetails] = useState([]);
 
-  const taskColumns = useMemo(
-    () => ({
-      Todo: task.filter((t) => t.taskStatusId.name === "To Do"),
-      "In Progress": task.filter((t) => t.taskStatusId.name === "In Progress"),
-      Completed: task.filter((t) => t.taskStatusId.name === "Completed"),
-      OverDue: task.filter((t) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // reset time to midnight
-
-        const dueDate = new Date(t.dueDate);
-        dueDate.setHours(0, 0, 0, 0); // reset time to midnight
-
-        return dueDate < today && t.taskStatusId.name !== "Completed";
-      }),
-    }),
-    [task],
-  );
-
-  const handleAddNew = () => {
-    setSelectedTask(null);
-    setIsFormOpen(true);
-  };
-
-  const { getPermissionsByPath } = useAuth();
   const [Permissions, setPermissions] = useState({
     isAdd: false,
     isView: false,
     isEdit: false,
     isDelete: false,
   });
+
+  const [viewMode, setViewMode] = useState("card"); // card | table
+  const [activeStatus, setActiveStatus] = useState("In Progress");
+
+  const [filterType, setFilterType] = useState(
+    user.role === "Admin" || user.role === "Super Admin" ? "day" : "date",
+  );
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
+  const [selectedWeek, setSelectedWeek] = useState(
+    new Date().toISOString().split("T")[0],
+  );
+  const [selectedMonth, setSelectedMonth] = useState(
+    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`,
+  );
 
   useEffect(() => {
     getPermissionsByPath(window.location.pathname).then((res) => {
@@ -841,10 +847,28 @@ const TasksPage = () => {
         navigate("/dashboard");
       }
     });
+
     getAllTasks();
     getEmployeeList();
   }, []);
+  const getProjectList = async () => {
+    try {
+      const response = await apiRequest("Project/getAllProjects/", {
+        method: "POST",
+        body: JSON.stringify({
+          _id: user._id,
+          role: user.role,
+        }),
+      });
 
+      setProjectList(response || []);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  if (user.role === "Admin" || user.role === "Super Admin") {
+    getProjectList();
+  }
   const getAllTasks = async () => {
     try {
       const response = await apiRequest("Task/getAllTasks/", {
@@ -852,12 +876,12 @@ const TasksPage = () => {
         body: JSON.stringify({ _id: user._id, role: user.role }),
       });
 
-      setTasks(response);
+      setTasks(response || []);
     } catch (error) {
       console.error("Error:", error);
-      throw error;
     }
   };
+
   const getEmployeeList = async () => {
     try {
       const response = await apiRequest("Employee/getAllEmployees/", {
@@ -865,15 +889,15 @@ const TasksPage = () => {
         body: JSON.stringify({}),
       });
 
-      setEmployees(response);
+      setEmployees(response || []);
     } catch (error) {
       console.error("Error:", error);
-      throw error;
     }
   };
+
   const deleteTask = async (id) => {
     try {
-      const response = await apiRequest("Task/deleteTask/", {
+      await apiRequest("Task/deleteTask/", {
         method: "POST",
         body: JSON.stringify({ _id: id }),
       });
@@ -881,34 +905,43 @@ const TasksPage = () => {
       getAllTasks();
     } catch (error) {
       console.error("Error:", error);
-      throw error;
     }
   };
+
+  const handleAddNew = () => {
+    setSelectedTask(null);
+    setIsFormOpen(true);
+  };
+
   const handleEdit = (task) => {
     setSelectedTask(task);
     setIsFormOpen(true);
   };
+
   const handleDelete = (task) => {
     setSelectedTask(task);
     setIsConfirmOpen(true);
   };
+
   const handleHistory = (details) => {
-    setProgressDetails(details);
+    setProgressDetails(details || []);
     setIsHistoryOpen(true);
   };
 
-  // NEW Handler for Work Logs
   const handleWorkLogs = (logs) => {
-    setWorkLogDetails(logs);
+    setWorkLogDetails(logs || []);
     setIsWorkLogOpen(true);
   };
 
-  const confirmDelete = () => {
-    deleteTask(selectedTask._id);
+  const confirmDelete = async () => {
+    if (!selectedTask?._id) return;
+
+    await deleteTask(selectedTask._id);
     toast({ title: "Task Deleted" });
     setIsConfirmOpen(false);
     setSelectedTask(null);
   };
+
   const handleSave = (taskData) => {
     if (selectedTask) {
       updateTask({ ...taskData, id: selectedTask._id });
@@ -919,7 +952,6 @@ const TasksPage = () => {
     }
   };
 
-  // Helper for formatting date/time
   const formatDateTime = (dateString) => {
     if (!dateString) return "Ongoing";
     return new Date(dateString).toLocaleString("en-IN", {
@@ -931,11 +963,138 @@ const TasksPage = () => {
     });
   };
 
+  const isSameDay = (date1, date2) => {
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+
+    return (
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate()
+    );
+  };
+
+  const getWeekRange = (dateString) => {
+    const date = new Date(dateString);
+    const day = date.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+
+    const start = new Date(date);
+    start.setDate(date.getDate() + diffToMonday);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+
+    return { start, end };
+  };
+
+  const filteredTasks = useMemo(() => {
+    return task.filter((t) => {
+      if (!t?.dueDate) return false;
+
+      const taskDate = new Date(t.dueDate);
+
+      // 👉 employee role
+      if (user.role !== "Admin" && user.role !== "Super Admin") {
+        return isSameDay(taskDate, selectedDate);
+      }
+
+      // 👉 admin date filters
+      let dateMatch = true;
+
+      if (filterType === "day") {
+        dateMatch = isSameDay(taskDate, selectedDate);
+      }
+
+      if (filterType === "week") {
+        const { start, end } = getWeekRange(selectedWeek);
+        dateMatch = taskDate >= start && taskDate <= end;
+      }
+
+      if (filterType === "month") {
+        const [year, month] = selectedMonth.split("-").map(Number);
+        dateMatch =
+          taskDate.getFullYear() === year && taskDate.getMonth() + 1 === month;
+      }
+
+      // 👉 employee filter
+      let employeeMatch = true;
+      if (selectedEmployee) {
+        employeeMatch = t.assignedTo?.some(
+          (emp) => emp._id === selectedEmployee,
+        );
+      }
+
+      // 👉 project filter
+      let projectMatch = true;
+      if (selectedProject) {
+        projectMatch = t.projectId?._id === selectedProject;
+      }
+
+      return dateMatch && employeeMatch && projectMatch;
+    });
+  }, [
+    task,
+    user.role,
+    filterType,
+    selectedDate,
+    selectedWeek,
+    selectedMonth,
+    selectedEmployee,
+    selectedProject,
+  ]);
+  const sortedFilteredTasks = useMemo(() => {
+    return [...filteredTasks].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+    );
+  }, [filteredTasks]);
+
+  const taskColumns = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return {
+      Pending: sortedFilteredTasks.filter(
+        (t) => t.taskStatusId?.name === "To Do",
+      ),
+      "In Progress": sortedFilteredTasks.filter(
+        (t) => t.taskStatusId?.name === "In Progress",
+      ),
+      Completed: sortedFilteredTasks.filter(
+        (t) => t.taskStatusId?.name === "Completed",
+      ),
+      OverDue: sortedFilteredTasks.filter((t) => {
+        const dueDate = new Date(t.dueDate);
+        dueDate.setHours(0, 0, 0, 0);
+        return dueDate < today && t.taskStatusId?.name !== "Completed";
+      }),
+    };
+  }, [sortedFilteredTasks]);
+
+  const activeTableData = taskColumns[activeStatus] || [];
+
+  const getPriorityBadge = (priority) =>
+    ({
+      High: "bg-red-500/20 text-red-300 border border-red-500/40",
+      Medium: "bg-yellow-500/20 text-yellow-300 border border-yellow-500/40",
+      Low: "bg-green-500/20 text-green-300 border border-green-500/40",
+    })[priority] || "bg-slate-500/20 text-slate-300 border border-slate-500/40";
+
+  const cardColors = {
+    Pending: "bg-violet-600",
+    "In Progress": "bg-yellow-600",
+    Completed: "bg-green-600",
+    OverDue: "bg-red-600",
+  };
+
   return (
     <>
       <Helmet>
         <title>Tasks - ENIS-HRMS</title>
       </Helmet>
+
       <AnimatePresence>
         {isFormOpen && (
           <TaskForm
@@ -949,6 +1108,7 @@ const TasksPage = () => {
           />
         )}
       </AnimatePresence>
+
       <AnimatePresence>
         {isConfirmOpen && (
           <ConfirmationDialog
@@ -961,7 +1121,6 @@ const TasksPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Existing History Modal */}
       <AnimatePresence>
         {isHistoryOpen && (
           <motion.div
@@ -984,10 +1143,7 @@ const TasksPage = () => {
               >
                 <X size={22} />
               </button>
-              <h2
-                className="text-xl font-semibold mb-4"
-                style={{ color: "black" }}
-              >
+              <h2 className="text-xl font-semibold mb-4 text-black">
                 Progress Details
               </h2>
               <ul className="list-disc list-inside space-y-2 text-gray-700 max-h-[60vh] overflow-y-auto">
@@ -1000,7 +1156,6 @@ const TasksPage = () => {
         )}
       </AnimatePresence>
 
-      {/* NEW Work Log Modal (Styled same as History) */}
       <AnimatePresence>
         {isWorkLogOpen && (
           <motion.div
@@ -1015,7 +1170,7 @@ const TasksPage = () => {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -50, opacity: 0 }}
               transition={{ type: "spring", stiffness: 200, damping: 20 }}
-              style={{ backgroundColor: "#e0f2fe" }} // Light blue to distinguish from history, or use #c4f4c4
+              style={{ backgroundColor: "#e0f2fe" }}
             >
               <button
                 onClick={() => setIsWorkLogOpen(false)}
@@ -1023,17 +1178,14 @@ const TasksPage = () => {
               >
                 <X size={22} />
               </button>
-              <h2
-                className="text-xl font-semibold mb-4"
-                style={{ color: "black" }}
-              >
+              <h2 className="text-xl font-semibold mb-4 text-black">
                 Work Timing Log
               </h2>
 
               <div className="max-h-[60vh] overflow-y-auto">
                 {workLogDetails.length > 0 ? (
                   <table className="w-full text-sm text-left text-gray-700">
-                    <thead className="text-xs text-gray-700 uppercase border-b border-gray-400">
+                    <thead className="text-xs uppercase border-b border-gray-400">
                       <tr>
                         <th className="px-2 py-2">Start Time</th>
                         <th className="px-2 py-2">End Time</th>
@@ -1057,7 +1209,6 @@ const TasksPage = () => {
                           </td>
                         </tr>
                       ))}
-                      {/* Total Hours Calculation */}
                       <tr className="bg-blue-100/50 font-bold border-t border-gray-400">
                         <td className="px-2 py-2" colSpan="2">
                           Total Hours Spent
@@ -1094,9 +1245,10 @@ const TasksPage = () => {
           <div>
             <h1 className="text-3xl font-bold text-white">Task Board</h1>
             <p className="text-gray-400">
-              Manage project tasks using a Kanban board.
+              Manage project tasks with card and table view.
             </p>
           </div>
+
           {(user.role === "Super Admin" ||
             user.role === "Admin" ||
             Permissions.isAdd) && (
@@ -1109,48 +1261,379 @@ const TasksPage = () => {
             </Button>
           )}
         </motion.div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
-          {Object.entries(taskColumns).map(([status, tasksInColumn], i) => {
-            const cardColors = {
-              Todo: "bg-violet-600",
-              "In Progress": "bg-yellow-600",
-              Completed: "bg-green-600",
-              OverDue: "bg-red-600",
-            };
-            return (
-              <motion.div
-                key={status}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-              >
-                <Card
-                  className={`border-white/10 h-full ${cardColors[status] || "glass-effect"}`}
+
+        <Card className="glass-effect border-white/10">
+          <CardContent className="p-6">
+            <div className="flex flex-wrap gap-4 items-end justify-between">
+              <div className="flex flex-wrap gap-4 items-end">
+                {user.role === "Admin" || user.role === "Super Admin" ? (
+                  <>
+                    <div>
+                      <Label className="text-gray-300">Filter Type</Label>
+                      <Select value={filterType} onValueChange={setFilterType}>
+                        <SelectTrigger className="w-[160px] glass-effect border-white/10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="glass-effect border-white/10 text-white">
+                          <SelectItem value="day">Day</SelectItem>
+                          <SelectItem value="week">Week</SelectItem>
+                          <SelectItem value="month">Month</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {filterType === "day" && (
+                      <div>
+                        <Label className="text-gray-300">Select Date</Label>
+                        <Input
+                          type="date"
+                          value={selectedDate}
+                          onChange={(e) => setSelectedDate(e.target.value)}
+                          className="glass-effect border-white/10 text-white"
+                        />
+                      </div>
+                    )}
+
+                    {filterType === "week" && (
+                      <div>
+                        <Label className="text-gray-300">
+                          Select Week Date
+                        </Label>
+                        <Input
+                          type="date"
+                          value={selectedWeek}
+                          onChange={(e) => setSelectedWeek(e.target.value)}
+                          className="glass-effect border-white/10 text-white"
+                        />
+                      </div>
+                    )}
+
+                    {filterType === "month" && (
+                      <div>
+                        <Label className="text-gray-300">Select Month</Label>
+                        <Input
+                          type="month"
+                          value={selectedMonth}
+                          onChange={(e) => setSelectedMonth(e.target.value)}
+                          className="glass-effect border-white/10 text-white"
+                        />
+                      </div>
+                    )}
+
+                    {/* Employee filter */}
+                    <div>
+                      <Label className="text-gray-300">Employee</Label>
+                      <Select
+                        value={selectedEmployee || "all"}
+                        onValueChange={(value) =>
+                          setSelectedEmployee(value === "all" ? "" : value)
+                        }
+                      >
+                        <SelectTrigger className="w-[180px] glass-effect border-white/10">
+                          <SelectValue placeholder="All Employees" />
+                        </SelectTrigger>
+                        <SelectContent className="glass-effect text-white h-[300px]">
+                          <SelectItem value="all">All Employees</SelectItem>
+                          {Employees.map((emp) => (
+                            <SelectItem key={emp._id} value={emp._id}>
+                              {emp.name || emp.email}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Project filter */}
+                    <div>
+                      <Label className="text-gray-300">Project</Label>
+                      <Select
+                        value={selectedProject || "all"}
+                        onValueChange={(value) =>
+                          setSelectedProject(value === "all" ? "" : value)
+                        }
+                      >
+                        <SelectTrigger className="w-[220px] glass-effect border-white/10">
+                          <SelectValue placeholder="All Projects" />
+                        </SelectTrigger>
+                        <SelectContent className="glass-effect text-white h-[300px]">
+                          <SelectItem value="all">All Projects</SelectItem>
+                          {projectList.map((proj) => (
+                            <SelectItem key={proj._id} value={proj._id}>
+                              {proj.projectName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <Label className="text-gray-300">Select Date</Label>
+                    <Input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="glass-effect border-white/10 text-white"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setViewMode("card")}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    viewMode === "card"
+                      ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white"
+                      : "bg-white/5 text-gray-300 hover:bg-white/10"
+                  }`}
                 >
-                  <CardHeader>
-                    <CardTitle className="text-white">
-                      {status} ({tasksInColumn.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {tasksInColumn.map((task) => (
-                      <TaskCard
-                        key={task._id}
-                        task={task}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        onShowHistory={handleHistory}
-                        onShowWorkLogs={handleWorkLogs}
-                        employees={Employees}
-                        Permissions={Permissions}
-                      />
-                    ))}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </div>
+                  Card View
+                </button>
+
+                <button
+                  onClick={() => {
+                    setViewMode("table");
+                    setActiveStatus("In Progress");
+                  }}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    viewMode === "table"
+                      ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white"
+                      : "bg-white/5 text-gray-300 hover:bg-white/10"
+                  }`}
+                >
+                  Table View
+                </button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {viewMode === "card" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-start">
+            {Object.entries(taskColumns).map(([status, tasksInColumn], i) => {
+              const visibleTasks =
+                status === "Completed" && !showAllCompleted
+                  ? tasksInColumn.slice(0, 5)
+                  : tasksInColumn;
+
+              return (
+                <motion.div
+                  key={status}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                >
+                  <Card
+                    className={`border-white/10 h-full ${cardColors[status] || "glass-effect"}`}
+                  >
+                    <CardHeader>
+                      <CardTitle className="text-white">
+                        {status} ({tasksInColumn.length})
+                      </CardTitle>
+                    </CardHeader>
+
+                    <CardContent className="space-y-4">
+                      {visibleTasks.length > 0 ? (
+                        <>
+                          {visibleTasks.map((t) => (
+                            <TaskCard
+                              key={t._id}
+                              task={t}
+                              onEdit={handleEdit}
+                              onDelete={handleDelete}
+                              onShowHistory={handleHistory}
+                              onShowWorkLogs={handleWorkLogs}
+                              employees={Employees}
+                              Permissions={Permissions}
+                            />
+                          ))}
+
+                          {status === "Completed" &&
+                            tasksInColumn.length > 5 && (
+                              <div className="pt-2 text-center">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="border-white/10 hover:bg-white/10 text-white"
+                                  onClick={() =>
+                                    setShowAllCompleted((prev) => !prev)
+                                  }
+                                >
+                                  {showAllCompleted ? "View Less" : "View More"}
+                                </Button>
+                              </div>
+                            )}
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-300 bg-white/5 rounded-lg p-4 text-center">
+                          No tasks in {status}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+
+        {viewMode === "table" && (
+          <Card className="glass-effect border-white/10">
+            <CardHeader>
+              <div className="flex flex-wrap gap-3">
+                {["Pending", "In Progress", "Completed", "OverDue"].map(
+                  (tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveStatus(tab)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                        activeStatus === tab
+                          ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white"
+                          : "bg-white/5 text-gray-300 hover:bg-white/10"
+                      }`}
+                    >
+                      {tab} ({taskColumns[tab]?.length || 0})
+                    </button>
+                  ),
+                )}
+              </div>
+            </CardHeader>
+
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left text-white">
+                  <thead className="border-b border-white/10 text-gray-300">
+                    <tr>
+                      <th className="px-4 py-3">Task Name</th>
+                      <th className="px-4 py-3">Project</th>
+                      <th className="px-4 py-3">Assignee</th>
+                      <th className="px-4 py-3">Priority</th>
+                      <th className="px-4 py-3">Due Date</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3 text-center">Actions</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {activeTableData.length > 0 ? (
+                      activeTableData.map((t) => {
+                        const assignee =
+                          Employees.find(
+                            (e) => e._id === t.assignedTo?.[0]?._id,
+                          ) || t.assignedTo?.[0];
+
+                        return (
+                          <tr
+                            key={t._id}
+                            className="border-b border-white/5 hover:bg-white/5"
+                          >
+                            <td className="px-4 py-3">
+                              <div className="font-medium">{t.taskName}</div>
+                              <div className="text-xs text-gray-400">
+                                {t.description || "-"}
+                              </div>
+                            </td>
+
+                            <td className="px-4 py-3">
+                              {t.projectId?.projectName || "-"}
+                            </td>
+
+                            <td className="px-4 py-3">
+                              {assignee?.name || assignee?.email || "-"}
+                            </td>
+
+                            <td className="px-4 py-3">
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs ${getPriorityBadge(
+                                  t.taskPriorityId?.name,
+                                )}`}
+                              >
+                                {t.taskPriorityId?.name || "-"}
+                              </span>
+                            </td>
+
+                            <td className="px-4 py-3">
+                              {t.dueDate
+                                ? new Date(t.dueDate).toLocaleDateString(
+                                    "en-IN",
+                                  )
+                                : "-"}
+                            </td>
+
+                            <td className="px-4 py-3">
+                              {t.taskStatusId?.name || "-"}
+                            </td>
+
+                            <td className="px-4 py-3">
+                              <div className="flex justify-center gap-2">
+                                {Permissions.isEdit && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => handleEdit(t)}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                )}
+
+                                {(user.role === "Super Admin" ||
+                                  user.role === "Admin") && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => handleDelete(t)}
+                                    >
+                                      <Trash2 className="w-4 h-4 text-red-400" />
+                                    </Button>
+
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() =>
+                                        handleHistory(t.progressDetails || [])
+                                      }
+                                    >
+                                      <History className="w-4 h-4 text-yellow-400" />
+                                    </Button>
+
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() =>
+                                        handleWorkLogs(t.workLogs || [])
+                                      }
+                                    >
+                                      <Clock className="w-4 h-4 text-blue-400" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="7"
+                          className="px-4 py-10 text-center text-gray-400"
+                        >
+                          No tasks found for {activeStatus}.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </>
   );
