@@ -496,11 +496,8 @@ const Header = ({ onMenuClick }) => {
               >
                 {user.avatar ? (
                   <Avatar className="w-8 h-8">
-                    <img
-                      src={user?.avatar}
-                      alt={user?.name}
-                      className="w-6 h-6 rounded-full"
-                    />
+                    <AvatarImage src={user?.avatar} className="object-cover" />
+                    <AvatarFallback>{user.name?.[0]}</AvatarFallback>
                   </Avatar>
                 ) : (
                   <Avatar className="w-8 h-8">
