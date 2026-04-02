@@ -1010,12 +1010,12 @@ const TasksPage = () => {
 
       const taskDate = new Date(t.dueDate);
 
-      // 👉 employee role
+      //  employee role
       if (user.role !== "Admin" && user.role !== "Super Admin") {
         return isSameDay(taskDate, selectedDate);
       }
 
-      // 👉 admin date filters
+      //  admin date filters
       let dateMatch = true;
 
       if (filterType === "day") {
@@ -1033,7 +1033,7 @@ const TasksPage = () => {
           taskDate.getFullYear() === year && taskDate.getMonth() + 1 === month;
       }
 
-      // 👉 employee filter
+      //  employee filter
       let employeeMatch = true;
       if (selectedEmployee) {
         employeeMatch = t.assignedTo?.some(
@@ -1041,7 +1041,7 @@ const TasksPage = () => {
         );
       }
 
-      // 👉 project filter
+      //  project filter
       let projectMatch = true;
       if (selectedProject) {
         projectMatch = t.projectId?._id === selectedProject;
@@ -1308,7 +1308,35 @@ const TasksPage = () => {
             </Button>
           )}
         </motion.div>
+        {/* View Switch - Center */}
+        <div className="flex justify-center mt-6">
+          <div className="flex gap-4 bg-white/5 p-2 rounded-xl border border-white/10">
+            <button
+              onClick={() => setViewMode("card")}
+              className={`px-6 py-2 rounded-lg text-sm font-medium transition ${
+                viewMode === "card"
+                  ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white"
+                  : "text-gray-300 hover:bg-white/10"
+              }`}
+            >
+              Card View
+            </button>
 
+            <button
+              onClick={() => {
+                setViewMode("table");
+                setActiveStatus("In Progress");
+              }}
+              className={`px-6 py-2 rounded-lg text-sm font-medium transition ${
+                viewMode === "table"
+                  ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white"
+                  : "text-gray-300 hover:bg-white/10"
+              }`}
+            >
+              Table View
+            </button>
+          </div>
+        </div>
         <Card className="glass-effect border-white/10">
           <CardContent className="p-6">
             <div className="flex flex-wrap gap-4 items-end justify-between">
@@ -1400,7 +1428,7 @@ const TasksPage = () => {
                           <SelectValue placeholder="All Projects" />
                         </SelectTrigger>
 
-                        <SelectContent className="glass-effect text-white h-[300px]">
+                        <SelectContent className="glass-effect text-white h-[150px]">
                           <SelectItem value="all">All Projects</SelectItem>
                           {filteredProjectList.map((proj) => (
                             <SelectItem key={proj._id} value={proj._id}>
@@ -1440,7 +1468,7 @@ const TasksPage = () => {
                           <SelectValue placeholder="All Employees" />
                         </SelectTrigger>
 
-                        <SelectContent className="glass-effect text-white h-[300px]">
+                        <SelectContent className="glass-effect text-white h-[150px]">
                           <SelectItem value="all">All Employees</SelectItem>
                           {filteredEmployeeList.map((emp) => (
                             <SelectItem key={emp._id} value={emp._id}>
@@ -1488,33 +1516,6 @@ const TasksPage = () => {
                     </div>
                   </>
                 )}
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setViewMode("card")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                    viewMode === "card"
-                      ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white"
-                      : "bg-white/5 text-gray-300 hover:bg-white/10"
-                  }`}
-                >
-                  Card View
-                </button>
-
-                <button
-                  onClick={() => {
-                    setViewMode("table");
-                    setActiveStatus("In Progress");
-                  }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                    viewMode === "table"
-                      ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white"
-                      : "bg-white/5 text-gray-300 hover:bg-white/10"
-                  }`}
-                >
-                  Table View
-                </button>
               </div>
             </div>
           </CardContent>
