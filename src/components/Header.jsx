@@ -252,7 +252,7 @@ const AttendanceActions = ({ startIdleTimeout }) => {
 const Header = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
   const { toast } = useToast();
-
+  console.log(user, "user");
   const [notifications, setNotifications] = useState([]);
   const userNotifications = notifications.filter(
     (n) => n.toEmployeeId === user._id && n.status === "unseen",
@@ -494,15 +494,25 @@ const Header = ({ onMenuClick }) => {
                 variant="ghost"
                 className="flex items-center gap-3 hover:bg-white/10 px-3 py-2 h-auto w-auto"
               >
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={user?.avatar} alt={user?.name} />
-                  <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                    {user.name
-                      ?.split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </AvatarFallback>
-                </Avatar>
+                {user.avatar ? (
+                  <Avatar className="w-8 h-8">
+                    <img
+                      src={user?.avatar}
+                      alt={user?.name}
+                      className="w-6 h-6 rounded-full"
+                    />
+                  </Avatar>
+                ) : (
+                  <Avatar className="w-8 h-8">
+                    {" "}
+                    <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                      {user.name
+                        ?.split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
                 <div className="hidden md:block text-left">
                   <p className="text-sm font-medium text-white">{user.name}</p>
                   <p className="text-xs text-gray-400">{user.role}</p>
