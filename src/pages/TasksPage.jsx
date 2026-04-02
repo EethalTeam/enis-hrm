@@ -1010,41 +1010,39 @@ const TasksPage = () => {
 
       const taskDate = new Date(t.dueDate);
 
-      //  employee role
+      // employee -> only own tasks
       if (user.role !== "Admin" && user.role !== "Super Admin") {
-        return isSameDay(taskDate, selectedDate);
+        const ownTask = (t.assignedTo || []).some(
+          (emp) => String(emp._id) === String(user._id),
+        );
+
+        return ownTask && isSameDay(taskDate, selectedDate);
       }
 
-      //  admin date filters
+      // admin -> all tasks
       let dateMatch = true;
 
       if (filterType === "day") {
         dateMatch = isSameDay(taskDate, selectedDate);
-      }
-
-      if (filterType === "week") {
+      } else if (filterType === "week") {
         const { start, end } = getWeekRange(selectedWeek);
         dateMatch = taskDate >= start && taskDate <= end;
-      }
-
-      if (filterType === "month") {
+      } else if (filterType === "month") {
         const [year, month] = selectedMonth.split("-").map(Number);
         dateMatch =
           taskDate.getFullYear() === year && taskDate.getMonth() + 1 === month;
       }
 
-      //  employee filter
       let employeeMatch = true;
       if (selectedEmployee) {
-        employeeMatch = t.assignedTo?.some(
-          (emp) => emp._id === selectedEmployee,
+        employeeMatch = (t.assignedTo || []).some(
+          (emp) => String(emp._id) === String(selectedEmployee),
         );
       }
 
-      //  project filter
       let projectMatch = true;
       if (selectedProject) {
-        projectMatch = t.projectId?._id === selectedProject;
+        projectMatch = String(t.projectId?._id) === String(selectedProject);
       }
 
       return dateMatch && employeeMatch && projectMatch;
@@ -1052,6 +1050,7 @@ const TasksPage = () => {
   }, [
     task,
     user.role,
+    user._id,
     filterType,
     selectedDate,
     selectedWeek,
@@ -1106,7 +1105,6 @@ const TasksPage = () => {
       }),
     };
   }, [sortedFilteredTasks]);
-
   const activeTableData = taskColumns[activeStatus] || [];
 
   const getPriorityBadge = (priority) =>
