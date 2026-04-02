@@ -401,7 +401,7 @@ const ProjectsPage = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-400">Budget</p>
-                      <p className="text-white font-medium">${project.budget  }</p>
+                      <p className="text-white font-medium">₹{project.budget  }</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-400 mb-2">Team</p>

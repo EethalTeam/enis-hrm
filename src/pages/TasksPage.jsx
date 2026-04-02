@@ -18,7 +18,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { apiRequest } from '@/components/CustomComponents/apiRequest';
 
 const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees, Permissions}) => {
+  console.log(task,"task")
   const { user } = useAuth();
+  console.log(user.role,"user.role")
   const [isConfirmPause, setIsConfirmPause] = useState(false);
   const [isConfirmComplete, setIsConfirmComplete] = useState(false);
   const [feedback, setFeedback] = useState('');
@@ -266,7 +268,7 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees, Permiss
             </div>
             <div>
               <Label htmlFor="description" className="text-gray-300">Task Description</Label>
-              <Textarea disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} name="description" value={formData.description} onChange={handleChange} placeholder="Task Description" className="bg-white/5 border-white/10" />
+              <Textarea disabled={task ? (user.role !== 'Admin' && user.role !== 'Super Admin' && Permissions.isAdd) : !Permissions.isAdd} name="description" value={formData.description} onChange={handleChange} placeholder="Task Description" className="bg-white/5 border-white/10" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -359,7 +361,7 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees, Permiss
                       {formData.project}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent className="glass-effect border-white/10 text-white">
+                  <SelectContent className="glass-effect border-white/10 text-white max-h-[200px] overflow-y-auto">
                     {(Data || []).map((dept) => (
                       <SelectItem key={dept._id} value={dept._id} className="hover:bg-white/10">
                         {dept.projectName}
@@ -368,7 +370,7 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees, Permiss
                   </SelectContent>
                 </Select>
               </div>
-              {(!task && user.role === 'Admin' && user.role === 'Super Admin') && <div>
+              {(!task && (user.role === 'Admin' || user.role === 'Super Admin')) && <div>
                 <Label htmlFor="assignees" className="text-gray-300">Select Members</Label>
                 <p className="text-gray-400 text-xs mb-2">Ctrl/Cmd + click to select multiple.</p>
                 <select
