@@ -1005,59 +1005,35 @@ const TasksPage = () => {
   };
 
   const filteredTasks = useMemo(() => {
-    return task.filter((t) => {
-      if (!t?.dueDate) return false;
-
-      const taskDate = new Date(t.dueDate);
-
-      // employee -> only own tasks
-      if (user.role !== "Admin" && user.role !== "Super Admin") {
-        const ownTask = (t.assignedTo || []).some(
+    if (user.role !== "Admin" && user.role !== "Super Admin") {
+      return task.filter((t) =>
+        (t.assignedTo || []).some(
           (emp) => String(emp._id) === String(user._id),
-        );
+        ),
+      );
+    }
 
-        return ownTask && isSameDay(taskDate, selectedDate);
-      }
+    let employeeMatch = true;
+    let projectMatch = true;
 
-      // admin -> all tasks
-      let dateMatch = true;
-
-      if (filterType === "day") {
-        dateMatch = isSameDay(taskDate, selectedDate);
-      } else if (filterType === "week") {
-        const { start, end } = getWeekRange(selectedWeek);
-        dateMatch = taskDate >= start && taskDate <= end;
-      } else if (filterType === "month") {
-        const [year, month] = selectedMonth.split("-").map(Number);
-        dateMatch =
-          taskDate.getFullYear() === year && taskDate.getMonth() + 1 === month;
-      }
-
-      let employeeMatch = true;
+    return task.filter((t) => {
       if (selectedEmployee) {
         employeeMatch = (t.assignedTo || []).some(
           (emp) => String(emp._id) === String(selectedEmployee),
         );
+      } else {
+        employeeMatch = true;
       }
 
-      let projectMatch = true;
       if (selectedProject) {
         projectMatch = String(t.projectId?._id) === String(selectedProject);
+      } else {
+        projectMatch = true;
       }
 
-      return dateMatch && employeeMatch && projectMatch;
+      return employeeMatch && projectMatch;
     });
-  }, [
-    task,
-    user.role,
-    user._id,
-    filterType,
-    selectedDate,
-    selectedWeek,
-    selectedMonth,
-    selectedEmployee,
-    selectedProject,
-  ]);
+  }, [task, user.role, user._id, selectedEmployee, selectedProject]);
   const sortedFilteredTasks = useMemo(() => {
     return [...filteredTasks].sort(
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
@@ -1088,23 +1064,47 @@ const TasksPage = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const isToday = (dateValue) => {
+      if (!dateValue) return false;
+      const d = new Date(dateValue);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime() === today.getTime();
+    };
+
+    const normalizeStatus = (name) =>
+      (name || "").toLowerCase().replace(/\s+/g, "");
+
     return {
-      Pending: sortedFilteredTasks.filter(
-        (t) => t.taskStatusId?.name === "To Do",
-      ),
-      "In Progress": sortedFilteredTasks.filter(
-        (t) => t.taskStatusId?.name === "In Progress",
-      ),
-      Completed: sortedFilteredTasks.filter(
-        (t) => t.taskStatusId?.name === "Completed",
-      ),
-      OverDue: sortedFilteredTasks.filter((t) => {
+      Pending: filteredTasks.filter((t) => {
+        const s = normalizeStatus(t.taskStatusId?.name);
+        return s === "todo";
+      }),
+
+      "In Progress": filteredTasks.filter((t) => {
+        const s = normalizeStatus(t.taskStatusId?.name);
+        return s === "inprogress" || s === "inprocess";
+      }),
+
+      Completed: filteredTasks.filter((t) => {
+        const s = normalizeStatus(t.taskStatusId?.name);
+        return (
+          (s === "completed" || s === "complete") &&
+          isToday(t.updatedAt || t.completedAt || t.createdAt)
+        );
+      }),
+
+      OverDue: filteredTasks.filter((t) => {
+        const s = normalizeStatus(t.taskStatusId?.name);
+        if (s === "completed" || s === "complete") return false;
+        if (!t.dueDate) return false;
+
         const dueDate = new Date(t.dueDate);
         dueDate.setHours(0, 0, 0, 0);
-        return dueDate < today && t.taskStatusId?.name !== "Completed";
+
+        return dueDate < today;
       }),
     };
-  }, [sortedFilteredTasks]);
+  }, [filteredTasks]);
   const activeTableData = taskColumns[activeStatus] || [];
 
   const getPriorityBadge = (priority) =>
