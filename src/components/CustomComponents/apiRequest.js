@@ -1,38 +1,47 @@
-// utils/api.js
-import { config } from '@/components/CustomComponents/config';
+import { config } from "@/components/CustomComponents/config";
 
 // Function to force logout
 function handleLogout() {
-    localStorage.removeItem('hrms_user');
-    localStorage.removeItem('attendanceElapsed')
-    localStorage.setItem('hrms_attendance_status',{ status: 'out', break: false })
-//   localStorage.clear(); // clear stored user data
-  window.location.href = "/login"; // redirect to login
+  localStorage.removeItem("hrms_user");
+  localStorage.removeItem("attendanceElapsed");
+  localStorage.setItem(
+    "hrms_attendance_status",
+    JSON.stringify({ status: "out", break: false }),
+  );
+  window.location.href = "/login";
 }
 
 export async function apiRequest(endpoint, options = {}) {
-  const userId = localStorage.getItem("userId"); // stored when user logs in
-const storedUser = JSON.parse(localStorage.getItem('hrms_user'));
+  const storedUser = JSON.parse(localStorage.getItem("hrms_user") || "{}");
+  const isFormData = options.body instanceof FormData;
+
   const finalOptions = {
     ...options,
     headers: {
-      "Content-Type": "application/json",
       ...(options.headers || {}),
-      "x-user-id": storedUser["_id"] || "", // attach userId on every request
+      "x-user-id": storedUser?._id || "",
     },
   };
+
+  // Only set JSON content-type for normal requests
+  if (!isFormData) {
+    finalOptions.headers["Content-Type"] = "application/json";
+  }
+
   try {
-    const response = await fetch(config.Api +"/api/"+ endpoint, finalOptions);
+    const response = await fetch(config.Api + "/api/" + endpoint, finalOptions);
+
     if (response.status === 401) {
-      // backend says user not logged in
       handleLogout();
       return;
     }
-          if (!response.ok) {
-        throw new Error('Failed to get datas');
-      }
 
     const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result?.message || "Failed to get data");
+    }
+
     return result;
   } catch (error) {
     console.error("API Error:", error);

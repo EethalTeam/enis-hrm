@@ -50,12 +50,15 @@ const initialState = {
   shift: "",
   workingHours: "",
   workLocation: "Office",
+  workLocationId: "",
   role: "",
   roleId: "",
 };
+
 const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
   const { addEmployee, departments, shifts, roles } = useData();
   const { toast } = useToast();
+
   const [formData, setFormData] = useState({
     _id: "",
     name: "",
@@ -81,6 +84,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
     role: "",
     roleId: "",
   });
+
   const [state, dispatch] = useReducer(Reducer, initialState);
   const [Employee, setEmployee] = useState([]);
   const [isEdit, setIsEdit] = useState(false);
@@ -102,8 +106,8 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
         designationId: employee.designationId,
         department: employee.departmentName,
         departmentId: employee.departmentId,
-        joinDate: employee.joinDate.split("T")[0],
-        birthDate: employee.birthDate?.split("T")[0],
+        joinDate: employee.joinDate?.split("T")[0] || "",
+        birthDate: employee.birthDate?.split("T")[0] || "",
         phoneNumber: employee.phoneNumber,
         salary: employee.salary,
         status: employee.statusName,
@@ -117,9 +121,10 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
         role: employee.roleName,
         roleId: employee.roleId,
       };
+
       setFormData({
         ...employeeData,
-        salary: employee.salary.toString(),
+        salary: employee.salary?.toString() || "",
         workingHours: employee.workingHours?.toString() || "8",
       });
     } else {
@@ -148,6 +153,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
         shift: "",
         shiftId: "",
       });
+      setEmployeePic(null);
     }
   }, [employee, isOpen]);
 
@@ -160,32 +166,34 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
     if (key && name) {
       setFormData((prev) => ({
         ...prev,
-        [id]: key, // e.g. shiftId
-        [name]: value, // e.g. shiftName
+        [id]: key,
+        [name]: value,
       }));
-      SetData([]); // clear Data once
+      SetData([]);
     }
   };
+  // useEffect(() => {
+  //   getRoleList();
+  // }, []);
   const getDepartmentList = async () => {
     try {
-      SetData([]); // clear Data once
+      SetData([]);
       const res = await apiRequest("Employee/getAllDepartments/", {
         method: "POST",
         body: JSON.stringify({}),
       });
 
       if (!res) {
-        throw new Error("Failed to get State");
+        throw new Error("Failed to get Department");
       }
 
       SetData(res);
-      // setState(result)
-      // setFilteredData(result)
     } catch (error) {
       console.error("Error:", error);
       throw error;
     }
   };
+
   const createEmployee = async () => {
     try {
       const formDataToSend = new FormData();
@@ -232,6 +240,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
       throw error;
     }
   };
+
   const updateEmployee = async () => {
     try {
       const formDataToSend = new FormData();
@@ -254,7 +263,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
       formDataToSend.append("roleId", formData.roleId);
 
       if (employeePic) {
-        formDataToSend.append("avatar", employeePic); // match backend multer field
+        formDataToSend.append("avatar", employeePic);
       }
 
       const response = await fetch(
@@ -278,82 +287,78 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
       throw error;
     }
   };
+
   const getDesignationList = async () => {
     try {
-      SetData([]); // clear Data once
+      SetData([]);
       const response = await apiRequest("Employee/getAllDesignations/", {
         method: "POST",
         body: JSON.stringify({}),
       });
 
       SetData(response);
-      // setState(result)
-      // setFilteredData(result)
     } catch (error) {
       console.error("Error:", error);
       throw error;
     }
   };
+
   const getShiftList = async () => {
     try {
-      SetData([]); // clear Data once
+      SetData([]);
       const response = await apiRequest("Employee/getAllShifts/", {
         method: "POST",
         body: JSON.stringify({}),
       });
       SetData(response);
-      // setState(result)
-      // setFilteredData(result)
     } catch (error) {
       console.error("Error:", error);
       throw error;
     }
   };
+
   const getWorkLocationList = async () => {
     try {
-      SetData([]); // clear Data once
+      SetData([]);
       const response = await apiRequest("Employee/getAllWorkLocations/", {
         method: "POST",
         body: JSON.stringify({}),
       });
       SetData(response);
-      // setState(result)
-      // setFilteredData(result)
     } catch (error) {
       console.error("Error:", error);
       throw error;
     }
   };
+
   const getRoleList = async () => {
     try {
-      SetData([]); // clear Data once
+      SetData([]);
       const response = await apiRequest("Employee/getAllRoles/", {
         method: "POST",
         body: JSON.stringify({}),
       });
       SetData(response);
-      // setState(result)
-      // setFilteredData(result)
     } catch (error) {
       console.error("Error:", error);
       throw error;
     }
   };
+
   const getStatusList = async () => {
     try {
-      SetData([]); // clear Data once
+      SetData([]);
       const response = await apiRequest("Employee/getAllStatus/", {
         method: "POST",
         body: JSON.stringify({}),
       });
       SetData(response);
-      // setState(result)
-      // setFilteredData(result)
     } catch (error) {
       console.error("Error:", error);
       throw error;
     }
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -400,6 +405,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
         >
           <X className="w-6 h-6" />
         </button>
+
         <div className="p-8">
           <h2 className="text-2xl font-bold text-white mb-2">
             {employee ? "Edit Employee" : "Add New Employee"}
@@ -410,6 +416,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
               : "Enter the details for the new"}{" "}
             employee.
           </p>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="space-y-2">
@@ -430,19 +437,6 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
               </div>
 
               <div className="space-y-2">
-                <label>
-                  Employee Pic<span className="text-red-500 ml-1">*</span>
-                </label>
-                <Input
-                  name="avatar"
-                  type="file"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    setEmployeePic(file);
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">
                   Full Name
                 </label>
@@ -458,6 +452,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">
                   Email Address
@@ -475,6 +470,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">
                   Password
@@ -492,12 +488,12 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">
                   Date of Birth
                 </label>
                 <div className="relative">
-                  {/* <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /> */}
                   <Input
                     name="birthDate"
                     type="date"
@@ -508,6 +504,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">
                   Phone Number
@@ -526,13 +523,14 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">
                   Designation
                 </label>
                 <Select
                   name="designation"
-                  value={formData.designationId} // store only _id
+                  value={formData.designationId}
                   onOpenChange={async (open) => {
                     if (open && (!Data || Data.length === 0)) {
                       await getDesignationList();
@@ -550,7 +548,6 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                       );
                     }
                   }}
-                  // required
                 >
                   <SelectTrigger className="glass-effect border-white/10">
                     <SelectValue placeholder="Select Designation">
@@ -570,15 +567,16 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">
                   Department
                 </label>
                 <Select
                   name="department"
-                  value={formData.department} // store only _id
+                  value={formData.departmentId}
                   onOpenChange={async (open) => {
-                    if (open && (!Data || Data.length === 0)) {
+                    if (open) {
                       await getDepartmentList();
                     }
                   }}
@@ -594,7 +592,6 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                       );
                     }
                   }}
-                  // required
                 >
                   <SelectTrigger className="glass-effect border-white/10">
                     <SelectValue placeholder="Select Department">
@@ -614,15 +611,16 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">
                   Shift
                 </label>
                 <Select
                   name="Shift"
-                  value={formData.shift} // store only _id
+                  value={formData.shiftId}
                   onOpenChange={async (open) => {
-                    if (open && (!Data || Data.length === 0)) {
+                    if (open) {
                       await getShiftList();
                     }
                   }}
@@ -638,7 +636,6 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                       );
                     }
                   }}
-                  // required
                 >
                   <SelectTrigger className="glass-effect border-white/10">
                     <SelectValue placeholder="Select Shift">
@@ -658,6 +655,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">
                   Working Hours/Day
@@ -675,12 +673,12 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">
                   Joining Date
                 </label>
                 <div className="relative">
-                  {/* <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /> */}
                   <Input
                     name="joinDate"
                     type="date"
@@ -691,6 +689,7 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">
                   Annual Salary (₹)
@@ -708,13 +707,14 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">
                   Work Location
                 </label>
                 <Select
                   name="Work Location"
-                  value={formData.workLocation} // store only _id
+                  value={formData.workLocationId}
                   onOpenChange={async (open) => {
                     if (open && (!Data || Data.length === 0)) {
                       await getWorkLocationList();
@@ -732,7 +732,6 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                       );
                     }
                   }}
-                  // required
                 >
                   <SelectTrigger className="glass-effect border-white/10">
                     <SelectValue placeholder="Select Work Location">
@@ -752,15 +751,16 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">
                   Role
                 </label>
                 <Select
                   name="Role"
-                  value={formData.role} // store only _id
+                  value={formData.roleId}
                   onOpenChange={async (open) => {
-                    if (open && (!Data || Data.length === 0)) {
+                    if (open) {
                       await getRoleList();
                     }
                   }}
@@ -776,7 +776,6 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                       );
                     }
                   }}
-                  // required
                 >
                   <SelectTrigger className="glass-effect border-white/10">
                     <SelectValue placeholder="Select Role">
@@ -796,15 +795,16 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">
                   Status
                 </label>
                 <Select
                   name="Status"
-                  value={formData.status} // store only _id
+                  value={formData.statusId}
                   onOpenChange={async (open) => {
-                    if (open && (!Data || Data.length === 0)) {
+                    if (open) {
                       await getStatusList();
                     }
                   }}
@@ -820,7 +820,6 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                       );
                     }
                   }}
-                  // required
                 >
                   <SelectTrigger className="glass-effect border-white/10">
                     <SelectValue placeholder="Select Status">
@@ -840,7 +839,22 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <label>
+                  Employee Pic<span className="text-red-500 ml-1">*</span>
+                </label>
+                <Input
+                  name="avatar"
+                  type="file"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    setEmployeePic(file);
+                  }}
+                />
+              </div>
             </div>
+
             <div className="flex justify-end gap-4 pt-4">
               <Button
                 type="button"
