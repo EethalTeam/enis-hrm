@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
+
 import {
   FolderKanban,
   Plus,
@@ -433,14 +434,13 @@ const ProjectsPage = () => {
         role: user?.role,
       };
 
-      console.log("getAllProjects payload:", payload);
+      ("getAllProjects payload:", payload);
 
       const response = await apiRequest("Project/getAllProjects/", {
         method: "POST",
         body: JSON.stringify(payload),
       });
 
-      console.log("getAllProjects response:", response);
       setProjects(response || []);
     } catch (error) {
       console.error("Error:", error);

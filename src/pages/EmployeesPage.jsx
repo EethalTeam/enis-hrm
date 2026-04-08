@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
+
 import {
   Plus,
   Search,
@@ -171,7 +172,6 @@ const EmployeesPage = () => {
       roleId: emp.roleId || emp.role?._id || "",
     };
 
-    console.log("Edit Employee Data =>", editData);
     setSelectedEmployee(editData);
     setIsFormOpen(true);
   };

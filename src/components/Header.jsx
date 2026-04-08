@@ -429,7 +429,6 @@ const Header = ({ onMenuClick }) => {
   const [employeeData, setEmployeeData] = useState(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  console.log(employeeData, "employeeData");
   const handleUserClick = async () => {
     try {
       const res = await apiRequest("Employee/getAllEmployees", {

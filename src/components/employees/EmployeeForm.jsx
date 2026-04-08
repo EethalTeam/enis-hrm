@@ -266,13 +266,10 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
         formDataToSend.append("avatar", employeePic);
       }
 
-      const response = await fetch(
-        `${config.Api}/api/Employee/updateEmployee`,
-        {
-          method: "POST",
-          body: formDataToSend,
-        },
-      );
+      const response = await apiRequest(`Employee/updateEmployee`, {
+        method: "POST",
+        body: formDataToSend,
+      });
 
       const result = await response.json();
 

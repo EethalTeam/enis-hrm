@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Helmet } from "react-helmet-async";
-
 import { Building2, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import ENISLogo from "@/data/ENIS-Logo.png";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,13 +15,15 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import socket from "@/socket/Socket";
+import { useNavigate } from "react-router-dom";
 
-const LoginPage = () => {
+const ClientLoginPage = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { clientlogin } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -39,9 +40,9 @@ const LoginPage = () => {
       socket.off("receiveNotification");
     };
   }, []);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!email || !password) {
       toast({
         title: "Missing Information",
@@ -52,31 +53,61 @@ const LoginPage = () => {
     }
 
     setLoading(true);
+
     try {
-      // Login API should return user details including employeeId
-      const user = await login(email, password);
-      // toast({
-      //   title: "Login Successful",
-      //   description: "You are now logged in!",
-      //   variant: "default",
-      // });
+      const user = await clientlogin(email, password);
+
+      if (user.success) {
+        navigate("/dashboard"); // redirect
+        // navigate("/client-dashboard"); // redirect
+      }
     } catch (err) {
-      // toast({
-      //   title: "Login Failed",
-      //   description: err.message || "Unable to login",
-      //   variant: "destructive",
-      // });
+      toast({
+        title: "Login Failed",
+        description: err.message || "Unable to login",
+        variant: "destructive",
+      });
     }
+
     setLoading(false);
   };
+  //   const handleSubmit = async (e) => {
+  //     e.preventDefault();
+  //     if (!email || !password) {
+  //       toast({
+  //         title: "Missing Information",
+  //         description: "Please enter both email and password.",
+  //         variant: "destructive",
+  //       });
+  //       return;
+  //     }
+
+  //     setLoading(true);
+  //     try {
+  //       // Login API should return user details including employeeId
+  //       const user = await login(email, password);
+  //       // toast({
+  //       //   title: "Login Successful",
+  //       //   description: "You are now logged in!",
+  //       //   variant: "default",
+  //       // });
+  //     } catch (err) {
+  //       // toast({
+  //       //   title: "Login Failed",
+  //       //   description: err.message || "Unable to login",
+  //       //   variant: "destructive",
+  //       // });
+  //     }
+  //     setLoading(false);
+  //   };
 
   return (
     <>
       <Helmet>
-        <title>Login - ENIS-HRMS</title>
+        <title>Client Login - ENIS</title>
         <meta
           name="description"
-          content="Access your ENIS-HRMS account. Secure login for HR management, employee tracking, and business operations."
+          content="Secure client login to access project updates, reports, and communication with the ENIS team."
         />
       </Helmet>
 
@@ -95,17 +126,17 @@ const LoginPage = () => {
               </div>
               <div>
                 <h1 className="text-4xl font-bold gradient-text">ENIS-HRMS</h1>
-                <p className="text-gray-400">Complete HR Management Solution</p>
+                <p className="text-gray-400">Client Portal</p>
               </div>
             </div>
 
             <div className="space-y-6">
               <h2 className="text-3xl font-bold text-white">
-                Streamline Your HR Operations
+                Welcome to the Client Portal
               </h2>
               <p className="text-xl text-gray-300 leading-relaxed">
-                Manage employees, track attendance, process payroll, and deliver
-                projects with our comprehensive enterprise-grade HRMS platform.
+                Access your project updates, and communicate directly with our
+                team through the secure ENIS client platform.
               </p>
             </div>
           </motion.div>
@@ -120,10 +151,10 @@ const LoginPage = () => {
             <Card className="glass-effect border-white/10">
               <CardHeader className="text-center">
                 <CardTitle className="text-2xl font-bold text-white">
-                  Welcome Back
+                  Client Login
                 </CardTitle>
                 <CardDescription className="text-gray-400">
-                  Sign in to access your HRMS dashboard
+                  Sign in to access your client dashboard
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -139,6 +170,7 @@ const LoginPage = () => {
                         type="email"
                         placeholder="Enter your email"
                         value={email}
+                        autofocus
                         onChange={(e) => setEmail(e.target.value)}
                         className="pl-10 glass-effect border-white/10 text-white placeholder-gray-400"
                         required
@@ -192,4 +224,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default ClientLoginPage;

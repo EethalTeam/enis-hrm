@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
+
 // Added Clock icon for the work log button
 import {
   ListTodo,
@@ -49,12 +50,13 @@ const TaskForm = ({
   employees,
   Permissions,
 }) => {
-  console.log(task, "task");
   const { user } = useAuth();
-  console.log(user.role, "user.role");
   const [isConfirmPause, setIsConfirmPause] = useState(false);
   const [isConfirmComplete, setIsConfirmComplete] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const isAdmin = ["Admin", "Super Admin"].includes(user.role);
+  const isEmployee = user.role === "Employee";
+  const isClient = user.role === "Client";
   const [ProgressMessage, setProgressMessage] = useState("");
   const [formData, setFormData] = useState(
     task || {
@@ -67,8 +69,7 @@ const TaskForm = ({
       taskStatusId: "68b5a25b88e62ec178bb2923",
       assignee: "",
       assignedTo: "",
-      assignees:
-        user.role !== "Admin" && user.role !== "Super Admin" ? [user._id] : [],
+      assignees: isEmployee ? [user._id] : [],
       project: "",
       projectId: "",
       dueDate: "",
@@ -264,10 +265,7 @@ const TaskForm = ({
 
     const finalFormData = {
       ...formData,
-      assignees:
-        user.role !== "Admin" && user.role !== "Super Admin"
-          ? [user._id]
-          : formData.assignees,
+      assignees: !isAdmin ? [user._id] : formData.assignees,
     };
 
     if (!finalFormData.assignees || finalFormData.assignees.length === 0) {
@@ -369,7 +367,7 @@ const TaskForm = ({
             <DialogHeader>
               <DialogTitle>
                 {task
-                  ? user.role === "Super Admin" || user.role === "Admin"
+                  ? isAdmin
                     ? "Edit Task"
                     : "Task details"
                   : "Create New Task"}
@@ -391,11 +389,7 @@ const TaskForm = ({
                   required
                   className="bg-white/5 border-white/10"
                   disabled={
-                    task
-                      ? user.role !== "Admin" &&
-                        user.role !== "Super Admin" &&
-                        Permissions.isAdd
-                      : !Permissions.isAdd
+                    task ? !isAdmin && Permissions.isAdd : !Permissions.isAdd
                   }
                 />
               </div>
@@ -405,11 +399,7 @@ const TaskForm = ({
                 </Label>
                 <Textarea
                   disabled={
-                    task
-                      ? user.role !== "Admin" &&
-                        user.role !== "Super Admin" &&
-                        Permissions.isAdd
-                      : !Permissions.isAdd
+                    task ? !isAdmin && Permissions.isAdd : !Permissions.isAdd
                   }
                   name="description"
                   value={formData.description}
@@ -432,11 +422,7 @@ const TaskForm = ({
                       }
                     }}
                     disabled={
-                      task
-                        ? user.role !== "Admin" &&
-                          user.role !== "Super Admin" &&
-                          Permissions.isAdd
-                        : !Permissions.isAdd
+                      task ? isAdmin && Permissions.isAdd : !Permissions.isAdd
                     }
                     onValueChange={(id) => {
                       if (!id) return;
@@ -526,11 +512,7 @@ const TaskForm = ({
                       }
                     }}
                     disabled={
-                      task
-                        ? user.role !== "Admin" &&
-                          user.role !== "Super Admin" &&
-                          Permissions.isAdd
-                        : !Permissions.isAdd
+                      task ? !isAdmin && Permissions.isAdd : !Permissions.isAdd
                     }
                     onValueChange={(id) => {
                       if (!id) return;
@@ -568,55 +550,50 @@ const TaskForm = ({
                     </SelectContent>
                   </Select>
                 </div>
-                {!task &&
-                  (user.role === "Admin" || user.role === "Super Admin") && (
-                    <div>
-                      <Label htmlFor="assignees" className="text-gray-300">
-                        Select Members
-                      </Label>
-                      <p className="text-gray-400 text-xs mb-2">
-                        Ctrl/Cmd + click to select multiple.
-                      </p>
+                {!task && isAdmin && (
+                  <div>
+                    <Label htmlFor="assignees" className="text-gray-300">
+                      Select Members
+                    </Label>
+                    <p className="text-gray-400 text-xs mb-2">
+                      Ctrl/Cmd + click to select multiple.
+                    </p>
 
-                      <select
-                        id="assignees"
-                        name="assignees"
-                        multiple
-                        disabled={
-                          user.role !== "Admin" &&
-                          user.role !== "Super Admin" &&
-                          Permissions.isAdd
-                        }
-                        value={formData.assignees}
-                        onChange={(e) =>
-                          handleSelectAssignee(
-                            "assignees",
-                            Array.from(
-                              e.target.selectedOptions,
-                              (option) => option.value,
-                            ),
-                          )
-                        }
-                        className="w-full h-32 glass-effect border-white/10 rounded-md bg-transparent p-2"
-                      >
-                        {filteredProjectEmployees.length > 0 ? (
-                          filteredProjectEmployees.map((emp) => (
-                            <option
-                              key={emp._id}
-                              value={emp._id}
-                              className="bg-slate-800 p-1"
-                            >
-                              {emp.name || emp.email}
-                            </option>
-                          ))
-                        ) : (
-                          <option disabled className="bg-slate-800 p-1">
-                            No employees assigned to this project
+                    <select
+                      id="assignees"
+                      name="assignees"
+                      multiple
+                      disabled={!isAdmin && Permissions.isAdd}
+                      value={formData.assignees}
+                      onChange={(e) =>
+                        handleSelectAssignee(
+                          "assignees",
+                          Array.from(
+                            e.target.selectedOptions,
+                            (option) => option.value,
+                          ),
+                        )
+                      }
+                      className="w-full h-32 glass-effect border-white/10 rounded-md bg-transparent p-2"
+                    >
+                      {filteredProjectEmployees.length > 0 ? (
+                        filteredProjectEmployees.map((emp) => (
+                          <option
+                            key={emp._id}
+                            value={emp._id}
+                            className="bg-slate-800 p-1"
+                          >
+                            {emp.name || emp.email}
                           </option>
-                        )}
-                      </select>
-                    </div>
-                  )}
+                        ))
+                      ) : (
+                        <option disabled className="bg-slate-800 p-1">
+                          No employees assigned to this project
+                        </option>
+                      )}
+                    </select>
+                  </div>
+                )}
               </div>
               <div>
                 <Label htmlFor="dueDate" className="text-gray-300">
@@ -624,11 +601,7 @@ const TaskForm = ({
                 </Label>
                 <Input
                   disabled={
-                    task
-                      ? user.role !== "Admin" &&
-                        user.role !== "Super Admin" &&
-                        Permissions.isAdd
-                      : !Permissions.isAdd
+                    task ? !isAdmin && Permissions.isAdd : !Permissions.isAdd
                   }
                   id="dueDate"
                   name="dueDate"
@@ -640,9 +613,7 @@ const TaskForm = ({
                 />
               </div>
               <DialogFooter>
-                {(user.role === "Super Admin" ||
-                  user.role === "Admin" ||
-                  (Permissions.isAdd && !task)) && (
+                {(isAdmin || (Permissions.isAdd && !task)) && (
                   <DialogClose asChild>
                     <Button
                       type="button"
@@ -653,9 +624,7 @@ const TaskForm = ({
                     </Button>
                   </DialogClose>
                 )}
-                {(user.role === "Super Admin" ||
-                  user.role === "Admin" ||
-                  (Permissions.isAdd && !task)) && (
+                {(isAdmin || (Permissions.isAdd && !task)) && (
                   <Button
                     type="submit"
                     className="bg-gradient-to-r from-blue-500 to-purple-600"
@@ -719,7 +688,9 @@ const TaskCard = ({
   Permissions,
 }) => {
   const { user } = useAuth();
-
+  const isAdmin = ["Admin", "Super Admin"].includes(user.role);
+  const isEmployee = user.role === "Employee";
+  const isClient = user.role === "Client";
   const getPriorityColor = (priority) =>
     ({
       High: "bg-red-500",
@@ -775,7 +746,7 @@ const TaskCard = ({
           </Button>
         )}
 
-        {(user.role === "Super Admin" || user.role === "Admin") && (
+        {isAdmin && (
           <>
             <Button
               variant="ghost"
@@ -827,7 +798,9 @@ const TasksPage = () => {
 
   const [isWorkLogOpen, setIsWorkLogOpen] = useState(false);
   const [workLogDetails, setWorkLogDetails] = useState([]);
-
+  const isAdmin = ["Admin", "Super Admin"].includes(user.role);
+  const isEmployee = user.role === "Employee";
+  const isClient = user.role === "Client";
   const [Permissions, setPermissions] = useState({
     isAdd: false,
     isView: false,
@@ -838,9 +811,7 @@ const TasksPage = () => {
   const [viewMode, setViewMode] = useState("card"); // card | table
   const [activeStatus, setActiveStatus] = useState("In Progress");
 
-  const [filterType, setFilterType] = useState(
-    user.role === "Admin" || user.role === "Super Admin" ? "day" : "date",
-  );
+  const [filterType, setFilterType] = useState(isAdmin ? "day" : "date");
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -879,23 +850,50 @@ const TasksPage = () => {
     }
   };
   useEffect(() => {
-    if (user.role === "Admin" || user.role === "Super Admin") {
+    if (isAdmin) {
       getProjectList();
     }
   }, [user.role]);
+  // const getAllTasks = async () => {
+  //   try {
+  //     const response = await apiRequest("Task/getAllTasks/", {
+  //       method: "POST",
+  //       body: JSON.stringify({ _id: user._id, role: user.role }),
+  //     });
+
+  //     setTasks(response || []);
+  //   } catch (error) {
+  //     console.error("Error:", error);
+  //   }
+  // };
   const getAllTasks = async () => {
     try {
-      const response = await apiRequest("Task/getAllTasks/", {
-        method: "POST",
-        body: JSON.stringify({ _id: user._id, role: user.role }),
-      });
+      let response;
 
-      setTasks(response || []);
+      if (user.role === "Client") {
+        response = await apiRequest("Client/getClientTasks", {
+          method: "POST",
+          body: JSON.stringify({
+            clientId: user._id,
+          }),
+        });
+        console.log("Client Tasks Response:", response);
+        setTasks(response.tasks || []);
+      } else {
+        response = await apiRequest("Task/getAllTasks", {
+          method: "POST",
+          body: JSON.stringify({
+            _id: user._id,
+            role: user.role,
+          }),
+        });
+
+        setTasks(response || []);
+      }
     } catch (error) {
       console.error("Error:", error);
     }
   };
-
   const getEmployeeList = async () => {
     try {
       const response = await apiRequest("Employee/getAllEmployees/", {
@@ -1005,12 +1003,18 @@ const TasksPage = () => {
   };
 
   const filteredTasks = useMemo(() => {
-    if (user.role !== "Admin" && user.role !== "Super Admin") {
+    // 🔹 EMPLOYEE → only assigned tasks
+    if (user.role === "Employee") {
       return task.filter((t) =>
         (t.assignedTo || []).some(
           (emp) => String(emp._id) === String(user._id),
         ),
       );
+    }
+
+    // 🔹 CLIENT → already filtered from backend → return as is
+    if (user.role === "Client") {
+      return task;
     }
 
     let employeeMatch = true;
@@ -1071,30 +1075,52 @@ const TasksPage = () => {
       return d.getTime() === today.getTime();
     };
 
-    const normalizeStatus = (name) =>
-      (name || "").toLowerCase().replace(/\s+/g, "");
+    const getStatusName = (task) => {
+      if (typeof task.taskStatusId === "object") {
+        return task.taskStatusId?.name;
+      }
+      return ""; // fallback if not populated
+    };
 
+    const normalizeStatus = (task) =>
+      (getStatusName(task) || "").toLowerCase().replace(/\s+/g, "");
     return {
       Pending: filteredTasks.filter((t) => {
-        const s = normalizeStatus(t.taskStatusId?.name);
+        const s = normalizeStatus(t);
         return s === "todo";
       }),
 
       "In Progress": filteredTasks.filter((t) => {
-        const s = normalizeStatus(t.taskStatusId?.name);
+        const s = normalizeStatus(t);
         return s === "inprogress" || s === "inprocess";
       }),
 
+      // Completed: filteredTasks.filter((t) => {
+      //   const s = normalizeStatus(t.taskStatusId?.name);
+      //   return (
+      //     (s === "completed" || s === "complete") &&
+      //     isToday(t.updatedAt || t.completedAt || t.createdAt)
+      //   );
+      // }),
       Completed: filteredTasks.filter((t) => {
-        const s = normalizeStatus(t.taskStatusId?.name);
-        return (
-          (s === "completed" || s === "complete") &&
-          isToday(t.updatedAt || t.completedAt || t.createdAt)
-        );
-      }),
+        const s = normalizeStatus(t);
 
+        if (!(s === "completed" || s === "complete")) return false;
+
+        //  CLIENT → show ALL completed tasks
+        if (isClient) {
+          return true;
+        }
+
+        // Others → keep your existing logic
+        if (!showAllCompleted) {
+          return isToday(t.updatedAt || t.createdAt);
+        }
+
+        return true;
+      }),
       OverDue: filteredTasks.filter((t) => {
-        const s = normalizeStatus(t.taskStatusId?.name);
+        const s = normalizeStatus(t);
         if (s === "completed" || s === "complete") return false;
         if (!t.dueDate) return false;
 
@@ -1121,9 +1147,7 @@ const TasksPage = () => {
     OverDue: "bg-red-600",
   };
   const handleResetFilters = () => {
-    setFilterType(
-      user.role === "Admin" || user.role === "Super Admin" ? "day" : "date",
-    );
+    setFilterType(isAdmin ? "day" : "date");
     setSelectedDate(new Date().toISOString().split("T")[0]);
     setSelectedWeek(new Date().toISOString().split("T")[0]);
     setSelectedMonth(
@@ -1294,9 +1318,7 @@ const TasksPage = () => {
             </p>
           </div>
 
-          {(user.role === "Super Admin" ||
-            user.role === "Admin" ||
-            Permissions.isAdd) && (
+          {(isAdmin || Permissions.isAdd) && (
             <Button
               onClick={handleAddNew}
               className="bg-gradient-to-r from-blue-500 to-purple-600"
@@ -1339,7 +1361,7 @@ const TasksPage = () => {
           <CardContent className="p-6">
             <div className="flex flex-wrap gap-4 items-end justify-between">
               <div className="flex flex-wrap gap-4 items-end">
-                {user.role === "Admin" || user.role === "Super Admin" ? (
+                {isAdmin ? (
                   <>
                     <div>
                       <Label className="text-gray-300">Filter Type</Label>
@@ -1688,8 +1710,7 @@ const TasksPage = () => {
                                   </Button>
                                 )}
 
-                                {(user.role === "Super Admin" ||
-                                  user.role === "Admin") && (
+                                {isAdmin && (
                                   <>
                                     <Button
                                       variant="ghost"

@@ -1,25 +1,51 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Helmet } from 'react-helmet';
-import { Shield, Plus, Edit, Trash2, Settings, Save, Eye, UserPlus, FileEdit, Trash } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Helmet } from "react-helmet-async";
+
+import {
+  Shield,
+  Plus,
+  Edit,
+  Trash2,
+  Settings,
+  Save,
+  Eye,
+  UserPlus,
+  FileEdit,
+  Trash,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import ConfirmationDialog from '@/components/ConfirmationDialog';
-import { config } from '@/components/CustomComponents/config';
-import { apiRequest } from '@/components/CustomComponents/apiRequest'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
+import { config } from "@/components/CustomComponents/config";
+import { apiRequest } from "@/components/CustomComponents/apiRequest";
 
 // ------------------ API FUNCTIONS ------------------
 const getRole = async (setRoles) => {
   try {
     const response = await apiRequest("RoleBased/getAllRoles", {
-        method: 'POST',
-        body: JSON.stringify({}),
-      });
+      method: "POST",
+      body: JSON.stringify({}),
+    });
     setRoles(response.data || []);
   } catch (error) {
     console.error("Failed to fetch roles", error);
@@ -30,7 +56,7 @@ const getRole = async (setRoles) => {
 const getAllMenus = async () => {
   try {
     const response = await apiRequest("RoleBased/getAllMenus", {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify({}),
     });
     return response.data || {};
@@ -43,11 +69,11 @@ const getAllMenus = async () => {
 const updateMenusAndAccess = async (roleId, menus) => {
   try {
     const response = await apiRequest("RoleBased/updateMenusAndAccess", {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         _id: roleId,
-        menus: menus
+        menus: menus,
       }),
     });
     return response;
@@ -59,8 +85,8 @@ const updateMenusAndAccess = async (roleId, menus) => {
 
 const createRole = async (data, setRoles) => {
   const response = await apiRequest("RoleBased/createRole", {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
   await getRole(setRoles);
@@ -69,7 +95,7 @@ const createRole = async (data, setRoles) => {
 
 const updateRoleApi = async (data, setRoles) => {
   const response = await apiRequest("RoleBased/updateRole", {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify(data),
   });
   await getRole(setRoles);
@@ -78,7 +104,7 @@ const updateRoleApi = async (data, setRoles) => {
 
 const deleteRoleApi = async (id, setRoles) => {
   const response = await apiRequest("RoleBased/deleteRole", {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify({ _id: id }),
   });
   await getRole(setRoles);
@@ -87,11 +113,11 @@ const deleteRoleApi = async (id, setRoles) => {
 
 // ------------------ ROLE FORM ------------------
 const RoleForm = ({ open, setOpen, role, onSave }) => {
-  const [RoleName, setRoleName] = useState('');
+  const [RoleName, setRoleName] = useState("");
 
   useEffect(() => {
     if (open) {
-      setRoleName(role ? role.RoleName : '');
+      setRoleName(role ? role.RoleName : "");
     }
   }, [role, open]);
 
@@ -107,16 +133,37 @@ const RoleForm = ({ open, setOpen, role, onSave }) => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="glass-effect border-white/10 text-white">
         <DialogHeader>
-          <DialogTitle>{role ? 'Edit Role' : 'Add New Role'}</DialogTitle>
+          <DialogTitle>{role ? "Edit Role" : "Add New Role"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="name" className="text-gray-300">Role Name</Label>
-            <Input id="name" value={RoleName} onChange={(e) => setRoleName(e.target.value)} required className="glass-effect border-white/10" />
+            <Label htmlFor="name" className="text-gray-300">
+              Role Name
+            </Label>
+            <Input
+              id="name"
+              value={RoleName}
+              onChange={(e) => setRoleName(e.target.value)}
+              required
+              className="glass-effect border-white/10"
+            />
           </div>
           <DialogFooter>
-            <DialogClose asChild><Button type="button" variant="outline" className="border-white/10 hover:bg-white/10">Cancel</Button></DialogClose>
-            <Button type="submit" className="bg-gradient-to-r from-blue-500 to-purple-600">Save</Button>
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="border-white/10 hover:bg-white/10"
+              >
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              type="submit"
+              className="bg-gradient-to-r from-blue-500 to-purple-600"
+            >
+              Save
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -222,7 +269,9 @@ const PermissionsDialog = ({ open, setOpen, role, onSave }) => {
 
   const isMenuFullySelected = (menuId) => {
     const perms = currentPermissions[menuId];
-    return perms && (perms.isView || perms.isAdd || perms.isEdit || perms.isDelete);
+    return (
+      perms && (perms.isView || perms.isAdd || perms.isEdit || perms.isDelete)
+    );
   };
 
   const isMenuPartiallySelected = (menuId) => {
@@ -237,7 +286,10 @@ const PermissionsDialog = ({ open, setOpen, role, onSave }) => {
   const handleSave = async () => {
     try {
       const menusToUpdate = Object.entries(currentPermissions)
-        .filter(([_, perms]) => perms.isView || perms.isAdd || perms.isEdit || perms.isDelete)
+        .filter(
+          ([_, perms]) =>
+            perms.isView || perms.isAdd || perms.isEdit || perms.isDelete,
+        )
         .map(([menuId, perms]) => ({
           menuId,
           ...perms,
@@ -317,39 +369,51 @@ const PermissionsDialog = ({ open, setOpen, role, onSave }) => {
               </p>
             </div>
           ) : ( */}
-            <>
-              {menus.map((parentMenu) => (
-                <div
-                  key={parentMenu._id}
-                  className="border border-white/10 rounded-lg bg-white/5"
-                >
-                  {/* Parent Menu */}
-                  <div className="p-4 border-b border-white/10 bg-white/10">
-                    <div className="flex items-center space-x-3">
-                      <Checkbox
-                        id={`select-all-${parentMenu._id}`}
-                        checked={isMenuFullySelected(parentMenu._id)}
-                        indeterminate={isMenuPartiallySelected(parentMenu._id)}
-                        onCheckedChange={(checked) =>
-                          handleSelectAllForMenu(parentMenu._id, checked)
-                        }
-                      />
-                      <Label
-                        htmlFor={`select-all-${parentMenu._id}`}
-                        className="font-semibold text-lg text-white cursor-pointer"
-                      >
-                        {parentMenu.label}
-                      </Label>
-                    </div>
+          <>
+            {menus.map((parentMenu) => (
+              <div
+                key={parentMenu._id}
+                className="border border-white/10 rounded-lg bg-white/5"
+              >
+                {/* Parent Menu */}
+                <div className="p-4 border-b border-white/10 bg-white/10">
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      id={`select-all-${parentMenu._id}`}
+                      checked={isMenuFullySelected(parentMenu._id)}
+                      indeterminate={isMenuPartiallySelected(parentMenu._id)}
+                      onCheckedChange={(checked) =>
+                        handleSelectAllForMenu(parentMenu._id, checked)
+                      }
+                    />
+                    <Label
+                      htmlFor={`select-all-${parentMenu._id}`}
+                      className="font-semibold text-lg text-white cursor-pointer"
+                    >
+                      {parentMenu.label}
+                    </Label>
+                  </div>
 
-                    <div className="flex flex-wrap gap-6 mt-3">
-                      {["isView", "isAdd", "isEdit", "isDelete"].map((permission) => (
-                        <div key={permission} className="flex items-center space-x-2">
+                  <div className="flex flex-wrap gap-6 mt-3">
+                    {["isView", "isAdd", "isEdit", "isDelete"].map(
+                      (permission) => (
+                        <div
+                          key={permission}
+                          className="flex items-center space-x-2"
+                        >
                           <Checkbox
                             id={`${parentMenu._id}-${permission}`}
-                            checked={currentPermissions[parentMenu._id]?.[permission] || false}
+                            checked={
+                              currentPermissions[parentMenu._id]?.[
+                                permission
+                              ] || false
+                            }
                             onCheckedChange={(checked) =>
-                              handlePermissionChange(parentMenu._id, permission, checked)
+                              handlePermissionChange(
+                                parentMenu._id,
+                                permission,
+                                checked,
+                              )
                             }
                           />
                           <Label
@@ -360,43 +424,56 @@ const PermissionsDialog = ({ open, setOpen, role, onSave }) => {
                             <span>{getPermissionLabel(permission)}</span>
                           </Label>
                         </div>
-                      ))}
-                    </div>
+                      ),
+                    )}
                   </div>
+                </div>
 
-                  {/* Sub Menus */}
-                  {parentMenu.subMenus?.length > 0 && (
-                    <div className="p-4 space-y-4">
-                      {parentMenu.subMenus.map((subMenu) => (
-                        <div
-                          key={subMenu._id}
-                          className="ml-6 p-3 border border-white/5 rounded-lg bg-white/3"
-                        >
-                          <div className="flex items-center space-x-3 mb-3">
-                            <Checkbox
-                              id={`select-all-${subMenu._id}`}
-                              checked={isMenuFullySelected(subMenu._id)}
-                              indeterminate={isMenuPartiallySelected(subMenu._id)}
-                              onCheckedChange={(checked) =>
-                                handleSelectAllForMenu(subMenu._id, checked)
-                              }
-                            />
-                            <Label
-                              htmlFor={`select-all-${subMenu._id}`}
-                              className="font-medium text-white cursor-pointer"
-                            >
-                              {subMenu.label}
-                            </Label>
-                          </div>
+                {/* Sub Menus */}
+                {parentMenu.subMenus?.length > 0 && (
+                  <div className="p-4 space-y-4">
+                    {parentMenu.subMenus.map((subMenu) => (
+                      <div
+                        key={subMenu._id}
+                        className="ml-6 p-3 border border-white/5 rounded-lg bg-white/3"
+                      >
+                        <div className="flex items-center space-x-3 mb-3">
+                          <Checkbox
+                            id={`select-all-${subMenu._id}`}
+                            checked={isMenuFullySelected(subMenu._id)}
+                            indeterminate={isMenuPartiallySelected(subMenu._id)}
+                            onCheckedChange={(checked) =>
+                              handleSelectAllForMenu(subMenu._id, checked)
+                            }
+                          />
+                          <Label
+                            htmlFor={`select-all-${subMenu._id}`}
+                            className="font-medium text-white cursor-pointer"
+                          >
+                            {subMenu.label}
+                          </Label>
+                        </div>
 
-                          <div className="flex flex-wrap gap-6 ml-6">
-                            {["isView", "isAdd", "isEdit", "isDelete"].map((permission) => (
-                              <div key={permission} className="flex items-center space-x-2">
+                        <div className="flex flex-wrap gap-6 ml-6">
+                          {["isView", "isAdd", "isEdit", "isDelete"].map(
+                            (permission) => (
+                              <div
+                                key={permission}
+                                className="flex items-center space-x-2"
+                              >
                                 <Checkbox
                                   id={`${subMenu._id}-${permission}`}
-                                  checked={currentPermissions[subMenu._id]?.[permission] || false}
+                                  checked={
+                                    currentPermissions[subMenu._id]?.[
+                                      permission
+                                    ] || false
+                                  }
                                   onCheckedChange={(checked) =>
-                                    handlePermissionChange(subMenu._id, permission, checked)
+                                    handlePermissionChange(
+                                      subMenu._id,
+                                      permission,
+                                      checked,
+                                    )
                                   }
                                 />
                                 <Label
@@ -407,15 +484,16 @@ const PermissionsDialog = ({ open, setOpen, role, onSave }) => {
                                   <span>{getPermissionLabel(permission)}</span>
                                 </Label>
                               </div>
-                            ))}
-                          </div>
+                            ),
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </>
           {/* )} */}
         </div>
 
@@ -430,13 +508,13 @@ const PermissionsDialog = ({ open, setOpen, role, onSave }) => {
             </Button>
           </DialogClose>
           {/* {!isSuperAdmin && ( */}
-            <Button
-              onClick={handleSave}
-              className="bg-gradient-to-r from-green-500 to-teal-500"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              Save Permissions
-            </Button>
+          <Button
+            onClick={handleSave}
+            className="bg-gradient-to-r from-green-500 to-teal-500"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            Save Permissions
+          </Button>
           {/* )} */}
         </DialogFooter>
       </DialogContent>
@@ -457,23 +535,30 @@ const RolesPage = () => {
   useEffect(() => {
     getRole(setRoles);
   }, []);
-useEffect(()=>{
-let rolepath=roles.reduce((acc,curr)=>{
-  if(!acc[curr.RoleName]){
-return {...acc,[curr.RoleName]:curr.permissions.map(val=>val.menuDetails.path)}
-  }else{
-return acc
-  }
-},{})
-},[roles])
+  useEffect(() => {
+    let rolepath = roles.reduce((acc, curr) => {
+      if (!acc[curr.RoleName]) {
+        return {
+          ...acc,
+          [curr.RoleName]: curr.permissions.map((val) => val.menuDetails.path),
+        };
+      } else {
+        return acc;
+      }
+    }, {});
+  }, [roles]);
   const handleAddNewRole = () => {
     setRoleToEdit(null);
     setIsRoleFormOpen(true);
   };
 
   const handleEditRole = (role) => {
-    if (role.RoleName === 'Super Admin') {
-      toast({ title: "Cannot Edit Super Admin", description: "The Super Admin role is locked.", variant: "destructive" });
+    if (role.RoleName === "Super Admin") {
+      toast({
+        title: "Cannot Edit Super Admin",
+        description: "The Super Admin role is locked.",
+        variant: "destructive",
+      });
       return;
     }
     setRoleToEdit(role);
@@ -481,8 +566,12 @@ return acc
   };
 
   const handleDeleteRole = (role) => {
-    if (role.RoleName === 'Super Admin') {
-      toast({ title: "Cannot Delete Super Admin", description: "The Super Admin role is protected.", variant: "destructive" });
+    if (role.RoleName === "Super Admin") {
+      toast({
+        title: "Cannot Delete Super Admin",
+        description: "The Super Admin role is protected.",
+        variant: "destructive",
+      });
       return;
     }
     setRoleToEdit(role);
@@ -501,7 +590,11 @@ return acc
       setIsConfirmOpen(false);
       setRoleToEdit(null);
     } catch (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -517,12 +610,19 @@ return acc
         }
       }
     } catch (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
   const handlePermissionsSaved = () => {
-    toast({ title: "Permissions Saved", description: `Permissions for ${roleForPermissions?.RoleName} have been updated.` });
+    toast({
+      title: "Permissions Saved",
+      description: `Permissions for ${roleForPermissions?.RoleName} have been updated.`,
+    });
     getRole(setRoles); // Refresh roles data
   };
 
@@ -530,35 +630,74 @@ return acc
     <>
       <Helmet>
         <title>Roles & Permissions - ENIS-HRMS</title>
-        <meta name="description" content="Manage user roles and their access permissions across the application." />
+        <meta
+          name="description"
+          content="Manage user roles and their access permissions across the application."
+        />
       </Helmet>
 
       <AnimatePresence>
-        {isRoleFormOpen && <RoleForm open={isRoleFormOpen} setOpen={setIsRoleFormOpen} role={roleToEdit} onSave={handleSaveRole} />}
-        {isPermissionsOpen && <PermissionsDialog open={isPermissionsOpen} setOpen={setIsPermissionsOpen} role={roleForPermissions} onSave={handlePermissionsSaved} />}
-        {isConfirmOpen && <ConfirmationDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDeleteRole} title="Delete Role?" description="This action cannot be undone and may affect users assigned to this role." />}
+        {isRoleFormOpen && (
+          <RoleForm
+            open={isRoleFormOpen}
+            setOpen={setIsRoleFormOpen}
+            role={roleToEdit}
+            onSave={handleSaveRole}
+          />
+        )}
+        {isPermissionsOpen && (
+          <PermissionsDialog
+            open={isPermissionsOpen}
+            setOpen={setIsPermissionsOpen}
+            role={roleForPermissions}
+            onSave={handlePermissionsSaved}
+          />
+        )}
+        {isConfirmOpen && (
+          <ConfirmationDialog
+            isOpen={isConfirmOpen}
+            onClose={() => setIsConfirmOpen(false)}
+            onConfirm={confirmDeleteRole}
+            title="Delete Role?"
+            description="This action cannot be undone and may affect users assigned to this role."
+          />
+        )}
       </AnimatePresence>
 
       <div className="space-y-8">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }} 
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           className="flex justify-between items-center"
         >
           <div>
-            <h1 className="text-3xl font-bold text-white">Roles & Permissions</h1>
-            <p className="text-gray-400">Define roles and control access to different modules.</p>
+            <h1 className="text-3xl font-bold text-white">
+              Roles & Permissions
+            </h1>
+            <p className="text-gray-400">
+              Define roles and control access to different modules.
+            </p>
           </div>
-          <Button onClick={handleAddNewRole} className="bg-gradient-to-r from-blue-500 to-purple-600">
-            <Plus className="w-4 h-4 mr-2" />Add Role
+          <Button
+            onClick={handleAddNewRole}
+            className="bg-gradient-to-r from-blue-500 to-purple-600"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Role
           </Button>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
           <Card className="glass-effect border-white/10">
             <CardHeader>
               <CardTitle className="text-white">Manage Roles</CardTitle>
-              <CardDescription className="text-gray-400">Add, edit, or delete roles and manage their permissions.</CardDescription>
+              <CardDescription className="text-gray-400">
+                Add, edit, or delete roles and manage their permissions.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -573,31 +712,55 @@ return acc
                     </tr>
                   </thead>
                   <tbody>
-                    {roles.map(role => (
+                    {roles.map((role) => (
                       <tr key={role._id}>
-                        <td className="font-mono text-sm text-gray-300">{role.RoleCode}</td>
-                        <td className="font-medium text-white">{role.RoleName}</td>
+                        <td className="font-mono text-sm text-gray-300">
+                          {role.RoleCode}
+                        </td>
+                        <td className="font-medium text-white">
+                          {role.RoleName}
+                        </td>
                         <td>
                           <span className="text-gray-300">
-                            {role.totalPermissions || 0} menu{(role.totalPermissions || 0) !== 1 ? 's' : ''}
+                            {role.totalPermissions || 0} menu
+                            {(role.totalPermissions || 0) !== 1 ? "s" : ""}
                           </span>
                         </td>
                         <td>
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            role.isActive ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
-                          }`}>
-                            {role.isActive ? 'Active' : 'Inactive'}
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              role.isActive
+                                ? "bg-green-900 text-green-300"
+                                : "bg-red-900 text-red-300"
+                            }`}
+                          >
+                            {role.isActive ? "Active" : "Inactive"}
                           </span>
                         </td>
                         <td>
                           <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="icon" className="hover:bg-white/10 h-8 w-8" onClick={() => handleManagePermissions(role)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="hover:bg-white/10 h-8 w-8"
+                              onClick={() => handleManagePermissions(role)}
+                            >
                               <Settings className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="hover:bg-white/10 h-8 w-8" onClick={() => handleEditRole(role)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="hover:bg-white/10 h-8 w-8"
+                              onClick={() => handleEditRole(role)}
+                            >
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="text-red-400 hover:bg-red-400/10 h-8 w-8" onClick={() => handleDeleteRole(role)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-400 hover:bg-red-400/10 h-8 w-8"
+                              onClick={() => handleDeleteRole(role)}
+                            >
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
