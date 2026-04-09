@@ -4,6 +4,7 @@ import { config } from "@/components/CustomComponents/config";
 import socket from "@/socket/Socket";
 import { apiRequest } from "@/components/CustomComponents/apiRequest";
 import { useNavigate } from "react-router-dom";
+import { use } from "react";
 
 const AuthContext = createContext();
 
@@ -174,7 +175,6 @@ export const AuthProvider = ({ children }) => {
       });
 
       const data = await response.json();
-
       if (response.status === 403) {
         toast({
           title: "Login failed",
@@ -197,7 +197,7 @@ export const AuthProvider = ({ children }) => {
 
       toast({
         title: "Login Successful",
-        description: `Welcome back, ${data.client.name}!`,
+        description: `Welcome back !`,
       });
 
       // store token
@@ -210,7 +210,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("client_user", JSON.stringify(data.client));
       localStorage.setItem("clientId", JSON.stringify(data.client._id));
       localStorage.setItem("clientEmail", JSON.stringify(data.client.email));
-
+      navigate("/clientdashboard");
       return { ...data.client, success: true };
     } catch (error) {
       console.error("Client Login Error:", error.message);
@@ -315,7 +315,11 @@ export const AuthProvider = ({ children }) => {
       if (data.success) {
         return data.permissions;
       } else {
-        navigate("/dashboard");
+        if (user.role === "Client") {
+          navigate("/clientdashboard");
+        } else {
+          navigate("/dashboard");
+        }
         return null;
       }
     } catch (err) {

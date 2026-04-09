@@ -58,8 +58,8 @@ const ClientLoginPage = () => {
       const user = await clientlogin(email, password);
 
       if (user.success) {
-        navigate("/dashboard"); // redirect
-        // navigate("/client-dashboard"); // redirect
+        // navigate("/dashboard"); // redirect
+        navigate("/clientdashboard"); // redirect
       }
     } catch (err) {
       toast({

@@ -529,7 +529,9 @@ const Header = ({ onMenuClick }) => {
                       notification.type === "task-complete") &&
                       notification.fromEmployeeId !== user._id &&
                       notification.status !== "approved" &&
-                      notification.status !== "rejected" && (
+                      notification.status !== "rejected" &&
+                      user.role === "Admin" &&
+                      user.role === "Super Admin" && (
                         <div className="flex gap-2 mt-1">
                           <Button
                             size="sm"
@@ -555,14 +557,17 @@ const Header = ({ onMenuClick }) => {
                       )}
                     {notification.type !== "permission-request" &&
                       notification.type !== "leave-request" &&
-                      notification.type !== "task-complete" && (
+                      (notification.type === "task-complete" ||
+                        notification.type === "task-assignment" ||
+                        notification.type === "task-created" ||
+                        notification.type === "subtask-completed") && (
                         <Button
                           size="sm"
                           variant="outline"
                           className="h-7"
                           onClick={() => markAsRead(notification._id)}
                         >
-                          Mark as read
+                          Mark as seen
                         </Button>
                       )}
                   </div>

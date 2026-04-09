@@ -20,6 +20,11 @@ import { useToast } from "@/components/ui/use-toast";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+  {
+    icon: LayoutDashboard,
+    label: "Client-Dashboard",
+    path: "/clientdashboard",
+  },
   { icon: Users, label: "Employees", path: "/employees" },
   { icon: CalendarCheck, label: "Attendance", path: "/attendance" },
   { icon: Briefcase, label: "Leaves", path: "/leaves" },

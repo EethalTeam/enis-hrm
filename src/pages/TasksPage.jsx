@@ -56,8 +56,34 @@ const TaskForm = ({
   const [feedback, setFeedback] = useState("");
   const isAdmin = ["Admin", "Super Admin"].includes(user.role);
   const isEmployee = user.role === "Employee";
+  const [isSubTaskOpen, setIsSubTaskOpen] = useState(false);
   const isClient = user.role === "Client";
   const [ProgressMessage, setProgressMessage] = useState("");
+  const [subTasks, setSubTasks] = useState([]);
+  const [subTaskData, setSubTaskData] = useState({
+    taskName: "",
+    description: "",
+    assignees: [],
+    subTaskType: "",
+    dependencyTaskId: "",
+  });
+  const getSubTasks = async (taskId) => {
+    try {
+      const res = await apiRequest("SubTask/getSubTasksByTaskId", {
+        method: "POST",
+        body: JSON.stringify({ parentTaskId: taskId }),
+      });
+
+      setSubTasks(res);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  useEffect(() => {
+    if (task?._id) {
+      getSubTasks(task._id);
+    }
+  }, [task]);
   const [formData, setFormData] = useState(
     task || {
       _id: "",
@@ -76,10 +102,68 @@ const TaskForm = ({
       reqLeadCount: "",
       compLeadCount: "",
       createdBy: user._id,
+      notifyto: [],
     },
   );
+  const [employee, setEmployee] = useState([]);
   const [Data, SetData] = useState([]);
+  useEffect(() => {
+    getEmployeeList();
+  }, []);
+  const handleSubTaskChange = (e) => {
+    const { name, value } = e.target;
+    setSubTaskData((prev) => ({ ...prev, [name]: value }));
+  };
 
+  const handleSubTaskAssignee = (value) => {
+    setSubTaskData((prev) => ({ ...prev, assignees: value }));
+  };
+  const createSubTask = async () => {
+    try {
+      if (!subTaskData.taskName || subTaskData.assignees.length === 0) {
+        toast({
+          title: "Validation failed",
+          description: "Subtask name and assignees are required.",
+        });
+        return;
+      }
+
+      const payload = {
+        subtaskName: subTaskData.taskName,
+        subdescription: subTaskData.description,
+
+        parentTaskId: formData._id,
+        subprojectId: formData.projectId,
+        subtaskPriorityId: formData.taskPriorityId,
+        subdueDate: formData.dueDate,
+
+        subassignedTo: subTaskData.assignees,
+        subcreatedBy: user._id,
+
+        subTaskType: subTaskData.subTaskType,
+        dependencyTaskId:
+          subTaskData.subTaskType === "Dependent"
+            ? subTaskData.dependencyTaskId
+            : null,
+      };
+      apiRequest("SubTask/createSubTask/", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      toast({
+        title: "Subtask Created",
+        description: "Subtask added successfully.",
+      });
+
+      setIsSubTaskOpen(false);
+      setSubTaskData({ taskName: "", description: "", assignees: [] });
+
+      getAllTasks();
+    } catch (err) {
+      console.error(err);
+    }
+  };
   useEffect(() => {
     if (task) {
       setFormData({
@@ -99,6 +183,7 @@ const TaskForm = ({
         reqLeadCount: task.reqLeadCount,
         compLeadCount: task.compLeadCount,
         assignees: task.assignedTo.map((val) => val._id),
+        notifyto: task.notifyId || [],
       });
     }
   }, [task]);
@@ -126,7 +211,7 @@ const TaskForm = ({
         body: JSON.stringify({}),
       });
 
-      SetData(response);
+      setEmployee(response);
     } catch (error) {
       console.error("Error:", error);
       throw error;
@@ -148,6 +233,9 @@ const TaskForm = ({
     }
   };
   const handleSelectAssignee = (name, value) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+  const handleSelectNotifyto = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
   const [projectList, setProjectList] = useState([]);
@@ -194,6 +282,7 @@ const TaskForm = ({
       throw error;
     }
   };
+
   const createTask = async (data) => {
     try {
       const response = await apiRequest("Task/createTask/", {
@@ -353,7 +442,136 @@ const TaskForm = ({
           </ConfirmationDialog>
         )}
       </AnimatePresence>
+      <AnimatePresence>
+        {isSubTaskOpen && (
+          <Dialog open={isSubTaskOpen} onOpenChange={setIsSubTaskOpen}>
+            <DialogContent className="glass-effect border-white/10 text-white">
+              <DialogHeader>
+                <DialogTitle>Create Sub Task</DialogTitle>
+                <DialogDescription>
+                  Add a sub task under this task.
+                </DialogDescription>
+              </DialogHeader>
 
+              <DialogContent>
+                <div className="space-y-4 py-4">
+                  <div>
+                    <Label className="text-gray-300">Sub Task Name</Label>
+                    <Input
+                      name="taskName"
+                      value={subTaskData.taskName}
+                      onChange={handleSubTaskChange}
+                      placeholder="Enter sub task name"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-gray-300">Description</Label>
+                    <Textarea
+                      name="description"
+                      value={subTaskData.description}
+                      onChange={handleSubTaskChange}
+                      placeholder="Enter description"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-gray-300">Assign Members</Label>
+                    <select
+                      multiple
+                      value={subTaskData.assignees}
+                      onChange={(e) =>
+                        handleSubTaskAssignee(
+                          Array.from(e.target.selectedOptions, (o) => o.value),
+                        )
+                      }
+                      className="w-full h-32 glass-effect border-white/10 rounded-md bg-transparent p-2"
+                    >
+                      {employee.map((emp) => (
+                        <option
+                          key={emp._id}
+                          value={emp._id}
+                          className="bg-slate-800"
+                        >
+                          {emp.name || emp.email}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-gray-300">Sub Task Type</Label>
+                    <select
+                      name="subTaskType"
+                      value={subTaskData.subTaskType || ""}
+                      onChange={handleSubTaskChange}
+                      className="w-full glass-effect border-white/10 rounded-md bg-transparent p-2"
+                    >
+                      <option value="" className="bg-slate-800">
+                        Select Type
+                      </option>
+                      <option value="Independent" className="bg-slate-800">
+                        Independent
+                      </option>
+                      <option value="Dependent" className="bg-slate-800">
+                        Dependent
+                      </option>
+                    </select>
+                  </div>
+                  {subTaskData.subTaskType === "Dependent" && (
+                    <div>
+                      <Label className="text-gray-300">
+                        Dependency SubTask
+                      </Label>
+                      <select
+                        name="dependencyTaskId"
+                        value={subTaskData.dependencyTaskId || ""}
+                        onChange={handleSubTaskChange}
+                        className="w-full glass-effect border-white/10 rounded-md bg-transparent p-2"
+                      >
+                        <option value="" className="bg-slate-800">
+                          Select Dependency
+                        </option>
+
+                        {/* You must fetch subtasks of this task */}
+                        {subTasks.map((sub) => (
+                          <option
+                            key={sub._id}
+                            value={sub._id}
+                            className="bg-slate-800"
+                          >
+                            {sub.subtaskName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  {/* 👇 inherited fields (read-only for clarity) */}
+                  <div className="text-sm text-gray-400">
+                    <p>Priority: {formData.taskPriority}</p>
+                    <p>Due Date: {formData.dueDate}</p>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsSubTaskOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                    onClick={createSubTask}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600"
+                  >
+                    Save Sub Task
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </DialogContent>
+          </Dialog>
+        )}
+      </AnimatePresence>
       {!isConfirmPause && !isConfirmComplete && (
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent
@@ -596,6 +814,48 @@ const TaskForm = ({
                 )}
               </div>
               <div>
+                <div>
+                  <Label htmlFor="notifyto" className="text-gray-300">
+                    Select Members to Notify - When Done
+                  </Label>
+                  <p className="text-gray-400 text-xs mb-2">
+                    Ctrl/Cmd + click to select multiple.
+                  </p>
+
+                  <select
+                    id="notifyto"
+                    name="notifyto"
+                    multiple
+                    // disabled={!isAdmin && Permissions.isAdd}
+                    value={formData.notifyto}
+                    onChange={(e) =>
+                      handleSelectNotifyto(
+                        "notifyto",
+                        Array.from(
+                          e.target.selectedOptions,
+                          (option) => option.value,
+                        ),
+                      )
+                    }
+                    className="w-full h-32 glass-effect border-white/10 rounded-md bg-transparent p-2"
+                  >
+                    {employee.length > 0 ? (
+                      employee.map((emp) => (
+                        <option
+                          key={emp._id}
+                          value={emp._id}
+                          className="bg-slate-800 p-1"
+                        >
+                          {emp.name || emp.email}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled className="bg-slate-800 p-1">
+                        No employees available
+                      </option>
+                    )}
+                  </select>
+                </div>
                 <Label htmlFor="dueDate" className="text-gray-300">
                   Due Date
                 </Label>
@@ -635,26 +895,40 @@ const TaskForm = ({
               </DialogFooter>
             </form>
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              {user.role === "Super Admin" && (
+                <Button
+                  onClick={() => setIsSubTaskOpen(true)}
+                  className="bg-gradient-to-r from-indigo-500 to-indigo-600 mr-4"
+                >
+                  Create Sub Task
+                </Button>
+              )}
               {formData.taskStatus !== "Completed" &&
                 formData.assignedTo === user._id && (
-                  <Button
-                    onClick={() => {
-                      formData.taskStatus === "In Progress"
-                        ? setIsConfirmPause(true)
-                        : updateTaskStatus(
-                            formData._id,
-                            formData.taskStatus === "In Progress"
-                              ? "Pause"
-                              : "Start",
-                            formData.compLeadCount,
-                          );
-                    }}
-                    className={`bg-gradient-to-r ${formData.taskStatus === "In Progress" ? "from-yellow-500 to-yellow-600" : "from-green-500 to-green-600"} mr-4`}
-                  >
-                    {formData.taskStatus === "In Progress"
-                      ? "Pause Task"
-                      : "Start Task"}
-                  </Button>
+                  <>
+                    <Button
+                      onClick={() => {
+                        formData.taskStatus === "In Progress"
+                          ? setIsConfirmPause(true)
+                          : updateTaskStatus(
+                              formData._id,
+                              formData.taskStatus === "In Progress"
+                                ? "Pause"
+                                : "Start",
+                              formData.compLeadCount,
+                            );
+                      }}
+                      className={`bg-gradient-to-r ${
+                        formData.taskStatus === "In Progress"
+                          ? "from-yellow-500 to-yellow-600"
+                          : "from-green-500 to-green-600"
+                      } mr-4`}
+                    >
+                      {formData.taskStatus === "In Progress"
+                        ? "Pause Task"
+                        : "Start Task"}
+                    </Button>
+                  </>
                 )}
               {formData.assignedTo === user._id && (
                 <Button
@@ -691,6 +965,11 @@ const TaskCard = ({
   const isAdmin = ["Admin", "Super Admin"].includes(user.role);
   const isEmployee = user.role === "Employee";
   const isClient = user.role === "Client";
+  const [confirmPause, setConfirmPause] = useState(false);
+  const [confirmComplete, setConfirmComplete] = useState(false);
+  const [selectedSubtask, setSelectedSubtask] = useState(null);
+  const [progressMessage, setProgressMessage] = useState("");
+  const [feedback, setFeedback] = useState("");
   const getPriorityColor = (priority) =>
     ({
       High: "bg-red-500",
@@ -699,7 +978,56 @@ const TaskCard = ({
     })[priority];
 
   const assignee = employees.find((e) => e._id === task.assignedTo?.[0]?._id);
+  const [subTasks, setSubTasks] = useState([]);
+  const [showSubTasks, setShowSubTasks] = useState(false);
+  const handleToggleSubTasks = async () => {
+    if (!showSubTasks) {
+      const data = await getSubTasksByTaskId(task._id);
+      setSubTasks(data);
+    }
+    setShowSubTasks(!showSubTasks);
+  };
+  const getStatus = (sub) => sub.subtaskStatusId?.name?.toLowerCase().trim();
+  const getSubTasksByTaskId = async (taskId) => {
+    try {
+      const res = await apiRequest("SubTask/getSubTasksByTaskId", {
+        method: "POST",
+        body: JSON.stringify({ parentTaskId: taskId }),
+      });
 
+      return res || [];
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
+  };
+  const updateSubTaskStatus = async (
+    subtaskId,
+    status,
+    progressDetails = "",
+    feedback = "",
+  ) => {
+    try {
+      await apiRequest("SubTask/updateSubTaskStatus", {
+        method: "POST",
+        body: JSON.stringify({
+          subtaskId,
+          status,
+          progressDetails,
+          feedback,
+        }),
+      });
+
+      handleToggleSubTasks();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const isBlocked = (sub) => {
+    if (sub.subTaskType !== "Dependent") return false;
+
+    return sub.dependencyTaskId?.subtaskStatusId?.name !== "Completed";
+  };
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -745,7 +1073,14 @@ const TaskCard = ({
             <Edit className="w-3 h-3" />
           </Button>
         )}
-
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={handleToggleSubTasks}
+        >
+          📂
+        </Button>
         {isAdmin && (
           <>
             <Button
@@ -777,6 +1112,138 @@ const TaskCard = ({
           </>
         )}
       </div>
+
+      {showSubTasks && (
+        <div className="mt-3 space-y-2 border-t border-white/10 pt-3">
+          {subTasks.length > 0 ? (
+            subTasks.map((sub) => (
+              <div
+                key={sub._id}
+                className="p-3 bg-slate-700/40 rounded-md border border-white/10"
+              >
+                <div className="flex justify-between items-center">
+                  {isBlocked(sub) && (
+                    <div className="text-xs text-red-500 mt-1 font-semibold"></div>
+                  )}
+                  <h5 className="text-sm font-semibold text-white">
+                    {sub.subtaskName}
+                  </h5>
+
+                  <span className="text-xs text-gray-400">
+                    {sub.subtaskStatusId?.name}
+                  </span>
+                </div>
+
+                <p className="text-xs text-gray-400">
+                  {sub.subdescription || "No description"}
+                </p>
+
+                <div className="text-xs text-gray-500 mt-1">
+                  Due:{" "}
+                  {sub.subdueDate
+                    ? new Date(sub.subdueDate).toLocaleDateString("en-IN")
+                    : "-"}
+                </div>
+
+                {sub.subTaskType === "Dependent" && (
+                  <div className="text-xs text-red-400 mt-1">
+                    Depends on: {sub.dependencyTaskId?.subtaskName || "Unknown"}
+                    {" | "}
+                    Status:{" "}
+                    {sub.dependencyTaskId?.subtaskStatusId?.name || "N/A"}
+                  </div>
+                )}
+                <div className="flex gap-2 mt-2">
+                  {/* 🔒 BLOCKED */}
+                  {isBlocked(sub) && (
+                    <span className="text-xs text-red-500 font-semibold"></span>
+                  )}
+
+                  {/* 🟢 TODO → SHOW START */}
+                  {!isBlocked(sub) && getStatus(sub) === "to do" && (
+                    <button
+                      className="text-xs bg-green-600 px-2 py-1 rounded hover:bg-green-700"
+                      onClick={() => updateSubTaskStatus(sub._id, "Start")}
+                    >
+                      Start
+                    </button>
+                  )}
+
+                  {/* 🟡 IN PROGRESS → SHOW PAUSE + COMPLETE */}
+                  {!isBlocked(sub) && getStatus(sub) === "in progress" && (
+                    <>
+                      <button
+                        className="text-xs bg-yellow-600 px-2 py-1 rounded hover:bg-yellow-700"
+                        onClick={() => {
+                          setSelectedSubtask(sub);
+                          setConfirmPause(true);
+                        }}
+                      >
+                        Pause
+                      </button>
+
+                      <button
+                        className="text-xs bg-blue-600 px-2 py-1 rounded hover:bg-blue-700"
+                        onClick={() => {
+                          setSelectedSubtask(sub);
+                          setConfirmComplete(true);
+                        }}
+                      >
+                        Complete
+                      </button>
+                    </>
+                  )}
+
+                  {/* 🔵 COMPLETED → NOTHING */}
+                  {!isBlocked(sub) && getStatus(sub) === "completed" && (
+                    <span className="text-xs text-green-400 font-semibold">
+                      ✅ Done
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-xs text-gray-400">No subtasks</p>
+          )}
+        </div>
+      )}
+      {confirmPause && (
+        <ConfirmationDialog
+          isOpen={confirmPause}
+          onClose={() => setConfirmPause(false)}
+          onConfirm={() => {
+            updateSubTaskStatus(selectedSubtask._id, "Pause", progressMessage);
+            setConfirmPause(false);
+          }}
+          title="Pause SubTask?"
+          description="Enter progress message"
+        >
+          <Input
+            value={progressMessage}
+            onChange={(e) => setProgressMessage(e.target.value)}
+            placeholder="Progress message"
+          />
+        </ConfirmationDialog>
+      )}
+      {confirmComplete && (
+        <ConfirmationDialog
+          isOpen={confirmComplete}
+          onClose={() => setConfirmComplete(false)}
+          onConfirm={() => {
+            updateSubTaskStatus(selectedSubtask._id, "Complete", "", feedback);
+            setConfirmComplete(false);
+          }}
+          title="Complete SubTask?"
+          description="Enter feedback"
+        >
+          <Input
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            placeholder="Feedback"
+          />
+        </ConfirmationDialog>
+      )}
     </motion.div>
   );
 };
