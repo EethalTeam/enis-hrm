@@ -425,32 +425,50 @@ const Header = ({ onMenuClick }) => {
       });
     }
   };
+
   const [isAssignEmployeeOpen, setIsAssignEmployeeOpen] = useState(false);
   const [employeeData, setEmployeeData] = useState(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const isClient = employeeData?.ClientCode;
+
   const handleUserClick = async () => {
     try {
-      const res = await apiRequest("Employee/getAllEmployees", {
+      // get employees
+      const empRes = await apiRequest("Employee/getAllEmployees", {
         method: "POST",
         body: JSON.stringify({}),
       });
 
-      const employees = Array.isArray(res) ? res : [];
+      // get clients
+      const clientRes = await apiRequest("Client/getAllClients", {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
 
-      const fullEmployeeData = employees.find(
+      const employees = Array.isArray(empRes) ? empRes : [];
+      const clients = Array.isArray(clientRes) ? clientRes : [];
+
+      // search employee
+      let fullUserData = employees.find(
         (emp) => String(emp?._id) === String(user?._id),
       );
 
-      if (!fullEmployeeData) {
-        console.error("Logged-in employee not found", {
+      // if not employee check client
+      if (!fullUserData) {
+        fullUserData = clients.find(
+          (client) => String(client?._id) === String(user?._id),
+        );
+      }
+
+      if (!fullUserData) {
+        console.error("Logged-in user not found", {
           userId: user?._id,
-          employees,
         });
         return;
       }
 
-      setEmployeeData(fullEmployeeData);
+      setEmployeeData(fullUserData);
       setIsProfileOpen(true);
     } catch (error) {
       console.error("handleUserClick error:", error);
@@ -482,7 +500,6 @@ const Header = ({ onMenuClick }) => {
             />
           </div>
         </div>
-
         <div className="flex items-center gap-4">
           {/* Attendance Actions with Timer */}
           <input
@@ -492,7 +509,9 @@ const Header = ({ onMenuClick }) => {
             onChange={handleAvatarUpload}
             className="hidden"
           />
-          <AttendanceActions startIdleTimeout={startIdleTimeout} />
+          {user.role !== "Client" && (
+            <AttendanceActions startIdleTimeout={startIdleTimeout} />
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -603,7 +622,9 @@ const Header = ({ onMenuClick }) => {
                   </Avatar>
                 )}
                 <div className="hidden md:block text-left">
-                  <p className="text-sm font-medium text-white">{user.name}</p>
+                  <p className="text-sm font-medium text-white">
+                    {user.name || user.UserName}
+                  </p>
                   <p className="text-xs text-gray-400">{user.role}</p>
                 </div>
               </Button>
@@ -633,135 +654,182 @@ const Header = ({ onMenuClick }) => {
               {/* Top Section */}
               <div className="px-6 py-6 bg-[#243878] border-b border-white/10">
                 <div className="flex items-start gap-5">
-                  {/* Avatar with camera edit button */}
+                  {/* Avatar */}
                   <div className="relative">
                     {employeeData?.avatar ? (
                       <img
                         src={employeeData.avatar}
-                        alt={employeeData.name}
+                        alt="avatar"
                         className="w-24 h-24 rounded-full object-cover border-4 border-white/20 shadow-lg"
                       />
                     ) : (
                       <div className="w-24 h-24 rounded-full bg-white/15 text-white flex items-center justify-center text-3xl font-bold border-4 border-white/20 shadow-lg">
-                        {employeeData?.name
-                          ?.split(" ")
-                          ?.map((n) => n[0])
-                          ?.join("")
-                          ?.toUpperCase()}
+                        {isClient
+                          ? employeeData?.UserName?.[0]?.toUpperCase()
+                          : employeeData?.name
+                              ?.split(" ")
+                              ?.map((n) => n[0])
+                              ?.join("")
+                              ?.toUpperCase()}
                       </div>
                     )}
-
-                    {/* camera edit button */}
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="absolute bottom-1 right-1 w-10 h-10 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center shadow-lg border-2 border-white transition"
-                      title="Upload Profile Photo"
-                    >
-                      <Camera className="w-5 h-5" />
-                    </button>
+                    {!isClient && (
+                      <>
+                        {/* Upload Avatar */}
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="absolute bottom-1 right-1 w-10 h-10 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center shadow-lg border-2 border-white"
+                        >
+                          <Camera className="w-5 h-5" />
+                        </button>
+                      </>
+                    )}
                   </div>
 
-                  {/* Name and role */}
+                  {/* Name & Role */}
                   <div className="flex-1 pt-2">
                     <h2 className="text-2xl font-bold tracking-wide">
-                      {employeeData?.name || "-"}
+                      {isClient
+                        ? employeeData?.UserName
+                        : employeeData?.name || "-"}
                     </h2>
+
                     <p className="text-sm text-white/80 mt-1">
-                      {employeeData?.roleName || "Employee"}
+                      {isClient
+                        ? employeeData?.RoleId?.RoleName
+                        : employeeData?.roleName || "Employee"}
                     </p>
+
                     <p className="text-sm text-white/70 mt-1">
-                      Employee ID:{" "}
-                      {employeeData?.employeeCode || employeeData?.code || "-"}
+                      {isClient ? "Client Code:" : "Employee Code:"}{" "}
+                      {isClient
+                        ? employeeData?.ClientCode
+                        : employeeData?.employeeCode ||
+                          employeeData?.code ||
+                          "-"}
                     </p>
                   </div>
-
-                  {/* right side edit button */}
-                  {/* <button
-                    type="button"
-                    onClick={() => {
-                      setIsProfileOpen(false);
-                      setIsEditProfileOpen(true);
-                    }}
-                    className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/10 transition"
-                  >
-                    Edit
-                  </button> */}
                 </div>
               </div>
 
               {/* Details Section */}
               <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#2b428b]">
+                {/* Name */}
                 <div className="rounded-xl bg-white/10 border border-white/10 p-4">
                   <p className="text-xs text-white/70 mb-1 flex items-center gap-2">
                     <User className="w-4 h-4" />
                     Full Name
                   </p>
                   <p className="text-base font-semibold">
-                    {employeeData?.name || "-"}
+                    {isClient
+                      ? employeeData?.UserName
+                      : employeeData?.name || "-"}
                   </p>
                 </div>
 
+                {/* Code */}
                 <div className="rounded-xl bg-white/10 border border-white/10 p-4">
                   <p className="text-xs text-white/70 mb-1 flex items-center gap-2">
                     <BadgeInfo className="w-4 h-4" />
-                    Employee Code
+                    {isClient ? "Client Code" : "Employee Code"}
                   </p>
                   <p className="text-base font-semibold">
-                    {employeeData?.employeeCode || employeeData?.code || "-"}
+                    {isClient
+                      ? employeeData?.ClientCode
+                      : employeeData?.employeeCode || employeeData?.code || "-"}
                   </p>
                 </div>
 
+                {/* Email */}
                 <div className="rounded-xl bg-white/10 border border-white/10 p-4">
                   <p className="text-xs text-white/70 mb-1 flex items-center gap-2">
                     <Mail className="w-4 h-4" />
                     Email
                   </p>
                   <p className="text-base font-semibold break-all">
-                    {employeeData?.email || "-"}
+                    {isClient
+                      ? employeeData?.UserName
+                      : employeeData?.email || "-"}
                   </p>
                 </div>
 
-                <div className="rounded-xl bg-white/10 border border-white/10 p-4">
-                  <p className="text-xs text-white/70 mb-1 flex items-center gap-2">
-                    <Phone className="w-4 h-4" />
-                    Phone Number
-                  </p>
-                  <p className="text-base font-semibold">
-                    {employeeData?.phoneNumber || "-"}
-                  </p>
-                </div>
+                {/* Phone (Employees only) */}
+                {!isClient && (
+                  <div className="rounded-xl bg-white/10 border border-white/10 p-4">
+                    <p className="text-xs text-white/70 mb-1 flex items-center gap-2">
+                      <Phone className="w-4 h-4" />
+                      Phone Number
+                    </p>
+                    <p className="text-base font-semibold">
+                      {employeeData?.phoneNumber || "-"}
+                    </p>
+                  </div>
+                )}
 
+                {/* Role */}
                 <div className="rounded-xl bg-white/10 border border-white/10 p-4">
                   <p className="text-xs text-white/70 mb-1 flex items-center gap-2">
                     <Briefcase className="w-4 h-4" />
                     Role
                   </p>
                   <p className="text-base font-semibold">
-                    {employeeData?.roleName || "-"}
+                    {isClient
+                      ? employeeData?.RoleId?.RoleName
+                      : employeeData?.roleName || "-"}
                   </p>
                 </div>
 
-                <div className="rounded-xl bg-white/10 border border-white/10 p-4">
-                  <p className="text-xs text-white/70 mb-1 flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4" />
-                    Status
-                  </p>
-                  <p className="text-base font-semibold">
-                    {employeeData?.isActive ? "Active" : "Inactive"}
-                  </p>
-                </div>
+                {/* Status */}
+                {!isClient && (
+                  <div className="rounded-xl bg-white/10 border border-white/10 p-4">
+                    <p className="text-xs text-white/70 mb-1 flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4" />
+                      Status
+                    </p>
+                    <p className="text-base font-semibold">
+                      {employeeData?.isActive ? "Active" : "Inactive"}
+                    </p>
+                  </div>
+                )}
 
-                <div className="rounded-xl bg-white/10 border border-white/10 p-4 md:col-span-2">
-                  <p className="text-xs text-white/70 mb-1 flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    Address
-                  </p>
-                  <p className="text-base font-semibold">
-                    {employeeData?.address || "-"}
-                  </p>
-                </div>
+                {/* Address (Employees only) */}
+                {!isClient && (
+                  <div className="rounded-xl bg-white/10 border border-white/10 p-4 md:col-span-2">
+                    <p className="text-xs text-white/70 mb-1 flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      Address
+                    </p>
+                    <p className="text-base font-semibold">
+                      {employeeData?.address || "-"}
+                    </p>
+                  </div>
+                )}
               </div>
+
+              {/* Client Projects */}
+              {isClient && (
+                <div className="p-6 border-t border-white/10 bg-[#2b428b]">
+                  <h3 className="text-lg font-semibold mb-4">Projects</h3>
+
+                  {employeeData?.projects?.length > 0 ? (
+                    <div className="space-y-3">
+                      {employeeData.projects.map((project) => (
+                        <div
+                          key={project._id}
+                          className="p-3 rounded-lg bg-white/10 border border-white/10"
+                        >
+                          {project.projectName}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-white/70">
+                      No projects assigned
+                    </p>
+                  )}
+                </div>
+              )}
             </DialogContent>
           </Dialog>
         </div>

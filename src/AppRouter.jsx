@@ -37,7 +37,7 @@ import LeaveStatusPage from "@/pages/LeaveStatusPage";
 import HolidayPage from "@/pages/HolidayPage";
 import MenusPage from "@/pages/MenusPage";
 import ClientLoginPage from "@/pages/ClientLoginPage";
-import ClientDashboard from "@/pages/ClientDashboard";
+// import ClientDashboard from "@/pages/ClientDashboard";
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
   return user ? children : <Navigate to="/login" replace />;
@@ -86,7 +86,7 @@ export default function AppRouter() {
               <Layout>
                 <Routes>
                   <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="clientdashboard" element={<ClientDashboard />} />
+                  {/* <Route path="clientdashboard" element={<ClientDashboard />} /> */}
                   <Route
                     path="employees/allEmployees"
                     element={<EmployeesPage />}

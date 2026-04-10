@@ -89,7 +89,25 @@ const MenuForm = ({ open, setOpen, menu, onSave, getAllMenus }) => {
       });
     }
   }, [menu]);
+  const confirmDelete = async () => {
+    try {
+      await apiRequest("Menu/deleteMenu/", {
+        method: "POST",
+        body: JSON.stringify({ _id: selectedMenu._id }),
+      });
 
+      toast({
+        title: "Menu Deleted",
+        description: `"${selectedMenu.label}" has been deleted.`,
+      });
+
+      setIsConfirmOpen(false);
+      setSelectedMenu(null);
+      getAllMenus();
+    } catch (error) {
+      console.error("Delete failed:", error);
+    }
+  };
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -354,7 +372,6 @@ const MenuForm = ({ open, setOpen, menu, onSave, getAllMenus }) => {
 
 const MenusPage = () => {
   const { user } = useAuth();
-  const { deleteMenu } = useData();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -410,14 +427,24 @@ const MenusPage = () => {
     setIsConfirmOpen(true);
   };
 
-  const confirmDelete = () => {
-    deleteMenu(selectedMenu._id);
-    toast({
-      title: "Menu Deleted",
-      description: `"${selectedMenu.label}" has been deleted.`,
-    });
-    setIsConfirmOpen(false);
-    setSelectedMenu(null);
+  const confirmDelete = async () => {
+    try {
+      await apiRequest("Menu/deleteMenu/", {
+        method: "POST",
+        body: JSON.stringify({ _id: selectedMenu._id }),
+      });
+
+      toast({
+        title: "Menu Deleted",
+        description: `"${selectedMenu.label}" has been deleted.`,
+      });
+
+      setIsConfirmOpen(false);
+      setSelectedMenu(null);
+      getAllMenus();
+    } catch (error) {
+      console.error("Delete failed:", error);
+    }
   };
 
   const handleSaveMenu = (menuData) => {

@@ -11,7 +11,11 @@ import {
   CalendarCheck2,
   UserCheck,
   UserX,
+  CheckCircle,
+  Loader,
+  AlertCircle,
 } from "lucide-react"; // Added UserX
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest } from "@/components/CustomComponents/apiRequest";
@@ -73,6 +77,101 @@ const LateLoginsCard = ({ lateLogins }) => (
     </CardContent>
   </Card>
 );
+const TicketTaskCards = ({ tickets = [], tasks = [] }) => {
+  // Tickets summary
+  const ticketsSummary = useMemo(() => {
+    return {
+      Opened: tickets.filter((t) => t.status === "Open").length,
+
+      process: tickets.filter((t) => t.status === "In Progress").length,
+
+      Resolved: tickets.filter((t) => t.status === "Resolved").length,
+
+      closed: tickets.filter((t) => t.status === "Closed").length,
+    };
+  }, [tickets]);
+
+  // Tasks summary
+  const tasksSummary = useMemo(() => {
+    return {
+      pending: tasks.filter((t) => t.taskStatusId?.name === "To Do").length,
+
+      inProcess: tasks.filter((t) => t.taskStatusId?.name === "In Progress")
+        .length,
+
+      completed: tasks.filter((t) => t.taskStatusId?.name === "Completed")
+        .length,
+
+      overdue: tasks.filter((t) => {
+        if (!t.dueDate) return false;
+
+        const due = new Date(t.dueDate);
+        due.setHours(23, 59, 59, 999);
+
+        return due < new Date() && t.taskStatusId?.name !== "Completed";
+      }).length,
+    };
+  }, [tasks]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 }}
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+    >
+      <MetricCard
+        title="Tickets Open"
+        value={ticketsSummary.Opened}
+        icon={CheckCircle}
+        color="green"
+      />
+      <MetricCard
+        title="Tickets In Progress"
+        value={ticketsSummary.process}
+        icon={Loader}
+        color="orange"
+      />
+      <MetricCard
+        title="Tickets Resolved"
+        value={ticketsSummary.Resolved}
+        icon={CheckCircle}
+        color="blue"
+      />
+      <MetricCard
+        title="Tickets Closed"
+        value={ticketsSummary.closed}
+        icon={UserX}
+        color="gray"
+      />
+
+      <MetricCard
+        title="Tasks Pending"
+        value={tasksSummary.pending}
+        icon={Loader}
+        color="orange"
+      />
+      <MetricCard
+        title="Tasks In Process"
+        value={tasksSummary.inProcess}
+        icon={Loader}
+        color="purple"
+      />
+      <MetricCard
+        title="Tasks Completed"
+        value={tasksSummary.completed}
+        icon={CheckCircle}
+        color="green"
+      />
+      <MetricCard
+        title="Tasks Overdue"
+        value={tasksSummary.overdue}
+        icon={AlertCircle}
+        color="red"
+      />
+    </motion.div>
+  );
+};
 
 // =================== CARD COMPONENT ===================
 const AbsenteesCard = ({ absentees }) => (
@@ -487,7 +586,18 @@ const EmployeeDashboard = ({ stats }) => (
     </motion.div>
   </div>
 );
+//Client-View
 
+const ClientDashboard = ({ stats }) => {
+  const tickets = stats.allTickets || [];
+  const tasks = stats.allTasks || [];
+
+  return (
+    <div className="space-y-8">
+      <TicketTaskCards tickets={tickets} tasks={tasks} />
+    </div>
+  );
+};
 // ############################################
 // ##   MAIN DASHBOARD COMPONENT (MODIFIED)   ##
 // ############################################
@@ -500,7 +610,7 @@ const DashboardPage = () => {
   const [todayPermissions, setTodayPermissions] = useState([]); // <-- New state
   const [todayLeaves, setTodayLeaves] = useState([]); // <-- New state
   const [loading, setLoading] = useState(true);
-
+  const [allTickets, setAllTickets] = useState([]);
   const isAdmin = user.role === "Super Admin" || user.role === "Admin";
 
   useEffect(() => {
@@ -513,10 +623,15 @@ const DashboardPage = () => {
           method: "POST",
           body: JSON.stringify({ _id: user._id, role: user.role }),
         };
+        const ticketPayload = {
+          method: "POST",
+          body: JSON.stringify({ userId: user._id, role: user.role }),
+        };
 
         const apiCalls = [
           apiRequest("Lead/getAllLeads/", commonPayload),
           apiRequest("Task/getAllTasks/", commonPayload),
+          apiRequest("Ticket/getAllTickets/", ticketPayload), // add this
         ];
 
         // Only add admin-specific calls
@@ -533,7 +648,7 @@ const DashboardPage = () => {
 
         setAllLeads(responses[0].leads || []);
         setAllTasks(responses[1] || []);
-
+        setAllTickets(responses[2].tickets || []);
         // Set admin-specific states
         if (isAdmin) {
           setLateLogins(responses[2].data || []);
@@ -567,6 +682,7 @@ const DashboardPage = () => {
   const stats = {
     allLeads,
     allTasks,
+    allTickets, // add this
     todaysLeads,
     todaysTasks,
     lateLogins,
@@ -586,6 +702,7 @@ const DashboardPage = () => {
       </Helmet>
 
       <div className="space-y-8">
+        {/* ================= HEADER ================= */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -594,22 +711,37 @@ const DashboardPage = () => {
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center">
               <LayoutDashboard className="w-8 h-8 mr-3 text-purple-400" />
-              {isAdmin ? "Admin Dashboard" : "My Dashboard"}
+              {user?.role === "Super Admin" || user?.role === "Admin"
+                ? "Admin Dashboard"
+                : user?.role === "Client"
+                  ? "Client Dashboard"
+                  : "My Dashboard"}
             </h1>
+
             <p className="text-gray-400">
-              Welcome back, {user.name || "User"}! Here's your focus for today.
+              Welcome back, {user?.name || "User"} ! Here's your focus for
+              today.
             </p>
           </div>
         </motion.div>
 
+        {/* ================= LOADING ================= */}
         {loading ? (
           <div className="text-center text-gray-400 pt-10">
             Loading dashboard data...
           </div>
-        ) : isAdmin ? (
-          <AdminDashboard stats={stats} />
         ) : (
-          <EmployeeDashboard stats={stats} />
+          <>
+            {/* ================= ROLE BASED DASHBOARDS ================= */}
+
+            {(user?.role === "Super Admin" || user?.role === "Admin") && (
+              <AdminDashboard stats={stats} />
+            )}
+
+            {user?.role === "Employee" && <EmployeeDashboard stats={stats} />}
+
+            {user?.role === "Client" && <ClientDashboard stats={stats} />}
+          </>
         )}
       </div>
     </>
