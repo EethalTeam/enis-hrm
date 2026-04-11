@@ -245,43 +245,25 @@ const EmployeeForm = ({ isOpen, setIsOpen, employee, getAllEmployees }) => {
     try {
       const formDataToSend = new FormData();
 
-      formDataToSend.append("_id", formData._id);
-      formDataToSend.append("code", formData.code);
-      formDataToSend.append("name", formData.name);
-      formDataToSend.append("email", formData.email);
-      formDataToSend.append("password", formData.password);
-      formDataToSend.append("designationId", formData.designationId);
-      formDataToSend.append("departmentId", formData.departmentId);
-      formDataToSend.append("joinDate", formData.joinDate);
-      formDataToSend.append("birthDate", formData.birthDate);
-      formDataToSend.append("phoneNumber", formData.phoneNumber);
-      formDataToSend.append("salary", formData.salary);
-      formDataToSend.append("statusId", formData.statusId);
-      formDataToSend.append("shiftId", formData.shiftId);
-      formDataToSend.append("workingHours", formData.workingHours);
-      formDataToSend.append("workLocationId", formData.workLocationId);
-      formDataToSend.append("roleId", formData.roleId);
+      Object.keys(formData).forEach((key) => {
+        formDataToSend.append(key, formData[key]);
+      });
 
       if (employeePic) {
         formDataToSend.append("avatar", employeePic);
       }
 
-      const response = await apiRequest(`Employee/updateEmployee`, {
+      const result = await apiRequest(`Employee/updateEmployee`, {
         method: "POST",
         body: formDataToSend,
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || "Failed to update employee");
-      }
+      console.log("Employee updated:", result);
 
       SetData([]);
       getAllEmployees();
     } catch (error) {
-      console.error("Error:", error);
-      throw error;
+      console.error("Error:", error.message);
     }
   };
 

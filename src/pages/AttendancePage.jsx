@@ -592,14 +592,26 @@ const AttendancePage = () => {
     setIsDetailDialogOpen(true);
   };
 
+  // const filteredEmployees = useMemo(() => {
+  //   if (!employees) return [];
+  //   return employees.filter(
+  //     (emp) =>
+  //       emp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //       emp.department?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //       emp.code?.toLowerCase().includes(searchQuery.toLowerCase()),
+  //   );
+  // }, [employees, searchQuery]);
   const filteredEmployees = useMemo(() => {
     if (!employees) return [];
-    return employees.filter(
-      (emp) =>
-        emp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        emp.department?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        emp.code?.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+
+    return employees
+      .filter((emp) => emp.isActive)
+      .filter(
+        (emp) =>
+          emp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          emp.department?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          emp.code?.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
   }, [employees, searchQuery]);
 
   const getEmployeeAttendanceForDate = (employeeId) => {

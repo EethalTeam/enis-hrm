@@ -35,7 +35,6 @@ const MetricCard = ({ title, value, icon: Icon, color }) => (
     </CardContent>
   </Card>
 );
-
 // =================== CARD COMPONENT ===================
 const LateLoginsCard = ({ lateLogins }) => (
   <Card className="glass-effect border-white/10">
@@ -612,7 +611,7 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [allTickets, setAllTickets] = useState([]);
   const isAdmin = user.role === "Super Admin" || user.role === "Admin";
-
+  console.log(lateLogins, lateLogins);
   useEffect(() => {
     const fetchData = async () => {
       if (!user?._id) return;
@@ -651,10 +650,10 @@ const DashboardPage = () => {
         setAllTickets(responses[2].tickets || []);
         // Set admin-specific states
         if (isAdmin) {
-          setLateLogins(responses[2].data || []);
-          setTodayPermissions(responses[3].permissions || []);
-          setTodayLeaves(responses[4].leaves || []);
-          setAbsentees(responses[5].absentees || []);
+          setLateLogins(responses[3].data || []);
+          setTodayPermissions(responses[4].permissions || []);
+          setTodayLeaves(responses[5].leaves || []);
+          setAbsentees(responses[6].absentees || []);
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
