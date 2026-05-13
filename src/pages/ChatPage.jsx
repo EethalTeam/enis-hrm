@@ -11,6 +11,7 @@ import {
   UserPlus,
   X,
   ShieldCheck,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,7 +37,13 @@ const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:8001";
 // =======================================================
 // HELPER COMPONENT: Create Group Dialog (Existing)
 // =======================================================
-const CreateGroupDialog = ({ open, setOpen, allEmployees, onCreateGroup }) => {
+const CreateGroupDialog = ({
+  open,
+  setOpen,
+  allEmployees,
+  onCreateGroup,
+  user,
+}) => {
   const [groupName, setGroupName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedMembers, setSelectedMembers] = useState([]);
@@ -59,7 +66,12 @@ const CreateGroupDialog = ({ open, setOpen, allEmployees, onCreateGroup }) => {
       });
       return;
     }
-    onCreateGroup({ groupName, description, memberIds: selectedMembers });
+    onCreateGroup({
+      groupName,
+      description,
+      memberIds: selectedMembers,
+      createdBy: user._id,
+    });
     setOpen(false);
     setGroupName("");
     setDescription("");
@@ -403,7 +415,7 @@ const ChatPage = () => {
     try {
       const response = await apiRequest("Group/getGroupByUsers", {
         method: "POST",
-        body: JSON.stringify({}),
+        body: JSON.stringify({ userId: user._id }),
       });
       if (response.success) {
         setGroups(response.groups || []);
@@ -562,6 +574,7 @@ const ChatPage = () => {
             open={isCreateGroupOpen}
             setOpen={setIsCreateGroupOpen}
             allEmployees={allEmployees}
+            user={user}
             onCreateGroup={handleCreateGroup}
           />
         )}
@@ -612,7 +625,14 @@ const ChatPage = () => {
           <Card className="glass-effect border-white/10 w-1/4 flex flex-col">
             <CardHeader className="flex-row justify-between items-center">
               <CardTitle className="text-white">Groups</CardTitle>
-              {/* <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setIsCreateGroupOpen(true)}><Plus className="w-4 h-4" /></Button> */}
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={() => setIsCreateGroupOpen(true)}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
             </CardHeader>
             <CardContent className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
               {groups.map((group) => (

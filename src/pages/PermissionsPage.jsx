@@ -123,7 +123,7 @@ const PermissionForm = ({
   const getEmployeeList = async () => {
     try {
       SetData([]); // clear Data once
-      const response = await apiRequest("Employee/getAllEmployees/", {
+      const response = await apiRequest("Employee/getAllActiveEmployees/", {
         method: "POST",
         body: JSON.stringify({}),
       });

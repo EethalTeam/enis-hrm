@@ -109,7 +109,7 @@ const LeaveForm = ({ open, setOpen, leave, onSave, getAllLeaves }) => {
   const getEmployeeList = async () => {
     try {
       SetData([]); // clear Data once
-      const response = await apiRequest("Employee/getAllEmployees/", {
+      const response = await apiRequest("Employee/getAllActiveEmployees/", {
         method: "POST",
         body: JSON.stringify({}),
       });
@@ -430,7 +430,7 @@ const LeavesPage = () => {
   };
   const getAllEmployees = async () => {
     try {
-      const response = await apiRequest("Employee/getAllEmployees/", {
+      const response = await apiRequest("Employee/getAllActiveEmployees/", {
         method: "POST",
         body: JSON.stringify({}),
       });

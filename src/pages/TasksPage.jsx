@@ -102,7 +102,7 @@ const TaskForm = ({
       reqLeadCount: "",
       compLeadCount: "",
       createdBy: user._id,
-      notifyto: [],
+      notifyId: [],
     },
   );
   const [employee, setEmployee] = useState([]);
@@ -183,7 +183,7 @@ const TaskForm = ({
         reqLeadCount: task.reqLeadCount,
         compLeadCount: task.compLeadCount,
         assignees: task.assignedTo.map((val) => val._id),
-        notifyto: task.notifyId || [],
+        notifyId: task.notifyId || [],
       });
     }
   }, [task]);
@@ -206,7 +206,7 @@ const TaskForm = ({
   const getEmployeeList = async () => {
     try {
       SetData([]); // clear Data once
-      const response = await apiRequest("Employee/getAllEmployees/", {
+      const response = await apiRequest("Employee/getAllActiveEmployees/", {
         method: "POST",
         body: JSON.stringify({}),
       });
@@ -311,7 +311,12 @@ const TaskForm = ({
       throw error;
     }
   };
-  const updateTaskStatus = async (taskId, status, compLeadCount) => {
+  const updateTaskStatus = async (
+    taskId,
+    status,
+    compLeadCount,
+    notifyId = [],
+  ) => {
     try {
       if (status === "Pause" && !ProgressMessage) {
         toast({
@@ -320,29 +325,37 @@ const TaskForm = ({
             "Please enter a reason for progress message or reason for pausing the task",
         });
         return;
-      } else if (status === "Complete" && !feedback) {
+      }
+
+      if (status === "Complete" && !feedback) {
         toast({
           title: "Validation fails",
-          description: "Please enter a feedback before completing the task",
+          description: "Please enter feedback before completing the task",
         });
         return;
       }
+
       const response = await apiRequest("Task/updateTaskStatus/", {
         method: "POST",
         body: JSON.stringify({
           taskId,
           status,
           progressDetails: ProgressMessage,
-          feedback: feedback,
-          compLeadCount: compLeadCount,
+          feedback,
+          compLeadCount,
+          notifyId: notifyId || [], // array
         }),
       });
+
       SetData([]);
+
       toast({
         title: "Status Updated",
-        description: `${response.message}`,
+        description: response.message,
       });
+
       setOpen(false);
+
       getAllTasks();
     } catch (error) {
       console.error("Error:", error);
@@ -394,6 +407,7 @@ const TaskForm = ({
                 formData._id,
                 formData.taskStatus === "In Progress" ? "Pause" : "Start",
                 formData.compLeadCount,
+                formData.notifyId || [],
               )
             }
             title="Pause Task?"
@@ -421,7 +435,12 @@ const TaskForm = ({
             isOpen={isConfirmComplete}
             onClose={() => setIsConfirmComplete(false)}
             onConfirm={() =>
-              updateTaskStatus(formData._id, "Complete", formData.compLeadCount)
+              updateTaskStatus(
+                formData._id,
+                "Complete",
+                formData.compLeadCount,
+                formData.notifyId || [],
+              )
             }
             title="Complete Task?"
             description="Please provide a feedback before completing the task."
@@ -827,10 +846,10 @@ const TaskForm = ({
                     name="notifyto"
                     multiple
                     // disabled={!isAdmin && Permissions.isAdd}
-                    value={formData.notifyto}
+                    value={formData.notifyId}
                     onChange={(e) =>
                       handleSelectNotifyto(
-                        "notifyto",
+                        "notifyId",
                         Array.from(
                           e.target.selectedOptions,
                           (option) => option.value,
@@ -916,6 +935,7 @@ const TaskForm = ({
                                 ? "Pause"
                                 : "Start",
                               formData.compLeadCount,
+                              formData.notifyId || [],
                             );
                       }}
                       className={`bg-gradient-to-r ${
