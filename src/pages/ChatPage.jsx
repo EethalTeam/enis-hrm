@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 
-// Added ShieldCheck icon
 import {
   Send,
   Users,
@@ -32,11 +31,10 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
 import io from "socket.io-client";
 
-// const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:8001";
 const SOCKET_URL = "https://eethal-hrm-node.eniscloud.in";
 
 // =======================================================
-// HELPER COMPONENT: Create Group Dialog (Existing)
+// HELPER COMPONENT: Create Group Dialog
 // =======================================================
 const CreateGroupDialog = ({
   open,
@@ -139,7 +137,7 @@ const CreateGroupDialog = ({
 };
 
 // =======================================================
-// HELPER COMPONENT: Add Members Dialog (Existing)
+// HELPER COMPONENT: Add Members Dialog
 // =======================================================
 const AddMembersDialog = ({
   open,
@@ -227,7 +225,7 @@ const AddMembersDialog = ({
 };
 
 // =======================================================
-// HELPER COMPONENT: Manage Members Dialog (MODIFIED)
+// HELPER COMPONENT: Manage Members Dialog
 // =======================================================
 const ManageMembersDialog = ({
   open,
@@ -255,7 +253,6 @@ const ManageMembersDialog = ({
     setOpen(false);
   };
 
-  // New handler for the Make Admin action
   const handleMakeAdminClick = (memberId) => {
     onMakeAdmin(group._id, memberId);
   };
@@ -322,7 +319,6 @@ const ManageMembersDialog = ({
                   </div>
                 ) : (
                   <div className="flex items-center gap-1">
-                    {/* ===== NEW BUTTON: Make Admin ===== */}
                     {isCurrentUserAdmin && !isAdmin && (
                       <Button
                         title="Make Admin"
@@ -369,54 +365,117 @@ const ChatPage = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [allEmployees, setAllEmployees] = useState([]);
-  console.log(user, "user");
+
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isManageMembersOpen, setIsManageMembersOpen] = useState(false);
 
   const endOfMessagesRef = useRef(null);
+  const activeGroupRef = useRef(null);
 
+  // Keep a ref of the active group so socket listeners always see the latest value
   useEffect(() => {
-    const newSocket = io(SOCKET_URL);
+    activeGroupRef.current = activeGroup;
+  }, [activeGroup]);
+
+  // ============================================================
+  // SOCKET SETUP (runs once per user)
+  // ============================================================
+  useEffect(() => {
+    if (!user?._id) return;
+
+    const newSocket = io(SOCKET_URL, {
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+    });
+
     setSocket(newSocket);
 
     newSocket.on("connect", () => {
+      console.log("✅ Socket connected:", newSocket.id);
       newSocket.emit("joinRoom", { employeeId: user._id });
+
+      // Re-join active group room on every (re)connect
+      const currentGroup = activeGroupRef.current;
+      if (currentGroup?._id) {
+        newSocket.emit("join_group_chat", currentGroup._id);
+        console.log("🔁 Re-joined group room:", currentGroup._id);
+      }
+    });
+
+    newSocket.on("disconnect", (reason) => {
+      console.log("❌ Socket disconnected:", reason);
+    });
+
+    newSocket.on("connect_error", (err) => {
+      console.error("⚠️ Socket connect error:", err.message);
+    });
+
+    // Incoming group message listener — uses functional setState
+    // so it always references the latest activeGroup
+    newSocket.on("receive_group_message", (incomingMessage) => {
+      console.log("📩 Received group message:", incomingMessage);
+      const currentGroup = activeGroupRef.current;
+      if (currentGroup && currentGroup._id === incomingMessage.groupId) {
+        setMessages((prevMessages) => {
+          // Avoid duplicates (in case of optimistic message already shown)
+          const exists = prevMessages.some(
+            (m) => m._id === incomingMessage._id,
+          );
+          if (exists) return prevMessages;
+          return [...prevMessages, incomingMessage];
+        });
+      }
     });
 
     fetchUserGroups();
     fetchAllEmployees();
 
-    newSocket.on("receive_group_message", (incomingMessage) => {
-      setActiveGroup((currentActiveGroup) => {
-        if (
-          currentActiveGroup &&
-          currentActiveGroup._id === incomingMessage.groupId
-        ) {
-          setMessages((prevMessages) => [...prevMessages, incomingMessage]);
-        }
-        return currentActiveGroup;
-      });
-    });
+    return () => {
+      newSocket.off("receive_group_message");
+      newSocket.disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?._id]);
 
-    return () => newSocket.disconnect();
-  }, [user._id]);
-
+  // ============================================================
+  // JOIN / LEAVE GROUP ROOM ON ACTIVE GROUP CHANGE
+  // ============================================================
   useEffect(() => {
     if (!socket || !activeGroup) return;
+
     fetchMessages(activeGroup._id);
-    socket.emit("join_group_chat", activeGroup._id);
+
+    const joinRoom = () => {
+      socket.emit("join_group_chat", activeGroup._id);
+      console.log("👥 Joined group room:", activeGroup._id);
+    };
+
+    if (socket.connected) {
+      joinRoom();
+    } else {
+      // Wait for connection before emitting
+      socket.once("connect", joinRoom);
+    }
+
     return () => {
       if (socket && activeGroup) {
         socket.emit("leave_group_chat", activeGroup._id);
+        socket.off("connect", joinRoom);
       }
     };
   }, [activeGroup, socket]);
 
+  // Auto-scroll on new messages
   useEffect(() => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // ============================================================
+  // DATA FETCHING
+  // ============================================================
   const fetchUserGroups = async () => {
     try {
       const response = await apiRequest("Group/getGroupByUsers", {
@@ -464,9 +523,13 @@ const ChatPage = () => {
     }
   };
 
+  // ============================================================
+  // SEND MESSAGE
+  // ============================================================
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (newMessage.trim() === "" || !socket || !activeGroup) return;
+
     const optimisticMessage = {
       _id: `optimistic-${Date.now()}`,
       content: newMessage,
@@ -475,6 +538,7 @@ const ChatPage = () => {
       createdAt: new Date().toISOString(),
     };
     setMessages((prevMessages) => [...prevMessages, optimisticMessage]);
+
     socket.emit("send_group_message", {
       groupId: activeGroup._id,
       senderId: user._id,
@@ -483,6 +547,9 @@ const ChatPage = () => {
     setNewMessage("");
   };
 
+  // ============================================================
+  // GROUP MANAGEMENT HANDLERS
+  // ============================================================
   const handleCreateGroup = async (groupData) => {
     try {
       await apiRequest("Group/createGroup", {
@@ -547,7 +614,6 @@ const ChatPage = () => {
     }
   };
 
-  // ===== NEW FUNCTION: Handle Making a Member an Admin =====
   const handleMakeAdmin = async (groupId, memberIdToPromote) => {
     try {
       await apiRequest("Group/makeMemberAdmin", {
@@ -562,7 +628,7 @@ const ChatPage = () => {
         title: "Admin Promoted",
         description: "The member has been promoted to an admin.",
       });
-      fetchUserGroups(); // Refresh data to show the new "Admin" badge
+      fetchUserGroups();
     } catch (error) {
       toast({
         variant: "destructive",
@@ -576,6 +642,9 @@ const ChatPage = () => {
     (admin) => admin._id === user._id,
   );
 
+  // ============================================================
+  // RENDER
+  // ============================================================
   return (
     <>
       <Helmet>
@@ -602,8 +671,6 @@ const ChatPage = () => {
             onAddMembers={handleAddMembers}
           />
         )}
-
-        {/* Pass the new onMakeAdmin handler to the dialog */}
         {isManageMembersOpen && (
           <ManageMembersDialog
             open={isManageMembersOpen}
