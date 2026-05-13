@@ -447,7 +447,7 @@ const ChatPage = () => {
     try {
       const response = await apiRequest("Group/getMessages", {
         method: "POST",
-        body: JSON.stringify({ groupId }),
+        body: JSON.stringify({ groupId, requesterId: user._id }),
       });
       if (response.success) {
         setMessages(response.messages || []);
