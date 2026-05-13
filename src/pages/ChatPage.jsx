@@ -142,6 +142,7 @@ const CreateGroupDialog = ({
 // =======================================================
 const AddMembersDialog = ({
   open,
+  user,
   setOpen,
   allEmployees,
   currentGroup,
@@ -167,7 +168,11 @@ const AddMembersDialog = ({
       toast({ variant: "destructive", title: "No members selected." });
       return;
     }
-    onAddMembers({ groupId: currentGroup._id, memberIds: selectedMembers });
+    onAddMembers({
+      groupId: currentGroup._id,
+      memberIds: selectedMembers,
+      requesterId: user._id,
+    });
     setOpen(false);
     setSelectedMembers([]);
   };
@@ -363,7 +368,7 @@ const ChatPage = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [allEmployees, setAllEmployees] = useState([]);
-
+  console.log(user, "user");
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isManageMembersOpen, setIsManageMembersOpen] = useState(false);
@@ -521,7 +526,11 @@ const ChatPage = () => {
     try {
       await apiRequest("Group/RemoveMember", {
         method: "POST",
-        body: JSON.stringify({ groupId, memberIdToRemove }),
+        body: JSON.stringify({
+          groupId,
+          memberIdToRemove,
+          requesterId: user._id,
+        }),
       });
       toast({
         title: "Member Removed",
@@ -542,7 +551,11 @@ const ChatPage = () => {
     try {
       await apiRequest("Group/makeMemberAdmin", {
         method: "POST",
-        body: JSON.stringify({ groupId, memberIdToPromote }),
+        body: JSON.stringify({
+          groupId,
+          memberIdToPromote,
+          requesterId: user._id,
+        }),
       });
       toast({
         title: "Admin Promoted",
@@ -582,6 +595,7 @@ const ChatPage = () => {
           <AddMembersDialog
             open={isAddMemberOpen}
             setOpen={setIsAddMemberOpen}
+            user={user}
             allEmployees={allEmployees}
             currentGroup={activeGroup}
             onAddMembers={handleAddMembers}
@@ -625,14 +639,16 @@ const ChatPage = () => {
           <Card className="glass-effect border-white/10 w-1/4 flex flex-col">
             <CardHeader className="flex-row justify-between items-center">
               <CardTitle className="text-white">Groups</CardTitle>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-8 w-8"
-                onClick={() => setIsCreateGroupOpen(true)}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
+              {(user.role === "Super Admin" || user.role === "Admin") && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8"
+                  onClick={() => setIsCreateGroupOpen(true)}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
               {groups.map((group) => (
@@ -660,28 +676,30 @@ const ChatPage = () => {
                   <CardTitle className="text-white flex items-center gap-3">
                     <MessageSquare /> {activeGroup.groupName}
                   </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-white/20"
-                      onClick={() => setIsManageMembersOpen(true)}
-                    >
-                      <Users className="w-4 h-4 mr-2" />
-                      View Members
-                    </Button>
-                    {isCurrentUserAdmin && (
+                  {(user.role === "Super Admin" || user.role === "Admin") && (
+                    <div className="flex items-center gap-2">
                       <Button
                         size="sm"
                         variant="outline"
                         className="border-white/20"
-                        onClick={() => setIsAddMemberOpen(true)}
+                        onClick={() => setIsManageMembersOpen(true)}
                       >
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Add
+                        <Users className="w-4 h-4 mr-2" />
+                        View Members
                       </Button>
-                    )}
-                  </div>
+                      {isCurrentUserAdmin && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-white/20"
+                          onClick={() => setIsAddMemberOpen(true)}
+                        >
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Add
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent className="flex-grow p-4 space-y-4 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
                   {messages.map((msg) => {
