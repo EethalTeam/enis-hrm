@@ -435,7 +435,7 @@ const Header = ({ onMenuClick }) => {
   const handleUserClick = async () => {
     try {
       // get employees
-      const empRes = await apiRequest("Employee/getAllEmployees", {
+      const empRes = await apiRequest("Employee/getAllActiveEmployees", {
         method: "POST",
         body: JSON.stringify({}),
       });

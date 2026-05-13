@@ -97,7 +97,7 @@ const EmployeesPage = () => {
 
   const getAllEmployees = async () => {
     try {
-      const res = await apiRequest("Employee/getAllEmployees/", {
+      const res = await apiRequest("Employee/getAllActiveEmployees/", {
         method: "POST",
         body: JSON.stringify({}),
       });

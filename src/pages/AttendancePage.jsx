@@ -517,7 +517,7 @@ const AttendancePage = () => {
   const getAllEmployees = async () => {
     try {
       setIsLoading(true);
-      const response = await apiRequest("Employee/getAllEmployees/", {
+      const response = await apiRequest("Employee/getAllActiveEmployees/", {
         method: "POST",
         body: JSON.stringify({ _id: user._id, role: user.role }),
       });

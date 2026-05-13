@@ -73,7 +73,7 @@ const DepartmentForm = ({ open, setOpen, department, getDepartment }) => {
   const getEmployeeList = async () => {
     try {
       SetData([]); // clear Data once
-      const res = await apiRequest("Employee/getAllEmployees/", {
+      const res = await apiRequest("Employee/getAllActiveEmployees/", {
         method: "POST",
         body: JSON.stringify({}),
       });

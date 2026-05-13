@@ -1383,7 +1383,7 @@ const TasksPage = () => {
   };
   const getEmployeeList = async () => {
     try {
-      const response = await apiRequest("Employee/getAllEmployees/", {
+      const response = await apiRequest("Employee/getAllActiveEmployees/", {
         method: "POST",
         body: JSON.stringify({}),
       });

@@ -593,10 +593,13 @@ const TicketsPage = () => {
           setStatuses(optionsRes.statuses || []);
           setPriorities(optionsRes.priorities || []);
         }
-        const employeesRes = await apiRequest("Employee/getAllEmployees", {
-          method: "POST",
-          body: JSON.stringify({ _id: user._id, role: user.role }),
-        });
+        const employeesRes = await apiRequest(
+          "Employee/getAllActiveEmployees",
+          {
+            method: "POST",
+            body: JSON.stringify({ _id: user._id, role: user.role }),
+          },
+        );
         if (Array.isArray(employeesRes)) {
           setEmployees(employeesRes);
         }
@@ -618,10 +621,13 @@ const TicketsPage = () => {
         });
 
         setProjects(optionsRes || []);
-        const employeesRes = await apiRequest("Employee/getAllEmployees", {
-          method: "POST",
-          body: JSON.stringify({ _id: user._id, role: user.role }),
-        });
+        const employeesRes = await apiRequest(
+          "Employee/getAllActiveEmployees",
+          {
+            method: "POST",
+            body: JSON.stringify({ _id: user._id, role: user.role }),
+          },
+        );
         if (Array.isArray(employeesRes)) {
           setEmployees(employeesRes);
         }

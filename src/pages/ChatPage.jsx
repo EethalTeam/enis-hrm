@@ -32,7 +32,9 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
 import io from "socket.io-client";
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:8001";
+// const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:8001";
+const SOCKET_URL =
+  import.meta.env.VITE_SOCKET_URL || "https://eethal-hrm-node.eniscloud.in";
 
 // =======================================================
 // HELPER COMPONENT: Create Group Dialog (Existing)
@@ -438,7 +440,7 @@ const ChatPage = () => {
 
   const fetchAllEmployees = async () => {
     try {
-      const response = await apiRequest("Employee/getAllEmployees/", {
+      const response = await apiRequest("Employee/getAllActiveEmployees/", {
         method: "POST",
         body: JSON.stringify({}),
       });
