@@ -33,8 +33,7 @@ import { toast } from "@/components/ui/use-toast";
 import io from "socket.io-client";
 
 // const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:8001";
-const SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL || "https://eethal-hrm-node.eniscloud.in";
+const SOCKET_URL = "https://eethal-hrm-node.eniscloud.in";
 
 // =======================================================
 // HELPER COMPONENT: Create Group Dialog (Existing)
