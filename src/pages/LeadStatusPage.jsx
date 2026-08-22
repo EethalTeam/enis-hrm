@@ -66,7 +66,7 @@ const LeadStatusForm = ({ open, setOpen, leadStatus,getLeadStatus }) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="statusName">Lead Status</Label>
+            <Label htmlFor="statusName">Lead Status <span className="text-red-500">*</span></Label>
             <Input id="statusName" name="statusName" value={formData.statusName} onChange={handleChange} required className="bg-white/5" />
           </div>
           <DialogFooter>

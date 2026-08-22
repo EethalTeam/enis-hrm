@@ -67,7 +67,7 @@ const LeaveTypeForm = ({ open, setOpen, leaveType,getLeaveType }) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="LeaveTypeName">Leave Type</Label>
+            <Label htmlFor="LeaveTypeName">Leave Type <span className="text-red-500">*</span></Label>
             <Input id="LeaveTypeName" name="LeaveTypeName" value={formData.LeaveTypeName} onChange={handleChange} required className="bg-white/5" />
           </div>
           <DialogFooter>

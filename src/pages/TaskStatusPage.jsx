@@ -68,7 +68,7 @@ const TaskStatusForm = ({ open, setOpen, taskStatus,getTaskStatus }) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="name">Task Status</Label>
+            <Label htmlFor="name">Task Status <span className="text-red-500">*</span></Label>
             <Input id="name" name="name" value={formData.name} onChange={handleChange} required className="bg-white/5" />
           </div>
           <DialogFooter>

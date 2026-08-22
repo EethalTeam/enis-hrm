@@ -68,7 +68,7 @@ const WorkLocationForm = ({ open, setOpen, workLocation,getWorkLocation }) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="locationName">Work Location</Label>
+            <Label htmlFor="locationName">Work Location <span className="text-red-500">*</span></Label>
             <Input id="locationName" name="locationName" value={formData.locationName} onChange={handleChange} required className="bg-white/5" />
           </div>
           <DialogFooter>

@@ -101,11 +101,11 @@ if(designation){
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="designationName">Designation Name</Label>
+            <Label htmlFor="designationName">Designation Name <span className="text-red-500">*</span></Label>
             <Input id="designationName" name="designationName" value={formData.designationName} onChange={handleChange} required className="bg-white/5" />
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-300">Department</label>
+            <label className="text-sm font-medium text-gray-300">Department <span className="text-red-500">*</span></label>
                             <Select
               name="department"
               value={formData.departmentId} // store only _id

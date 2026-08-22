@@ -111,7 +111,7 @@ const RoleForm = ({ open, setOpen, role, onSave }) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="name" className="text-gray-300">Role Name</Label>
+            <Label htmlFor="name" className="text-gray-300">Role Name <span className="text-red-500">*</span></Label>
             <Input id="name" value={RoleName} onChange={(e) => setRoleName(e.target.value)} required className="glass-effect border-white/10" />
           </div>
           <DialogFooter>

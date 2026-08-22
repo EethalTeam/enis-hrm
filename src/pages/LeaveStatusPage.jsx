@@ -67,7 +67,7 @@ const LeaveStatusForm = ({ open, setOpen, leaveStatus,getLeaveStatus }) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="StatusName">Leave Status</Label>
+            <Label htmlFor="StatusName">Leave Status <span className="text-red-500">*</span></Label>
             <Input id="StatusName" name="StatusName" value={formData.StatusName} onChange={handleChange} required className="bg-white/5" />
           </div>
           <DialogFooter>

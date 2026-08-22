@@ -149,7 +149,7 @@ const createProject = async (data) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="projectName" className="text-gray-300">Project Name</Label>
+            <Label htmlFor="projectName" className="text-gray-300">Project Name <span className="text-red-500">*</span></Label>
             <Input id="projectName" name="projectName" value={formData.projectName} onChange={handleChange} placeholder="e.g., Q4 Marketing Campaign" required className="bg-white/5 border-white/10" />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -187,17 +187,17 @@ const createProject = async (data) => {
                                           </Select>
             </div>
             <div>
-              <Label htmlFor="budget" className="text-gray-300">Budget (₹)</Label>
+              <Label htmlFor="budget" className="text-gray-300">Budget (₹) <span className="text-red-500">*</span></Label>
               <Input id="budget" name="budget" type="number" value={formData.budget} onChange={handleChange} placeholder="e.g., 50000" required className="bg-white/5 border-white/10" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
              <div>
-              <Label htmlFor="startDate" className="text-gray-300">Start Date</Label>
+              <Label htmlFor="startDate" className="text-gray-300">Start Date <span className="text-red-500">*</span></Label>
               <Input id="startDate" name="startDate" type="date" value={formData.startDate} onChange={handleChange} required className="bg-white/5 border-white/10 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" />
             </div>
              <div>
-              <Label htmlFor="endDate" className="text-gray-300">End Date</Label>
+              <Label htmlFor="endDate" className="text-gray-300">End Date <span className="text-red-500">*</span></Label>
               <Input id="endDate" name="endDate" type="date" value={formData.endDate} onChange={handleChange} required className="bg-white/5 border-white/10 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" />
             </div>
           </div>

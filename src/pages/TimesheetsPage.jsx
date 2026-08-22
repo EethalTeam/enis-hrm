@@ -49,23 +49,23 @@ const TimesheetForm = ({ open, setOpen, entry, onSave }) => {
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="date">Date</Label>
+              <Label htmlFor="date">Date <span className="text-red-500">*</span></Label>
               <Input id="date" name="date" type="date" value={formData.date} onChange={handleChange} required className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" />
             </div>
             <div>
-              <Label htmlFor="hours">Hours</Label>
+              <Label htmlFor="hours">Hours <span className="text-red-500">*</span></Label>
               <Input id="hours" name="hours" type="number" step="0.1" value={formData.hours} onChange={handleChange} required className="bg-white/5" />
             </div>
           </div>
           <div>
-            <Label htmlFor="projectId">Project</Label>
+            <Label htmlFor="projectId">Project <span className="text-red-500">*</span></Label>
             <Select name="projectId" value={formData.projectId} onValueChange={(v) => handleSelectChange('projectId', v)} required>
               <SelectTrigger className="bg-white/5"><SelectValue placeholder="Select Project" /></SelectTrigger>
               <SelectContent className="glass-effect">{projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div>
-            <Label htmlFor="taskId">Task</Label>
+            <Label htmlFor="taskId">Task <span className="text-red-500">*</span></Label>
             <Select name="taskId" value={formData.taskId} onValueChange={(v) => handleSelectChange('taskId', v)} required disabled={!formData.projectId}>
               <SelectTrigger className="bg-white/5"><SelectValue placeholder="Select Task" /></SelectTrigger>
               <SelectContent className="glass-effect">{projectTasks.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}</SelectContent>

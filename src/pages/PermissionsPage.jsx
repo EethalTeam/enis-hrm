@@ -217,12 +217,13 @@ const handleSelectChange = (id, name, key, value) => {
                                                                                       </SelectContent>
                                                                                     </Select>
           <div className="grid grid-cols-2 gap-4">
-            <div><Label>Date</Label><Input type="date" name="permissionDate" value={formData.permissionDate} onChange={handleChange} required className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
-            <div><Label>From Time</Label><Input type="time" name="fromTime" value={formData.fromTime} onChange={handleChange} required className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
-            <div><Label>To Time</Label><Input type="time" name="toTime" value={formData.toTime} onChange={handleChange} required className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
-            <div><Label>Total Hours</Label><Input type="number" name="totalHours" value={formData.totalHours} onChange={handleChange} placeholder="e.g., 2" required className="bg-white/5" disabled/></div>
+            <div><Label>Date <span className="text-red-500">*</span></Label><Input type="date" name="permissionDate" value={formData.permissionDate} onChange={handleChange} required className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
+            <div><Label>From Time <span className="text-red-500">*</span></Label><Input type="time" name="fromTime" value={formData.fromTime} onChange={handleChange} required className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
+            <div><Label>To Time <span className="text-red-500">*</span></Label><Input type="time" name="toTime" value={formData.toTime} onChange={handleChange} required className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
+            <div><Label>Total Hours <span className="text-red-500">*</span></Label><Input type="number" name="totalHours" value={formData.totalHours} onChange={handleChange} placeholder="e.g., 2" required className="bg-white/5" disabled/></div>
           </div>
-          <Input name="reason" value={formData.reason} onChange={handleChange} placeholder="Reason for permission" required className="bg-white/5" />
+          <Label htmlFor="reason">Reason <span className="text-red-500">*</span></Label>
+          <Input id="reason" name="reason" value={formData.reason} onChange={handleChange} placeholder="Reason for permission" required className="bg-white/5" />
           <DialogFooter>
             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
             <Button type="submit" className="bg-gradient-to-r from-blue-500 to-purple-600">Submit Request</Button>

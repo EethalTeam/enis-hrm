@@ -49,10 +49,10 @@ const CreateGroupDialog = ({ open, setOpen, allEmployees, onCreateGroup }) => {
             <DialogContent className="glass-effect border-white/10 text-white">
                 <DialogHeader><DialogTitle>Create New Group</DialogTitle></DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div><Label>Group Name</Label><Input value={groupName} onChange={e => setGroupName(e.target.value)} required className="glass-effect" /></div>
+                    <div><Label>Group Name <span className="text-red-500">*</span></Label><Input value={groupName} onChange={e => setGroupName(e.target.value)} required className="glass-effect" /></div>
                     <div><Label>Description (Optional)</Label><Input value={description} onChange={e => setDescription(e.target.value)} className="glass-effect" /></div>
                     <div>
-                        <Label>Select Members</Label>
+                        <Label>Select Members <span className="text-red-500">*</span></Label>
                         <div className="max-h-60 overflow-y-auto space-y-2 rounded-md border border-white/10 p-2 mt-2 scrollbar-thin scrollbar-thumb-slate-700">
                             {allEmployees.map(emp => (
                                 <div key={emp._id} className="flex items-center justify-between rounded-md p-2 hover:bg-white/10 cursor-pointer" onClick={() => handleToggleMember(emp._id)}>
@@ -98,7 +98,7 @@ const AddMembersDialog = ({ open, setOpen, allEmployees, currentGroup, onAddMemb
                 <DialogHeader><DialogTitle>Add Members to "{currentGroup?.groupName}"</DialogTitle></DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <Label>Select Employees to Add</Label>
+                        <Label>Select Employees to Add <span className="text-red-500">*</span></Label>
                         <div className="max-h-60 overflow-y-auto space-y-2 rounded-md border border-white/10 p-2 mt-2 scrollbar-thin scrollbar-thumb-slate-700">
                             {availableEmployees.length > 0 ? availableEmployees.map(emp => (
                                 <div key={emp._id} className="flex items-center justify-between rounded-md p-2 hover:bg-white/10 cursor-pointer" onClick={() => handleToggleMember(emp._id)}>

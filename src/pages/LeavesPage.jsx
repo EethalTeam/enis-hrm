@@ -244,9 +244,10 @@ const handleSelectChange = (id, name, key, value) => {
                                      </Select>
           <div className="grid grid-cols-2 gap-4">
             <div><Label>Start Date</Label><Input type="date" name="startDate" value={formData.startDate} onChange={handleChange} className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
-            <div><Label>End Date</Label><Input type="date" name="endDate" value={formData.endDate} onChange={handleChange} required className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
+            <div><Label>End Date <span className="text-red-500">*</span></Label><Input type="date" name="endDate" value={formData.endDate} onChange={handleChange} required className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
           </div>
-          <Input name="reason" value={formData.reason} onChange={handleChange} placeholder="Reason for leave" required className="bg-white/5" />
+          <Label htmlFor="reason">Reason <span className="text-red-500">*</span></Label>
+          <Input id="reason" name="reason" value={formData.reason} onChange={handleChange} placeholder="Reason for leave" required className="bg-white/5" />
           <DialogFooter>
             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
             <Button type="submit" className="bg-gradient-to-r from-blue-500 to-purple-600">Submit Request</Button>

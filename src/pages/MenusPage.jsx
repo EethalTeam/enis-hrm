@@ -154,7 +154,7 @@ const MenuForm = ({ open, setOpen, menu, onSave, getAllMenus }) => {
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Label</Label>
+              <Label>Label <span className="text-red-500">*</span></Label>
               <Input 
                 name="label" 
                 value={formData.label} 
@@ -166,7 +166,7 @@ const MenuForm = ({ open, setOpen, menu, onSave, getAllMenus }) => {
               />
             </div>
             <div>
-              <Label>Menu ID</Label>
+              <Label>Menu ID <span className="text-red-500">*</span></Label>
               <Input 
                 name="id" 
                 value={formData.id} 
@@ -178,7 +178,7 @@ const MenuForm = ({ open, setOpen, menu, onSave, getAllMenus }) => {
               />
             </div>
             <div>
-              <Label>Path</Label>
+              <Label>Path <span className="text-red-500">*</span></Label>
               <Input 
                 name="path" 
                 value={formData.path} 

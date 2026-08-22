@@ -44,7 +44,7 @@ const PayrollComponentForm = ({ open, setOpen, component, onSave, componentType 
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="name" className="text-gray-300">Component Name</Label>
+            <Label htmlFor="name" className="text-gray-300">Component Name <span className="text-red-500">*</span></Label>
             <Input id="name" name="name" value={formData.name} onChange={handleChange} placeholder="e.g., Basic Salary" required className="bg-white/5 border-white/10" />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -61,7 +61,7 @@ const PayrollComponentForm = ({ open, setOpen, component, onSave, componentType 
               </Select>
             </div>
             <div>
-              <Label htmlFor="value" className="text-gray-300">Value</Label>
+              <Label htmlFor="value" className="text-gray-300">Value <span className="text-red-500">*</span></Label>
               <Input id="value" name="value" type="number" value={formData.value} onChange={handleChange} placeholder="e.g., 500 or 50" required className="bg-white/5 border-white/10" />
             </div>
           </div>

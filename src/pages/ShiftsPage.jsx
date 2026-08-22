@@ -77,21 +77,21 @@ const ShiftForm = ({ open, setOpen, shift, onSave, getShift  }) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="shiftName" className="text-gray-300">Shift Name</Label>
+            <Label htmlFor="shiftName" className="text-gray-300">Shift Name <span className="text-red-500">*</span></Label>
             <Input id="shiftName" name="shiftName" value={formData.shiftName} onChange={handleChange} placeholder="e.g., Morning Shift" required className="bg-white/5 border-white/10" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="startTime" className="text-gray-300">Start Time</Label>
+              <Label htmlFor="startTime" className="text-gray-300">Start Time <span className="text-red-500">*</span></Label>
               <Input id="startTime" name="startTime" type="time" value={formData.startTime} onChange={handleChange} required className="bg-white/5 border-white/10 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" />
             </div>
             <div>
-              <Label htmlFor="endTime" className="text-gray-300">End Time</Label>
+              <Label htmlFor="endTime" className="text-gray-300">End Time <span className="text-red-500">*</span></Label>
               <Input id="endTime" name="endTime" type="time" value={formData.endTime} onChange={handleChange} required className="bg-white/5 border-white/10 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" />
             </div>
           </div>
           <div>
-            <Label htmlFor="hourlyRate" className="text-gray-300">Hourly Rate (₹)</Label>
+            <Label htmlFor="hourlyRate" className="text-gray-300">Hourly Rate (₹) <span className="text-red-500">*</span></Label>
             <Input id="hourlyRate" name="hourlyRate" type="number" value={formData.hourlyRate} onChange={handleChange} placeholder="e.g., 25.50" required className="bg-white/5 border-white/10" />
           </div>
           <DialogFooter>

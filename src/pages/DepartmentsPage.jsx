@@ -101,7 +101,7 @@ const handleSelectChange = (id, name, key, value) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="departmentName">Department Name</Label>
+            <Label htmlFor="departmentName">Department Name <span className="text-red-500">*</span></Label>
             <Input id="departmentName" name="departmentName" value={formData.departmentName} onChange={handleChange} required className="bg-white/5" />
           </div>
           <div>

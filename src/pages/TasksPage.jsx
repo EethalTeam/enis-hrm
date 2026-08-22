@@ -17,6 +17,19 @@ import { config } from '@/components/CustomComponents/config';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiRequest } from '@/components/CustomComponents/apiRequest';
 
+const formatEta = (time) => {
+  if (!time) return '-';
+
+  const [hours, minutes] = time.split(':').map(Number);
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return '-';
+  }
+
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 || 12;
+  return `${displayHours}:${String(minutes).padStart(2, '0')} ${period}`;
+};
+
 const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
   const { user } = useAuth();
   console.log(user,"user")
@@ -25,7 +38,7 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
   const [feedback, setFeedback] = useState('');
   const [ProgressMessage, setProgressMessage] = useState('');
   const [formData, setFormData] = useState(
-    task || { _id: '', taskName: '', description: '', taskPriority: '', taskPriorityId: '', taskStatus: 'To Do', taskStatusId: '68b5a25b88e62ec178bb2923', assignee: '', assignedTo: '', assignees: [], project: '', projectId: '', dueDate: '', reqLeadCount: '', compLeadCount: '', createdBy: user._id }
+    task || { _id: '', taskName: '', description: '', taskPriority: '', taskPriorityId: '', taskStatus: 'To Do', taskStatusId: '68b5a25b88e62ec178bb2923', assignee: '', assignedTo: '', assignees: [], project: '', projectId: '', dueDate: '', eta: '', reqLeadCount: '', compLeadCount: '', createdBy: user._id }
   );
   const [Data, SetData] = useState([]);
 
@@ -45,6 +58,7 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
         assignee: task.assignedTo[0].name,
         assignedTo: task.assignedTo[0]._id,
         dueDate: task.dueDate.split('T')[0],
+        eta: task.eta || '',
         reqLeadCount: task.reqLeadCount,
         compLeadCount: task.compLeadCount,
         assignees: task.assignedTo.map(val => val._id)
@@ -189,6 +203,30 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
   };
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!formData._id && !formData.taskPriorityId) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a priority.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (!formData._id && !formData.projectId) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a project.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (!formData._id && (!formData.assignees || formData.assignees.length === 0)) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select at least one member.',
+        variant: 'destructive',
+      });
+      return;
+    }
     if (formData._id) {
       updateTask(formData);
       toast({
@@ -218,7 +256,7 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
             description="Please provide a reason or Progress message for pausing the task."
           >
             <div className="mt-2">
-              <Label htmlFor="ProgressMessage" className="text-gray-300"><b>Progress message</b></Label>
+              <Label htmlFor="ProgressMessage" className="text-gray-300"><b>Progress message <span className="text-red-500">*</span></b></Label>
               <Input
                 id="ProgressMessage"
                 type="text"
@@ -241,7 +279,7 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
             description="Please provide a feedback before completing the task."
           >
             <div className="mt-2">
-              <Label htmlFor="feedback" className="text-gray-300"><b>Feedback</b></Label>
+              <Label htmlFor="feedback" className="text-gray-300"><b>Feedback <span className="text-red-500">*</span></b></Label>
               <Input
                 id="feedback"
                 type="text"
@@ -263,7 +301,7 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 py-4">
             <div>
-              <Label htmlFor="taskName" className="text-gray-300">Task Title</Label>
+              <Label htmlFor="taskName" className="text-gray-300">Task Title <span className="text-red-500">*</span></Label>
               <Input name="taskName" value={formData.taskName} onChange={handleChange} placeholder="Task Title" required className="bg-white/5 border-white/10" disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} />
             </div>
             <div>
@@ -272,7 +310,7 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="taskPriority" className="text-gray-300">Priority</Label>
+                <Label htmlFor="taskPriority" className="text-gray-300">Priority <span className="text-red-500">*</span></Label>
                 <Select
                   name="taskPriority"
                   value={formData.taskPriorityId}
@@ -338,7 +376,7 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="taskStatus" className="text-gray-300">Project</Label>
+                <Label htmlFor="taskStatus" className="text-gray-300">Project <span className="text-red-500">*</span></Label>
                 <Select
                   name="project"
                   value={formData.projectId}
@@ -371,7 +409,7 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
                 </Select>
               </div>
               {!task && <div>
-                <Label htmlFor="assignees" className="text-gray-300">Select Members</Label>
+                <Label htmlFor="assignees" className="text-gray-300">Select Members <span className="text-red-500">*</span></Label>
                 <p className="text-gray-400 text-xs mb-2">Ctrl/Cmd + click to select multiple.</p>
                 <select
                   id="assignees"
@@ -387,9 +425,15 @@ const TaskForm = ({ open, setOpen, task, onSave, getAllTasks, employees }) => {
                 </select>
               </div>}
             </div>
-            <div>
-              <Label htmlFor="dueDate" className="text-gray-300">Due Date</Label>
-              <Input disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} id="dueDate" name="dueDate" type="date" value={formData.dueDate} required onChange={handleChange} className="bg-white/5 border-white/10 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="dueDate" className="text-gray-300">Due Date <span className="text-red-500">*</span></Label>
+                <Input disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} id="dueDate" name="dueDate" type="date" value={formData.dueDate} required onChange={handleChange} className="bg-white/5 border-white/10 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" />
+              </div>
+              <div>
+                <Label htmlFor="eta" className="text-gray-300">ETA <span className="text-red-500">*</span></Label>
+                <Input disabled={(user.role !== 'Super Admin' && user.role !== 'Admin')} id="eta" name="eta" type="time" value={formData.eta} onChange={handleChange} className="bg-white/5 border-white/10 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" />
+              </div>
             </div>
             <DialogFooter>
               {(user.role === 'Super Admin' || user.role === 'Admin') && <DialogClose asChild><Button type="button" variant="outline" className="border-white/10 hover:bg-white/10">Cancel</Button></DialogClose>}
@@ -422,6 +466,7 @@ const TaskCard = ({ task, onEdit, onDelete, employees, onShowHistory, onShowWork
         <div className={`w-3 h-3 rounded-full ${getPriorityColor(task.priority)}`}></div>
       </div>
       <p className="text-sm text-gray-400 mb-4">{task.description}</p>
+      <p className="text-sm text-gray-400 mb-4">ETA: {formatEta(task.eta)}</p>
       <div className="flex justify-between items-center text-xs">
         <div className="flex items-center gap-2">
           {assignee && <img src={assignee.avatar} alt={assignee.name} className="w-6 h-6 rounded-full" />}

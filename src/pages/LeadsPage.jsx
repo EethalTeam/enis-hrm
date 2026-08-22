@@ -170,9 +170,9 @@ const LeadForm = ({ open, setOpen, lead, getAllLeads, leadStatuses, employees })
                     
                     {/* --- Candidate Details --- */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div><Label>Lead Name *</Label><Input name="leadName" value={formData.leadName || ''} onChange={handleChange} required className="bg-white/5" /></div>
-                        <div><Label>Lead Phone *</Label><Input name="leadPhoneNumber" value={formData.leadPhoneNumber || ''} onChange={handleChange} required className="bg-white/5" /></div>
-                        <div><Label>Lead Date *</Label><Input name="leadDate" type="date" value={formData.leadDate || ''} onChange={handleChange} required className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert" /></div>
+                        <div><Label>Lead Name <span className="text-red-500">*</span></Label><Input name="leadName" value={formData.leadName || ''} onChange={handleChange} required className="bg-white/5" /></div>
+                        <div><Label>Lead Phone <span className="text-red-500">*</span></Label><Input name="leadPhoneNumber" value={formData.leadPhoneNumber || ''} onChange={handleChange} required className="bg-white/5" /></div>
+                        <div><Label>Lead Date <span className="text-red-500">*</span></Label><Input name="leadDate" type="date" value={formData.leadDate || ''} onChange={handleChange} required className="bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert" /></div>
                     </div>
 
                     {/* --- Role & Experience Details --- */}
@@ -192,7 +192,7 @@ const LeadForm = ({ open, setOpen, lead, getAllLeads, leadStatuses, employees })
                     {/* --- Status & Follow-up --- */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <Label>Status *</Label>
+                            <Label>Status <span className="text-red-500">*</span></Label>
                             <Select value={formData.statusId || ''} onValueChange={(value) => handleSelectChange('statusId', value)} required>
                                 <SelectTrigger className="glass-effect border-white/10"><SelectValue placeholder="Select Status" /></SelectTrigger>
                                 <SelectContent className="glass-effect border-white/10 text-white">

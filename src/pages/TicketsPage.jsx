@@ -61,11 +61,11 @@ const CreateTicketDialog = ({ open, setOpen, priorities, employees, onTicketCrea
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 py-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Title</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Title <span className="text-red-500">*</span></label>
                         <Input value={title} onChange={(e) => setTitle(e.target.value)} className="glass-effect" />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Description</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Description <span className="text-red-500">*</span></label>
                         <Textarea value={description} onChange={(e) => setDescription(e.target.value)} className="glass-effect" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">

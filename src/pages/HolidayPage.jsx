@@ -79,7 +79,7 @@ const HolidayForm = ({ open, setOpen, holiday,getHoliday }) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="holidayName">Holiday</Label>
+            <Label htmlFor="holidayName">Holiday <span className="text-red-500">*</span></Label>
             <Input id="holidayName" name="holidayName" value={formData.holidayName} onChange={handleChange} required className="bg-white/5" />
           </div>
           <div>

@@ -118,7 +118,7 @@ const LoginPage = () => {
 
                   {/* Email */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-300">Email Address</label>
+                    <label className="text-sm font-medium text-gray-300">Email Address <span className="text-red-500">*</span></label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <Input
@@ -134,7 +134,7 @@ const LoginPage = () => {
 
                   {/* Password */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-300">Password</label>
+                    <label className="text-sm font-medium text-gray-300">Password <span className="text-red-500">*</span></label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <Input

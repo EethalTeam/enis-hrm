@@ -66,7 +66,7 @@ const ProjectStatusForm = ({ open, setOpen, projectStatus,getProjectStatus }) =>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="name">Project Status</Label>
+            <Label htmlFor="name">Project Status <span className="text-red-500">*</span></Label>
             <Input id="name" name="name" value={formData.name} onChange={handleChange} required className="bg-white/5" />
           </div>
           <DialogFooter>

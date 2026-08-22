@@ -49,7 +49,7 @@ const TimeTracker = () => {
         <div className="flex flex-col sm:flex-row gap-4 items-end">
           <div className="flex-1">
             <label className="text-sm font-medium text-gray-300 mb-2 block">
-              What are you working on?
+              What are you working on? <span className="text-red-500">*</span>
             </label>
             <Input
               placeholder="Enter task description..."

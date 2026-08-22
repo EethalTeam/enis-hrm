@@ -66,7 +66,7 @@ const StatusForm = ({ open, setOpen, status,getStatus }) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <Label htmlFor="statusName">Status</Label>
+            <Label htmlFor="statusName">Status <span className="text-red-500">*</span></Label>
             <Input id="statusName" name="statusName" value={formData.statusName} onChange={handleChange} required className="bg-white/5" />
           </div>
           <DialogFooter>

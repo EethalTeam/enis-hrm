@@ -335,29 +335,29 @@ const handleSelectChange = (id, name, key, value) => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Employee Code</label>
+                <label className="text-sm font-medium text-gray-300">Employee Code <span className="text-red-500">*</span></label>
                 <div className="relative"><User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="code" value={formData.code} onChange={handleChange} placeholder="e.g. EMP001" required className="pl-10 border-white/10" /></div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Full Name</label>
+                <label className="text-sm font-medium text-gray-300">Full Name <span className="text-red-500">*</span></label>
                 <div className="relative"><User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="name" value={formData.name} onChange={handleChange} placeholder="e.g. John Doe" required className="pl-10 border-white/10" /></div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Email Address</label>
+                <label className="text-sm font-medium text-gray-300">Email Address <span className="text-red-500">*</span></label>
                 <div className="relative"><Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="e.g. john.doe@company.com" required className="pl-10 border-white/10" /></div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Password</label>
+                <label className="text-sm font-medium text-gray-300">Password <span className="text-red-500">*</span></label>
                 <div className="relative"><BookLock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="password" type="password" value={formData.password} onChange={handleChange} placeholder="please enter password" required className="pl-10 border-white/10" /></div>
               </div>
                <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Date of Birth</label>
+                <label className="text-sm font-medium text-gray-300">Date of Birth <span className="text-red-500">*</span></label>
                 <div className="relative">
                   {/* <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /> */}
                   <Input name="birthDate" type="date" value={formData.birthDate} onChange={handleChange} required className="glass-effect border-white/10 bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Phone Number</label>
+                <label className="text-sm font-medium text-gray-300">Phone Number <span className="text-red-500">*</span></label>
                 <div className="relative"><Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="phoneNumber" type="tel" maxLength={10} value={formData.phoneNumber} onChange={handleChange} placeholder="e.g. 9876543210" required className="pl-10 border-white/10" /></div>
               </div>
               <div className="space-y-2">
@@ -461,17 +461,17 @@ const handleSelectChange = (id, name, key, value) => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Working Hours/Day</label>
+                <label className="text-sm font-medium text-gray-300">Working Hours/Day <span className="text-red-500">*</span></label>
                 <div className="relative"><Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="workingHours" type="number" value={formData.workingHours} onChange={handleChange} placeholder="e.g. 8" required className="pl-10 glass-effect border-white/10" /></div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Joining Date</label>
+                <label className="text-sm font-medium text-gray-300">Joining Date <span className="text-red-500">*</span></label>
                 <div className="relative">
                   {/* <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /> */}
                   <Input name="joinDate" type="date" value={formData.joinDate} onChange={handleChange} required className="glass-effect border-white/10 bg-white/5 text-white [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100" /></div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Annual Salary (₹)</label>
+                <label className="text-sm font-medium text-gray-300">Annual Salary (₹) <span className="text-red-500">*</span></label>
                 <div className="relative"><IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" /><Input name="salary" type="number" value={formData.salary} onChange={handleChange} placeholder="e.g. 75000" required className="pl-10 glass-effect border-white/10" /></div>
               </div>
               <div className="space-y-2">
