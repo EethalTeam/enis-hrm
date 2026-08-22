@@ -9,6 +9,7 @@ import {
   Trash2,
   CheckCircle,
   XCircle,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -35,6 +37,17 @@ import {
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { config } from "@/components/CustomComponents/config";
 import { apiRequest } from "@/components/CustomComponents/apiRequest";
+
+// Employees eligible to be picked in the "Request To" (approver) dropdown.
+// Matches the Admin/Super Admin check used elsewhere in the app (e.g. canManage).
+const isAdminRole = (roleName) =>
+  roleName === "Admin" || roleName === "Super Admin";
+
+// Reason cells in the table are truncated; click to view the full text.
+const truncateText = (text, maxLength = 40) => {
+  if (!text) return "";
+  return text.length > maxLength ? `${text.slice(0, maxLength).trim()}…` : text;
+};
 
 const PermissionForm = ({
   open,
@@ -272,15 +285,17 @@ const PermissionForm = ({
               </SelectValue>
             </SelectTrigger>
             <SelectContent className="glass-effect border-white/10 text-white">
-              {(Data || []).map((dept) => (
-                <SelectItem
-                  key={dept._id}
-                  value={dept._id}
-                  className="hover:bg-white/10"
-                >
-                  {dept.name}
-                </SelectItem>
-              ))}
+              {(Data || [])
+                .filter((dept) => isAdminRole(dept.roleName))
+                .map((dept) => (
+                  <SelectItem
+                    key={dept._id}
+                    value={dept._id}
+                    className="hover:bg-white/10"
+                  >
+                    {dept.name}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
           <div className="grid grid-cols-2 gap-4">
@@ -331,7 +346,7 @@ const PermissionForm = ({
               />
             </div>
           </div>
-          <Input
+          <Textarea
             name="reason"
             value={formData.reason}
             onChange={handleChange}
@@ -365,6 +380,23 @@ const PermissionsPage = () => {
   const [selectedPermission, setSelectedPermission] = useState(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [Permissions, setPermissions] = useState([]);
+
+  // Approve / Reject state
+  const [actionTarget, setActionTarget] = useState(null); // permission being acted on
+  const [actionType, setActionType] = useState(null); // "Approved" | "Rejected"
+  const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejectionError, setRejectionError] = useState("");
+  const [isSubmittingAction, setIsSubmittingAction] = useState(false);
+  const [processingPermissionId, setProcessingPermissionId] = useState(null);
+
+  // View full reason
+  const [viewReasonText, setViewReasonText] = useState("");
+  const [isReasonDialogOpen, setIsReasonDialogOpen] = useState(false);
+  const openReasonDialog = (reason) => {
+    setViewReasonText(reason || "");
+    setIsReasonDialogOpen(true);
+  };
 
   useEffect(() => {
     let api = false;
@@ -440,9 +472,76 @@ const PermissionsPage = () => {
     }
   };
 
-  const handleStatusChange = (permission, status) => {
-    updatePermission({ ...permission, status });
-    toast({ title: `Permission ${status}` });
+  const openApproveDialog = (permission) => {
+    setActionTarget(permission);
+    setActionType("Approved");
+    setRejectionReason("");
+    setRejectionError("");
+    setIsActionDialogOpen(true);
+  };
+
+  const openRejectDialog = (permission) => {
+    setActionTarget(permission);
+    setActionType("Rejected");
+    setRejectionReason("");
+    setRejectionError("");
+    setIsActionDialogOpen(true);
+  };
+
+  const closeActionDialog = () => {
+    if (isSubmittingAction) return; // prevent closing mid-request
+    setIsActionDialogOpen(false);
+    setActionTarget(null);
+    setActionType(null);
+    setRejectionReason("");
+    setRejectionError("");
+  };
+
+  const submitAction = async () => {
+    if (!actionTarget || !actionType) return;
+
+    if (actionType === "Rejected" && !rejectionReason.trim()) {
+      setRejectionError("Please provide a reason for rejecting this permission request.");
+      return;
+    }
+
+    setIsSubmittingAction(true);
+    setProcessingPermissionId(actionTarget._id);
+    try {
+      await apiRequest("Permission/updatePermissionStatus/", {
+        method: "POST",
+        body: JSON.stringify({
+          _id: actionTarget._id,
+          status: actionType,
+          ...(actionType === "Rejected" ? { rejectionReason: rejectionReason.trim() } : {}),
+        }),
+      });
+
+      await getAllPermissions();
+
+      toast({
+        title: `Permission ${actionType}`,
+        description: `Permission request for ${actionTarget.employeeId?.name || "the employee"} has been ${actionType.toLowerCase()}.`,
+      });
+
+      setIsActionDialogOpen(false);
+      setActionTarget(null);
+      setActionType(null);
+      setRejectionReason("");
+      setRejectionError("");
+    } catch (error) {
+      console.error("Error updating permission status:", error);
+      toast({
+        variant: "destructive",
+        title: `Failed to ${actionType === "Approved" ? "approve" : "reject"} permission`,
+        description:
+          error?.message || "Something went wrong. The permission status was not changed.",
+      });
+      // Keep the dialog open (and status unchanged) so the user can retry.
+    } finally {
+      setIsSubmittingAction(false);
+      setProcessingPermissionId(null);
+    }
   };
 
   const canManage = user.role === "Admin" || user.role === "Super Admin";
@@ -481,6 +580,76 @@ const PermissionsPage = () => {
           />
         )}
       </AnimatePresence>
+      <AnimatePresence>
+        {isActionDialogOpen && (
+          <ConfirmationDialog
+            isOpen={isActionDialogOpen}
+            onClose={closeActionDialog}
+            onConfirm={submitAction}
+            title={
+              actionType === "Approved"
+                ? "Approve Permission Request?"
+                : "Reject Permission Request?"
+            }
+            description={
+              actionType === "Approved"
+                ? "Are you sure you want to approve this permission request?"
+                : "Are you sure you want to reject this permission request? Please provide a reason below."
+            }
+            confirmLabel={
+              isSubmittingAction ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {actionType === "Approved" ? "Approving..." : "Rejecting..."}
+                </span>
+              ) : actionType === "Approved" ? (
+                "Approve"
+              ) : (
+                "Reject"
+              )
+            }
+            confirmDisabled={isSubmittingAction}
+            variant={actionType === "Approved" ? "success" : "danger"}
+          >
+            {actionType === "Rejected" && (
+              <div className="text-left space-y-2">
+                <Label htmlFor="permissionRejectionReason">Rejection Reason</Label>
+                <Textarea
+                  id="permissionRejectionReason"
+                  value={rejectionReason}
+                  onChange={(e) => {
+                    setRejectionReason(e.target.value);
+                    if (rejectionError) setRejectionError("");
+                  }}
+                  placeholder="Enter the reason for rejecting this permission request"
+                  disabled={isSubmittingAction}
+                  className="bg-white/5"
+                />
+                {rejectionError && (
+                  <p className="text-sm text-red-400">{rejectionError}</p>
+                )}
+              </div>
+            )}
+          </ConfirmationDialog>
+        )}
+      </AnimatePresence>
+      <Dialog open={isReasonDialogOpen} onOpenChange={setIsReasonDialogOpen}>
+        <DialogContent className="glass-effect border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle>Reason</DialogTitle>
+          </DialogHeader>
+          <p className="text-gray-200 whitespace-pre-wrap py-2">
+            {viewReasonText}
+          </p>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Close
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="space-y-8">
         <motion.div
@@ -527,6 +696,11 @@ const PermissionsPage = () => {
                   </thead>
                   <tbody>
                     {userPermissions.map((permission) => {
+                      const isPending =
+                        permission.RequestStatusId?.StatusName === "Pending";
+                      const isOwner = user._id === permission.employeeId._id;
+                      const hasActions =
+                        (canManage && isPending) || (isOwner && isPending);
                       return (
                         <tr key={permission._id}>
                           <td>{permission.employeeId.name || "Unknown"}</td>
@@ -538,7 +712,15 @@ const PermissionsPage = () => {
                               .join("-")}
                           </td>
                           <td>{permission.totalHours}</td>
-                          <td>{permission.reason}</td>
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => openReasonDialog(permission.reason)}
+                              className="text-left hover:underline decoration-white/40 underline-offset-2"
+                            >
+                              {truncateText(permission.reason)}
+                            </button>
+                          </td>
                           <td>
                             <span
                               className={`status-badge ${permission.RequestStatusId?.StatusName === "Approved" ? "status-active" : permission.RequestStatusId?.StatusName === "Pending" ? "status-pending" : "status-inactive"}`}
@@ -555,32 +737,38 @@ const PermissionsPage = () => {
                                     <Button
                                       size="icon"
                                       variant="ghost"
-                                      className="h-8 w-8 text-green-400"
-                                      onClick={() =>
-                                        handleStatusChange(
-                                          permission,
-                                          "Approved",
-                                        )
+                                      disabled={
+                                        processingPermissionId === permission._id
                                       }
+                                      className="h-8 w-8 text-green-400"
+                                      onClick={() => openApproveDialog(permission)}
                                     >
-                                      <CheckCircle className="w-4 h-4" />
+                                      {processingPermissionId === permission._id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <CheckCircle className="w-4 h-4" />
+                                      )}
                                     </Button>
                                     <Button
                                       size="icon"
                                       variant="ghost"
-                                      className="h-8 w-8 text-red-400"
-                                      onClick={() =>
-                                        handleStatusChange(
-                                          permission,
-                                          "Rejected",
-                                        )
+                                      disabled={
+                                        processingPermissionId === permission._id
                                       }
+                                      className="h-8 w-8 text-red-400"
+                                      onClick={() => openRejectDialog(permission)}
                                     >
-                                      <XCircle className="w-4 h-4" />
+                                      {processingPermissionId === permission._id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <XCircle className="w-4 h-4" />
+                                      )}
                                     </Button>
                                   </>
                                 )}
-                              {user._id === permission.employeeId._id && (
+                              {user._id === permission.employeeId._id &&
+                                permission.RequestStatusId?.StatusName ===
+                                  "Pending" && (
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -590,7 +778,9 @@ const PermissionsPage = () => {
                                   <Edit className="w-4 h-4" />
                                 </Button>
                               )}
-                              {user._id === permission.employeeId._id && (
+                              {user._id === permission.employeeId._id &&
+                                permission.RequestStatusId?.StatusName ===
+                                  "Pending" && (
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -599,6 +789,9 @@ const PermissionsPage = () => {
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
+                              )}
+                              {!hasActions && (
+                                <span className="text-gray-500">—</span>
                               )}
                             </div>
                           </td>

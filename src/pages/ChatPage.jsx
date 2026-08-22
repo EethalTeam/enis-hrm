@@ -31,7 +31,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
 import io from "socket.io-client";
 
-const SOCKET_URL = "https://eethal-hrm-node.eniscloud.in";
+const SOCKET_URL = "https://enis-hrm-node.eniscloud.in";
 
 // =======================================================
 // HELPER COMPONENT: Create Group Dialog

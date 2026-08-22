@@ -10,6 +10,7 @@ import {
   Trash2,
   CheckCircle,
   XCircle,
+  Loader2,
 } from "lucide-react";
 import {
   Card,
@@ -38,6 +39,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -49,6 +51,34 @@ import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { config } from "@/components/CustomComponents/config";
 import { apiRequest } from "@/components/CustomComponents/apiRequest";
 import { useAuth } from "@/contexts/AuthContext";
+
+// Employees eligible to be picked in the "Request To" (approver) dropdown.
+// Matches the Admin/Super Admin check used elsewhere in the app (e.g. canManage).
+const isAdminRole = (roleName) =>
+  roleName === "Admin" || roleName === "Super Admin";
+
+// Leave types currently enabled for applying leave. Only "Casual Leave" is
+// available for now; the other leave types are temporarily disabled here.
+// To bring one back, uncomment its name below.
+const ENABLED_LEAVE_TYPES = [
+  "Casual Leave",
+  // "Sick Leave",
+  // "Earned Leave",
+];
+const isEnabledLeaveType = (leaveTypeName) =>
+  ENABLED_LEAVE_TYPES.some(
+    (name) => name.toLowerCase() === (leaveTypeName || "").trim().toLowerCase(),
+  );
+
+// Default approver for new leave requests. Must also satisfy isAdminRole
+// (only Admin/Super Admin employees are valid "Request To" options).
+const DEFAULT_REQUESTED_TO_NAME = "Amsa Veni";
+
+// Reason cells in the table are truncated; click to view the full text.
+const truncateText = (text, maxLength = 40) => {
+  if (!text) return "";
+  return text.length > maxLength ? `${text.slice(0, maxLength).trim()}…` : text;
+};
 
 const LeaveForm = ({ open, setOpen, leave, onSave, getAllLeaves }) => {
   const { user } = useAuth();
@@ -70,6 +100,62 @@ const LeaveForm = ({ open, setOpen, leave, onSave, getAllLeaves }) => {
     },
   );
   const [Data, SetData] = useState([]);
+
+  // Default the leave type to the sole enabled type ("Casual Leave") for new requests.
+  useEffect(() => {
+    if (leave) return;
+    const setDefaultLeaveType = async () => {
+      try {
+        const response = await apiRequest("LeaveType/getAllLeaveType/", {
+          method: "POST",
+          body: JSON.stringify({}),
+        });
+        const defaultType = (response || []).find((lt) =>
+          isEnabledLeaveType(lt.LeaveTypeName),
+        );
+        if (defaultType) {
+          setFormData((prev) => ({
+            ...prev,
+            leaveTypeId: defaultType._id,
+            leaveType: defaultType.LeaveTypeName,
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching default leave type:", error);
+      }
+    };
+    setDefaultLeaveType();
+  }, [leave]);
+
+  // Default "Request To" to the designated approver for new requests.
+  useEffect(() => {
+    if (leave) return;
+    const setDefaultRequestedTo = async () => {
+      try {
+        const response = await apiRequest("Employee/getAllActiveEmployees/", {
+          method: "POST",
+          body: JSON.stringify({}),
+        });
+        const defaultApprover = (response || []).find(
+          (emp) =>
+            isAdminRole(emp.roleName) &&
+            (emp.name || "").trim().toLowerCase() ===
+              DEFAULT_REQUESTED_TO_NAME.toLowerCase(),
+        );
+        if (defaultApprover) {
+          setFormData((prev) => ({
+            ...prev,
+            requestedToId: defaultApprover._id,
+            requestedTo: defaultApprover.name,
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching default approver:", error);
+      }
+    };
+    setDefaultRequestedTo();
+  }, [leave]);
+
   useEffect(() => {
     if (leave) {
       setFormData({
@@ -278,15 +364,17 @@ const LeaveForm = ({ open, setOpen, leave, onSave, getAllLeaves }) => {
               </SelectValue>
             </SelectTrigger>
             <SelectContent className="glass-effect border-white/10 text-white">
-              {(Data || []).map((dept) => (
-                <SelectItem
-                  key={dept._id}
-                  value={dept._id}
-                  className="hover:bg-white/10"
-                >
-                  {dept.LeaveTypeName}
-                </SelectItem>
-              ))}
+              {(Data || [])
+                .filter((dept) => isEnabledLeaveType(dept.LeaveTypeName))
+                .map((dept) => (
+                  <SelectItem
+                    key={dept._id}
+                    value={dept._id}
+                    className="hover:bg-white/10"
+                  >
+                    {dept.LeaveTypeName}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
           <Select
@@ -317,15 +405,17 @@ const LeaveForm = ({ open, setOpen, leave, onSave, getAllLeaves }) => {
               </SelectValue>
             </SelectTrigger>
             <SelectContent className="glass-effect border-white/10 text-white">
-              {(Data || []).map((dept) => (
-                <SelectItem
-                  key={dept._id}
-                  value={dept._id}
-                  className="hover:bg-white/10"
-                >
-                  {dept.name}
-                </SelectItem>
-              ))}
+              {(Data || [])
+                .filter((dept) => isAdminRole(dept.roleName))
+                .map((dept) => (
+                  <SelectItem
+                    key={dept._id}
+                    value={dept._id}
+                    className="hover:bg-white/10"
+                  >
+                    {dept.name}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
           <div className="grid grid-cols-2 gap-4">
@@ -351,7 +441,7 @@ const LeaveForm = ({ open, setOpen, leave, onSave, getAllLeaves }) => {
               />
             </div>
           </div>
-          <Input
+          <Textarea
             name="reason"
             value={formData.reason}
             onChange={handleChange}
@@ -389,6 +479,25 @@ const LeavesPage = () => {
   const [Employees, setEmployees] = useState([]);
   const [Status, setStatus] = useState([]);
   const { user } = useAuth();
+
+  // Approve / Reject state
+  const [actionTarget, setActionTarget] = useState(null); // leave request being acted on
+  const [actionType, setActionType] = useState(null); // "Approved" | "Rejected"
+  const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejectionError, setRejectionError] = useState("");
+  const [isSubmittingAction, setIsSubmittingAction] = useState(false);
+  const [processingLeaveId, setProcessingLeaveId] = useState(null);
+
+  // View full reason
+  const [viewReasonText, setViewReasonText] = useState("");
+  const [isReasonDialogOpen, setIsReasonDialogOpen] = useState(false);
+  const openReasonDialog = (reason) => {
+    setViewReasonText(reason || "");
+    setIsReasonDialogOpen(true);
+  };
+
+  const canManage = user.role === "Admin" || user.role === "Super Admin";
 
   const filteredRequests = Leaves.filter((request) => {
     const employee = Employees.find((e) => e._id === request.employeeId._id);
@@ -489,12 +598,80 @@ const LeavesPage = () => {
     }
   };
 
-  const handleStatusChange = (leave, status) => {
-    updateLeave({ ...leave, status });
-    toast({
-      title: `Leave ${status}`,
-      description: `Leave request for ${Employees.find((e) => e._id === leave.employeeId)?.name} has been ${status.toLowerCase()}.`,
-    });
+  const openApproveDialog = (leave) => {
+    setActionTarget(leave);
+    setActionType("Approved");
+    setRejectionReason("");
+    setRejectionError("");
+    setIsActionDialogOpen(true);
+  };
+
+  const openRejectDialog = (leave) => {
+    setActionTarget(leave);
+    setActionType("Rejected");
+    setRejectionReason("");
+    setRejectionError("");
+    setIsActionDialogOpen(true);
+  };
+
+  const closeActionDialog = () => {
+    if (isSubmittingAction) return; // prevent closing mid-request
+    setIsActionDialogOpen(false);
+    setActionTarget(null);
+    setActionType(null);
+    setRejectionReason("");
+    setRejectionError("");
+  };
+
+  const submitAction = async () => {
+    if (!actionTarget || !actionType) return;
+
+    if (actionType === "Rejected" && !rejectionReason.trim()) {
+      setRejectionError("Please provide a reason for rejecting this leave request.");
+      return;
+    }
+
+    setIsSubmittingAction(true);
+    setProcessingLeaveId(actionTarget._id);
+    try {
+      await apiRequest("Leave/updateLeaveStatus/", {
+        method: "POST",
+        body: JSON.stringify({
+          _id: actionTarget._id,
+          status: actionType,
+          ...(actionType === "Rejected" ? { rejectionReason: rejectionReason.trim() } : {}),
+        }),
+      });
+
+      await getAllLeaves();
+
+      const employeeName =
+        actionTarget.employeeId?.name ||
+        Employees.find((e) => e._id === actionTarget.employeeId?._id)?.name ||
+        "the employee";
+      toast({
+        title: `Leave ${actionType}`,
+        description: `Leave request for ${employeeName} has been ${actionType.toLowerCase()}.`,
+      });
+
+      setIsActionDialogOpen(false);
+      setActionTarget(null);
+      setActionType(null);
+      setRejectionReason("");
+      setRejectionError("");
+    } catch (error) {
+      console.error("Error updating leave status:", error);
+      toast({
+        variant: "destructive",
+        title: `Failed to ${actionType === "Approved" ? "approve" : "reject"} leave`,
+        description:
+          error?.message || "Something went wrong. The leave status was not changed.",
+      });
+      // Keep the dialog open (and status unchanged) so the user can retry.
+    } finally {
+      setIsSubmittingAction(false);
+      setProcessingLeaveId(null);
+    }
   };
 
   return (
@@ -528,6 +705,76 @@ const LeavesPage = () => {
           />
         )}
       </AnimatePresence>
+      <AnimatePresence>
+        {isActionDialogOpen && (
+          <ConfirmationDialog
+            isOpen={isActionDialogOpen}
+            onClose={closeActionDialog}
+            onConfirm={submitAction}
+            title={
+              actionType === "Approved"
+                ? "Approve Leave Request?"
+                : "Reject Leave Request?"
+            }
+            description={
+              actionType === "Approved"
+                ? "Are you sure you want to approve this leave request?"
+                : "Are you sure you want to reject this leave request? Please provide a reason below."
+            }
+            confirmLabel={
+              isSubmittingAction ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {actionType === "Approved" ? "Approving..." : "Rejecting..."}
+                </span>
+              ) : actionType === "Approved" ? (
+                "Approve"
+              ) : (
+                "Reject"
+              )
+            }
+            confirmDisabled={isSubmittingAction}
+            variant={actionType === "Approved" ? "success" : "danger"}
+          >
+            {actionType === "Rejected" && (
+              <div className="text-left space-y-2">
+                <Label htmlFor="rejectionReason">Rejection Reason</Label>
+                <Textarea
+                  id="rejectionReason"
+                  value={rejectionReason}
+                  onChange={(e) => {
+                    setRejectionReason(e.target.value);
+                    if (rejectionError) setRejectionError("");
+                  }}
+                  placeholder="Enter the reason for rejecting this leave request"
+                  disabled={isSubmittingAction}
+                  className="bg-white/5"
+                />
+                {rejectionError && (
+                  <p className="text-sm text-red-400">{rejectionError}</p>
+                )}
+              </div>
+            )}
+          </ConfirmationDialog>
+        )}
+      </AnimatePresence>
+      <Dialog open={isReasonDialogOpen} onOpenChange={setIsReasonDialogOpen}>
+        <DialogContent className="glass-effect border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle>Reason</DialogTitle>
+          </DialogHeader>
+          <p className="text-gray-200 whitespace-pre-wrap py-2">
+            {viewReasonText}
+          </p>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Close
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="space-y-8">
         <motion.div
@@ -608,6 +855,11 @@ const LeavesPage = () => {
                       const employee = Employees.find(
                         (e) => e._id === request.employeeId._id,
                       );
+                      const isPending =
+                        request.RequestStatusId?.StatusName === "Pending";
+                      const isOwner = user._id === request.employeeId._id;
+                      const hasActions =
+                        (canManage && isPending) || (isOwner && isPending);
                       return (
                         <tr key={request.id}>
                           <td>{request.employeeId.name}</td>
@@ -626,41 +878,65 @@ const LeavesPage = () => {
                               .join("-")}
                           </td>
                           <td>{request.totalDays}</td>
-                          <td>{request.reason}</td>
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => openReasonDialog(request.reason)}
+                              className="text-left hover:underline decoration-white/40 underline-offset-2"
+                            >
+                              {truncateText(request.reason)}
+                            </button>
+                          </td>
                           <td>
                             <span
                               className={`status-badge ${request.RequestStatusId.StatusName === "Approved" ? "status-active" : request.RequestStatusId.StatusName === "Pending" ? "status-pending" : "status-inactive"}`}
+                              title={
+                                request.RequestStatusId.StatusName === "Rejected"
+                                  ? request.rejectionReason || undefined
+                                  : undefined
+                              }
                             >
                               {request.RequestStatusId.StatusName}
                             </span>
                           </td>
                           <td>
-                            <div className="flex gap-2">
-                              {request.status === "Pending" && (
-                                <>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-8 w-8 text-green-400"
-                                    onClick={() =>
-                                      handleStatusChange(request, "Approved")
-                                    }
-                                  >
-                                    <CheckCircle className="w-4 h-4" />
-                                  </Button>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-8 w-8 text-red-400"
-                                    onClick={() =>
-                                      handleStatusChange(request, "Rejected")
-                                    }
-                                  >
-                                    <XCircle className="w-4 h-4" />
-                                  </Button>
-                                </>
-                              )}
-                              {user._id === request.employeeId._id && (
+                            <div className="flex flex-wrap gap-2">
+                              {canManage &&
+                                request.RequestStatusId?.StatusName === "Pending" && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      disabled={processingLeaveId === request._id}
+                                      className="h-8 gap-1 px-2 text-green-400 border-green-500/30 hover:bg-green-500/10 hover:text-green-300"
+                                      onClick={() => openApproveDialog(request)}
+                                    >
+                                      {processingLeaveId === request._id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <CheckCircle className="w-4 h-4" />
+                                      )}
+                                      Approve
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      disabled={processingLeaveId === request._id}
+                                      className="h-8 gap-1 px-2 text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
+                                      onClick={() => openRejectDialog(request)}
+                                    >
+                                      {processingLeaveId === request._id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <XCircle className="w-4 h-4" />
+                                      )}
+                                      Reject
+                                    </Button>
+                                  </>
+                                )}
+                              {user._id === request.employeeId._id &&
+                                request.RequestStatusId?.StatusName ===
+                                  "Pending" && (
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -670,7 +946,9 @@ const LeavesPage = () => {
                                   <Edit className="w-4 h-4" />
                                 </Button>
                               )}
-                              {user._id === request.employeeId._id && (
+                              {user._id === request.employeeId._id &&
+                                request.RequestStatusId?.StatusName ===
+                                  "Pending" && (
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -679,6 +957,9 @@ const LeavesPage = () => {
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
+                              )}
+                              {!hasActions && (
+                                <span className="text-gray-500">—</span>
                               )}
                             </div>
                           </td>

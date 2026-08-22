@@ -395,6 +395,31 @@ const Header = ({ onMenuClick }) => {
     }
   };
 
+  const markAllAsRead = async () => {
+    try {
+      const res = await apiRequest("Notifications/markAllAsSeen/", {
+        method: "POST",
+        body: JSON.stringify({ employeeId: user._id }),
+      });
+
+      if (res) {
+        // Re-fetch updated notifications
+        fetchNotifications();
+        toast({
+          title: "Notifications updated",
+          description: "Older notifications marked as seen.",
+        });
+      }
+    } catch (err) {
+      console.error("Error marking all notifications as seen:", err);
+      toast({
+        title: "Error",
+        description: "Failed to mark notifications as seen.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleNotificationAction = async (notification, action) => {
     try {
       const res = await apiRequest("Notifications/updateNotificationStatus", {
@@ -537,60 +562,78 @@ const Header = ({ onMenuClick }) => {
                 scrollbarWidth: "none",
               }}
             >
-              <div className="p-2 font-semibold">Notifications</div>
+              <div className="p-2 font-semibold flex items-center justify-between">
+                Notifications
+                {/* Disabled for now — uncomment to re-enable bulk "Mark all as seen". */}
+                {userNotifications && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 px-2 text-xs font-normal text-gray-300 hover:text-white"
+                    onClick={markAllAsRead}
+                  >
+                    Mark all as seen
+                  </Button>
+                )}
+              </div>
               <DropdownMenuSeparator />
               {userNotifications.length > 0 ? (
-                userNotifications.map((notification) => (
-                  <div key={notification._id} className="px-2 py-1.5 text-sm">
-                    <p className="mb-2">{notification.message}</p>
-                    {(notification.type === "permission-request" ||
-                      notification.type === "leave-request" ||
-                      notification.type === "task-complete") &&
-                      notification.fromEmployeeId !== user._id &&
-                      notification.status !== "approved" &&
-                      notification.status !== "rejected" &&
-                      user.role === "Admin" &&
-                      user.role === "Super Admin" && (
-                        <div className="flex gap-2 mt-1">
+                userNotifications.map((notification) => {
+                  const isRequestType =
+                    notification.type === "permission-request" ||
+                    notification.type === "leave-request";
+                  const canAct =
+                    isRequestType &&
+                    notification.fromEmployeeId !== user._id &&
+                    notification.status !== "approved" &&
+                    notification.status !== "rejected" &&
+                    (user.role === "Admin" || user.role === "Super Admin");
+
+                  return (
+                    <div key={notification._id} className="px-2 py-1.5 text-sm">
+                      <p className="mb-2">{notification.message}</p>
+                      <div className="flex gap-2 mt-1">
+                        {canAct && (
+                          <>
+                            <Button
+                              size="sm"
+                              className="bg-green-500/80 hover:bg-green-500 h-7"
+                              onClick={() =>
+                                handleNotificationAction(
+                                  notification,
+                                  "approve",
+                                )
+                              }
+                            >
+                              <Check className="w-4 h-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="bg-red-500/80 hover:bg-red-500 h-7"
+                              onClick={() =>
+                                handleNotificationAction(notification, "reject")
+                              }
+                            >
+                              <X className="w-4 h-4 mr-1" />
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        {!canAct && (
                           <Button
                             size="sm"
-                            className="bg-green-500/80 hover:bg-green-500 h-7"
-                            onClick={() =>
-                              handleNotificationAction(notification, "approve")
-                            }
+                            variant="outline"
+                            className="h-7"
+                            onClick={() => markAsRead(notification._id)}
                           >
-                            <Check className="w-4 h-4 mr-1" />
-                            Approve
+                            Mark as seen
                           </Button>
-                          <Button
-                            size="sm"
-                            className="bg-red-500/80 hover:bg-red-500 h-7"
-                            onClick={() =>
-                              handleNotificationAction(notification, "reject")
-                            }
-                          >
-                            <X className="w-4 h-4 mr-1" />
-                            Reject
-                          </Button>
-                        </div>
-                      )}
-                    {notification.type !== "permission-request" &&
-                      notification.type !== "leave-request" &&
-                      (notification.type === "task-complete" ||
-                        notification.type === "task-assignment" ||
-                        notification.type === "task-created" ||
-                        notification.type === "subtask-completed") && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7"
-                          onClick={() => markAsRead(notification._id)}
-                        >
-                          Mark as seen
-                        </Button>
-                      )}
-                  </div>
-                ))
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
               ) : (
                 <div className="px-2 py-4 text-center text-sm text-gray-400">
                   No new notifications
